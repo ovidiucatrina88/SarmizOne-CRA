@@ -49,6 +49,7 @@ import {
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Layout from "@/components/layout/layout";
 
 // Form schema for adding a new control to the library
 const controlLibraryFormSchema = z.object({
@@ -405,7 +406,8 @@ export default function ControlLibrary() {
   }
 
   return (
-    <div>
+    <Layout>
+      <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">Control Library</h2>
         <div className="flex items-center gap-2">
