@@ -1,5 +1,5 @@
 // Build configuration for production
-const esbuild = require('esbuild');
+import esbuild from 'esbuild';
 
 esbuild.build({
   entryPoints: ['server/production.ts'],

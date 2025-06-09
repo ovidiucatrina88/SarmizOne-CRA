@@ -1,0 +1,100 @@
+root@Debian-1208-bookworm-amd64-base ~/risk-hetzner #  npm run build
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+vite v5.4.14 building for production...
+transforming (3) src/main.tsxBrowserslist: browsers data (caniuse-lite) is 8 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+✓ 3795 modules transformed.
+../dist/public/index.html                              0.63 kB │ gzip:   0.38 kB
+../dist/public/assets/index-BWx5FHdg.css             118.00 kB │ gzip:  19.33 kB
+../dist/public/assets/purify.es-CF4_YkFU.js           21.86 kB │ gzip:   8.62 kB
+../dist/public/assets/index.es-CrMQdti6.js           149.98 kB │ gzip:  51.24 kB
+../dist/public/assets/html2canvas.esm-CBrSDip1.js    201.42 kB │ gzip:  48.03 kB
+../dist/public/assets/index-CvqewKx4.js            2,533.32 kB │ gzip: 726.35 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 10.91s
+▲ [WARNING] Duplicate member "getAllControlLibraryItems" in class body [duplicate-class-member]
+
+    server/services/repositoryStorage.ts:495:8:
+      495 │   async getAllControlLibraryItems(): Promise<any[]> {
+          ╵         ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  The original member "getAllControlLibraryItems" is here:
+
+    server/services/repositoryStorage.ts:234:8:
+      234 │   async getAllControlLibraryItems(): Promise<any[]> {
+          ╵         ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate member "getControlLibraryItem" in class body [duplicate-class-member]
+
+    server/services/repositoryStorage.ts:499:8:
+      499 │   async getControlLibraryItem(id: number): Promise<any | undefined> {
+          ╵         ~~~~~~~~~~~~~~~~~~~~~
+
+  The original member "getControlLibraryItem" is here:
+
+    server/services/repositoryStorage.ts:238:8:
+      238 │   async getControlLibraryItem(id: number): Promise<any | undefined> {
+          ╵         ~~~~~~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate member "createControlLibraryItem" in class body [duplicate-class-member]
+
+    server/services/repositoryStorage.ts:504:8:
+      504 │   async createControlLibraryItem(data: any): Promise<any> {
+          ╵         ~~~~~~~~~~~~~~~~~~~~~~~~
+
+  The original member "createControlLibraryItem" is here:
+
+    server/services/repositoryStorage.ts:243:8:
+      243 │   async createControlLibraryItem(item: any): Promise<any> {
+          ╵         ~~~~~~~~~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate member "updateControlLibraryItem" in class body [duplicate-class-member]
+
+    server/services/repositoryStorage.ts:509:8:
+      509 │   async updateControlLibraryItem(id: number, data: any): Promise<any> {
+          ╵         ~~~~~~~~~~~~~~~~~~~~~~~~
+
+  The original member "updateControlLibraryItem" is here:
+
+    server/services/repositoryStorage.ts:248:8:
+      248 │   async updateControlLibraryItem(id: number, data: any): Promise<any | undefined> {
+          ╵         ~~~~~~~~~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate member "deleteControlLibraryItem" in class body [duplicate-class-member]
+
+    server/services/repositoryStorage.ts:518:8:
+      518 │   async deleteControlLibraryItem(id: number): Promise<void> {
+          ╵         ~~~~~~~~~~~~~~~~~~~~~~~~
+
+  The original member "deleteControlLibraryItem" is here:
+
+    server/services/repositoryStorage.ts:257:8:
+      257 │   async deleteControlLibraryItem(id: number): Promise<boolean> {
+          ╵         ~~~~~~~~~~~~~~~~~~~~~~~~
+
+▲ [WARNING] Duplicate member "recalculateRiskSummaries" in class body [duplicate-class-member]
+
+    server/services/repositoryStorage.ts:525:8:
+      525 │   async recalculateRiskSummaries(): Promise<void> {
+          ╵         ~~~~~~~~~~~~~~~~~~~~~~~~
+
+  The original member "recalculateRiskSummaries" is here:
+
+    server/services/repositoryStorage.ts:481:8:
+      481 │   async recalculateRiskSummaries(): Promise<void> {
+          ╵         ~~~~~~~~~~~~~~~~~~~~~~~~
+
+6 warnings
+
+  dist/index.js  240.7kb
+
+⚡ Done in 15ms
+root@Debian-1208-bookworm-amd64-base ~/risk-hetzner #
