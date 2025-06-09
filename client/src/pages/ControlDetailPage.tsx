@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "@shared/utils/calculations";
 import { Badge } from "@/components/ui/badge";
+import Layout from "@/components/layout/layout";
 
 export default function ControlDetailPage() {
   const { id } = useParams();

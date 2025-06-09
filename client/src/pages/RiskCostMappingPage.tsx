@@ -30,6 +30,7 @@ import {
   Treemap
 } from 'recharts';
 import { LegalEntityCostMatrix } from "@/components/legal-entity/legal-entity-cost-matrix";
+import Layout from "@/components/layout/layout";
 
 export default function RiskCostMappingPage() {
   const [searchTerm, setSearchTerm] = useState("");

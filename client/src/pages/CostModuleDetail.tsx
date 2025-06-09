@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, ArrowLeft, CircleDollarSign, Shield } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
+import Layout from "@/components/layout/layout";
 
 interface CostModule {
   id: number;

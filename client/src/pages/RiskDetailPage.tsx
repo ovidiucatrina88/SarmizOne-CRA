@@ -30,6 +30,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import Layout from "@/components/layout/layout";
 
 export default function RiskDetailPage() {
   const { id } = useParams();
