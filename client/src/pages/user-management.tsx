@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Users, UserPlus, Shield, ShieldCheck, UserX, RotateCcw, Calendar, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
-import { Layout } from "@/components/layout/layout";
+import Layout from "@/components/layout/layout";
 
 interface User {
   id: number;
@@ -481,6 +481,7 @@ export default function UserManagementPage() {
           )}
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </Layout>
   );
 }
