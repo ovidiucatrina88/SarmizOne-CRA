@@ -7,7 +7,7 @@ RUN apk add --no-cache curl
 # Set working directory
 WORKDIR /app
 
-# Copy package files and install dependencies
+# Copy package files and install ALL dependencies (including devDependencies for build)
 COPY package*.json ./
 RUN npm ci
 
@@ -36,7 +36,6 @@ RUN npm ci --only=production && npm cache clean --force
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/dist/public ./public
 
 # Copy necessary runtime files
 COPY --chown=appuser:nodejs shared ./shared
