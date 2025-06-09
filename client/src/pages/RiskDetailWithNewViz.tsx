@@ -127,7 +127,8 @@ const RiskDetailWithNewViz: React.FC = () => {
   }
   
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <Layout>
+      <div className="container mx-auto py-6 space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -291,7 +292,8 @@ const RiskDetailWithNewViz: React.FC = () => {
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </Layout>
   );
 };
 
