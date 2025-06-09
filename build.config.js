@@ -15,9 +15,27 @@ esbuild.build({
     'drizzle-orm',
     'bcryptjs',
     'passport',
+    'passport-local',
+    'passport-openidconnect',
     'express-session',
     'connect-pg-simple',
-    'dotenv'
+    'dotenv',
+    'uuid',
+    'ws',
+    'openai',
+    'axios',
+    // Node.js built-in modules
+    'url',
+    'crypto',
+    'fs',
+    'path',
+    'http',
+    'https',
+    'util',
+    'stream',
+    'buffer',
+    'events',
+    'querystring'
   ],
   define: {
     'process.env.NODE_ENV': '"production"'
