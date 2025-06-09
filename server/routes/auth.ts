@@ -153,8 +153,8 @@ router.post('/auth/change-password', async (req, res) => {
     }
 
     // Verify current password
-    const loginResult = await authService.authenticateLocal(session.user.username, currentPassword);
-    if (!loginResult.success) {
+    const user = await authService.authenticateLocal({ username: session.user.username, password: currentPassword });
+    if (!user) {
       return res.status(400).json({
         success: false,
         error: 'Current password is incorrect'
@@ -162,19 +162,20 @@ router.post('/auth/change-password', async (req, res) => {
     }
 
     // Change password
-    const success = await authService.resetUserPassword(session.user.id, newPassword);
-    
-    if (!success) {
+    try {
+      await authService.changePassword(session.user.id, newPassword);
+      
+      res.json({
+        success: true,
+        message: 'Password changed successfully'
+      });
+    } catch (error) {
+      console.error('Change password error:', error);
       return res.status(500).json({
         success: false,
         error: 'Failed to change password'
       });
     }
-
-    res.json({
-      success: true,
-      message: 'Password changed successfully'
-    });
   } catch (error) {
     console.error('Change password error:', error);
     res.status(400).json({
