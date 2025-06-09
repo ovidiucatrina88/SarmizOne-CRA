@@ -338,7 +338,7 @@ export default function RiskCostMappingPage() {
   const chartData = getChartData();
   
   return (
-    
+    <Layout>
       <div className="container px-4 py-6 space-y-8">
       <div className="flex justify-between items-center">
         <div>

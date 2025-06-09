@@ -900,6 +900,6 @@ export default function AdminPage() {
         </TabsContent>
       </Tabs>
       </div>
-    
+    </Layout>
   );
 }
