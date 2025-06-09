@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Risk, RiskCalculationParams } from '@shared/schema';
 import XyflowFairVisualization from '../components/risks/XyflowFairVisualization';
 import FairVisualizationTemplate from '../components/risks/fair-visualization-template';
+import Layout from "@/components/layout/layout";
 
 const RiskDetailWithNewViz: React.FC = () => {
   const { id } = useParams();
