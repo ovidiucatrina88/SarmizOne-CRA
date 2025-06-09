@@ -426,4 +426,167 @@ router.patch('/auth/users/:id/reset-password', requireAdmin, async (req, res) =>
   }
 });
 
+/**
+ * OIDC Configuration Routes (Admin only)
+ */
+
+const oidcConfigSchema = z.object({
+  oidcEnabled: z.boolean().optional(),
+  oidcIssuer: z.string().url().optional().or(z.literal('')),
+  oidcClientId: z.string().optional(),
+  oidcClientSecret: z.string().optional(),
+  oidcCallbackUrl: z.string().url().optional().or(z.literal('')),
+  oidcScopes: z.array(z.string()).optional(),
+  authType: z.enum(['local', 'oidc', 'hybrid']).optional(),
+});
+
+// Get current OIDC configuration
+router.get('/auth/oidc/config', requireAdmin, async (req, res) => {
+  try {
+    const [config] = await db.select().from(authConfig).limit(1);
+    
+    if (!config) {
+      return res.json({
+        success: true,
+        config: {
+          oidcEnabled: false,
+          oidcIssuer: '',
+          oidcClientId: '',
+          oidcClientSecret: '',
+          oidcCallbackUrl: '',
+          oidcScopes: ['openid', 'profile', 'email'],
+          authType: 'local'
+        }
+      });
+    }
+
+    // Don't expose sensitive data
+    res.json({
+      success: true,
+      config: {
+        oidcEnabled: config.oidcEnabled,
+        oidcIssuer: config.oidcIssuer || '',
+        oidcClientId: config.oidcClientId || '',
+        oidcClientSecret: config.oidcClientSecret ? '***' : '',
+        oidcCallbackUrl: config.oidcCallbackUrl || '',
+        oidcScopes: config.oidcScopes || ['openid', 'profile', 'email'],
+        authType: config.authType
+      }
+    });
+  } catch (error) {
+    console.error('Get OIDC config error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get OIDC configuration'
+    });
+  }
+});
+
+// Update OIDC configuration
+router.put('/auth/oidc/config', requireAdmin, async (req, res) => {
+  try {
+    const updates = oidcConfigSchema.parse(req.body);
+    
+    // Handle client secret - only update if provided and not masked
+    if (updates.oidcClientSecret === '***') {
+      delete updates.oidcClientSecret;
+    }
+    
+    // Get existing config or create default
+    let [config] = await db.select().from(authConfig).limit(1);
+    
+    if (!config) {
+      [config] = await db.insert(authConfig).values({
+        authType: 'local',
+        oidcEnabled: false,
+        sessionTimeout: 3600,
+        maxLoginAttempts: 5,
+        lockoutDuration: 300,
+        passwordMinLength: 8,
+        ...updates
+      }).returning();
+    } else {
+      [config] = await db.update(authConfig)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(authConfig.id, config.id))
+        .returning();
+    }
+    
+    // Dynamically reconfigure OIDC without restart
+    if (updates.oidcEnabled !== undefined || updates.oidcIssuer || updates.oidcClientId) {
+      try {
+        const { configurePassport } = await import('../auth');
+        configurePassport();
+        console.log('OIDC configuration updated dynamically');
+      } catch (error) {
+        console.error('Failed to reconfigure OIDC:', error);
+      }
+    }
+    
+    // Don't expose sensitive data
+    res.json({
+      success: true,
+      message: 'OIDC configuration updated successfully',
+      config: {
+        oidcEnabled: config.oidcEnabled,
+        oidcIssuer: config.oidcIssuer || '',
+        oidcClientId: config.oidcClientId || '',
+        oidcClientSecret: config.oidcClientSecret ? '***' : '',
+        oidcCallbackUrl: config.oidcCallbackUrl || '',
+        oidcScopes: config.oidcScopes || ['openid', 'profile', 'email'],
+        authType: config.authType
+      }
+    });
+  } catch (error) {
+    console.error('Update OIDC config error:', error);
+    res.status(400).json({
+      success: false,
+      error: error.errors?.[0]?.message || error.message || 'Failed to update OIDC configuration'
+    });
+  }
+});
+
+// Test OIDC connection
+router.post('/auth/oidc/test', requireAdmin, async (req, res) => {
+  try {
+    const [config] = await db.select().from(authConfig).limit(1);
+    
+    if (!config || !config.oidcEnabled || !config.oidcIssuer) {
+      return res.status(400).json({
+        success: false,
+        error: 'OIDC not configured'
+      });
+    }
+
+    // Test OIDC discovery endpoint
+    const response = await fetch(`${config.oidcIssuer}/.well-known/openid_configuration`);
+    
+    if (!response.ok) {
+      return res.status(400).json({
+        success: false,
+        error: 'Failed to connect to OIDC provider'
+      });
+    }
+
+    const discovery = await response.json();
+    
+    res.json({
+      success: true,
+      message: 'OIDC connection successful',
+      provider: {
+        issuer: discovery.issuer,
+        authorizationEndpoint: discovery.authorization_endpoint,
+        tokenEndpoint: discovery.token_endpoint,
+        userInfoEndpoint: discovery.userinfo_endpoint
+      }
+    });
+  } catch (error) {
+    console.error('OIDC test error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to test OIDC connection'
+    });
+  }
+});
+
 export default router;
