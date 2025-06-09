@@ -136,41 +136,35 @@ export default function RiskResponses() {
   }
 
   return (
-    <Layout 
-      pageTitle="Risk Responses" 
-      pageIcon="🛡️" 
-      pageDescription="Manage how you respond to identified risks"
-      pageActions={
-        <div className="flex gap-2">
-          <Button 
-            onClick={() => refetchResponses()} 
-            variant="outline" 
-            size="sm"
-            className="flex items-center gap-1"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-1">
-                <Plus className="h-4 w-4" />
-                Add Response
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl bg-gray-800 border-gray-700">
-              <DialogHeader>
-                <DialogTitle className="text-white">Add New Risk Response</DialogTitle>
-              </DialogHeader>
-              <RiskResponseForm 
-                risks={risks?.data || []} 
-                onSuccess={handleAddSuccess} 
-              />
-            </DialogContent>
-          </Dialog>
-        </div>
-      }
-    >
+    <div>
+      <div className="mb-6 flex gap-2">
+        <Button 
+          onClick={() => refetchResponses()} 
+          variant="outline" 
+          size="sm"
+          className="flex items-center gap-1"
+        >
+          <RefreshCw className="h-4 w-4" />
+          Refresh
+        </Button>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-1">
+              <Plus className="h-4 w-4" />
+              Add Response
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl bg-gray-800 border-gray-700">
+            <DialogHeader>
+              <DialogTitle className="text-white">Add New Risk Response</DialogTitle>
+            </DialogHeader>
+            <RiskResponseForm 
+              risks={risks?.data || []} 
+              onSuccess={handleAddSuccess} 
+            />
+          </DialogContent>
+        </Dialog>
+      </div>
       <div className="bg-gray-800 rounded-lg border border-gray-700">
         <div className="p-6 border-b border-gray-700">
           <h3 className="text-lg font-semibold text-white">Risk Responses</h3>
@@ -287,6 +281,6 @@ export default function RiskResponses() {
           </div>
         </div>
       </div>
-    
+    </div>
   );
 }

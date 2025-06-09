@@ -227,33 +227,27 @@ export default function RiskLibrary() {
   }
   
   return (
-    <Layout 
-      pageTitle="Risk Library" 
-      pageIcon="📚" 
-      pageDescription="Manage risk templates and create risk instances from templates"
-      pageActions={
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="default" 
-            size="sm" 
-            onClick={() => setIsCreateModalOpen(true)}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Risk to Library
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh} 
-            disabled={isRefreshing}
-            className="ml-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
-          </Button>
-        </div>
-      }
-    >
+    <div>
+      <div className="mb-6 flex items-center gap-2">
+        <Button 
+          variant="default" 
+          size="sm" 
+          onClick={() => setIsCreateModalOpen(true)}
+        >
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add Risk to Library
+        </Button>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleRefresh} 
+          disabled={isRefreshing}
+          className="ml-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? 'Refreshing...' : 'Refresh'}
+        </Button>
+      </div>
       
       <div className="mb-6">
         <div className="bg-gray-800 rounded-lg border border-gray-600">

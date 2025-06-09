@@ -85,27 +85,15 @@ export default function Controls() {
 
   if (error) {
     return (
-      <Layout
-        pageTitle="Security Controls"
-        pageIcon="CTL"
-        pageDescription="Implement and monitor security controls to reduce risk exposure and improve your security posture."
-        pageActions={pageActions}
-      >
-        <div className="p-8 text-center">
-          <h2 className="text-xl font-bold text-red-500">Error loading controls</h2>
-          <p className="mt-2 text-gray-600">Please try again later or contact support.</p>
-        </div>
-      
+      <div className="p-8 text-center">
+        <h2 className="text-xl font-bold text-red-500">Error loading controls</h2>
+        <p className="mt-2 text-gray-600">Please try again later or contact support.</p>
+      </div>
     );
   }
 
   return (
-    <Layout
-      pageTitle="Security Controls"
-      pageIcon="CTL"
-      pageDescription="Implement and monitor security controls to reduce risk exposure and improve your security posture."
-      pageActions={pageActions}
-    >
+    <div>
       <ControlList controls={controlInstances || []} onEdit={handleEditControl} />
         
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
@@ -118,6 +106,6 @@ export default function Controls() {
           <ControlForm control={selectedControl} onClose={handleCloseControl} />
         </DialogContent>
       </Dialog>
-    
+    </div>
   );
 }
