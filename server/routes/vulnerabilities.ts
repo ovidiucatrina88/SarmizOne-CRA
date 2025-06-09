@@ -24,7 +24,25 @@ const createVulnerabilitySchema = z.object({
 // GET /vulnerabilities - List all vulnerabilities  
 router.get('/vulnerabilities', async (req, res) => {
   try {
-    const allVulnerabilities = await db.select().from(vulnerabilities);
+    const allVulnerabilities = await db.select({
+      id: vulnerabilities.id,
+      cveId: vulnerabilities.cveId,
+      title: vulnerabilities.title,
+      description: vulnerabilities.description,
+      cvssScore: vulnerabilities.cvssScore,
+      cvssVector: vulnerabilities.cvssVector,
+      severity: vulnerabilities.severity,
+      status: vulnerabilities.status,
+      discoveredDate: vulnerabilities.discoveredDate,
+      remediatedDate: vulnerabilities.remediatedDate,
+      publishedDate: vulnerabilities.publishedDate,
+      modifiedDate: vulnerabilities.modifiedDate,
+      eDetectImpact: vulnerabilities.eDetectImpact,
+      eResistImpact: vulnerabilities.eResistImpact,
+      remediation: vulnerabilities.remediation,
+      createdAt: vulnerabilities.createdAt,
+      updatedAt: vulnerabilities.updatedAt
+    }).from(vulnerabilities);
     
     res.json({
       success: true,

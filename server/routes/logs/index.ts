@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { isAuthenticated, isAdmin } from '../../auth';
+import { isAuthenticated } from '../../auth';
 import { storage } from '../../services/storage';
 
 const router = Router();
 
-// GET /logs - Get all activity logs (admin only)
-router.get('/logs', isAuthenticated, isAdmin, async (req, res) => {
+// GET /activity-logs - Get all activity logs 
+router.get('/activity-logs', isAuthenticated, async (req, res) => {
   try {
     const logs = await storage.getActivityLogs();
     
