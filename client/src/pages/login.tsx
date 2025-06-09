@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,7 @@ export default function LoginPage() {
   const [, setLocation] = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const {
     register,
@@ -56,8 +57,11 @@ export default function LoginPage() {
         description: `Welcome back, ${data.user.displayName || data.user.username}!`,
       });
       
-      // Redirect to dashboard
-      setLocation('/');
+      // Invalidate auth queries to refresh authentication state
+      queryClient.invalidateQueries({ queryKey: ['/api/auth/user'] });
+      
+      // Force page reload to trigger authentication state refresh
+      window.location.href = '/';
     },
     onError: (error: Error) => {
       toast({
