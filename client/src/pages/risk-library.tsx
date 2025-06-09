@@ -162,17 +162,19 @@ export default function RiskLibrary() {
           <h2 className="text-xl font-bold text-red-500">Error loading risk templates</h2>
           <p className="mt-2 text-gray-400">Please try again later or contact support.</p>
         </div>
-      
+      </Layout>
     );
   }
 
   return (
-    <Layout 
-      pageTitle="Risk Library" 
-      pageIcon="⚠️" 
-      pageDescription="Manage risk templates and create risk instances"
-      pageActions={
-        <Button onClick={handleCreateNew}>
+    <Layout>
+      <div className="container mx-auto p-6 bg-gray-900 min-h-screen text-white">
+        <div className="mb-6 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold">Risk Library</h1>
+            <p className="text-gray-400">Manage risk templates and create risk instances</p>
+          </div>
+          <Button onClick={handleCreateNew}>
           <PlusCircle className="mr-2 h-4 w-4" />
           Add New Risk Template
         </Button>

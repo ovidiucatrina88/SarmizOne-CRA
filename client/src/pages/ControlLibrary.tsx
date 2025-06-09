@@ -962,6 +962,7 @@ export default function ControlLibrary() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </Layout>
   );
 }

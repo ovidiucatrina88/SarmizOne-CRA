@@ -281,6 +281,7 @@ export default function RiskResponses() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </Layout>
   );
 }

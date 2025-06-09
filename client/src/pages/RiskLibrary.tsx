@@ -227,7 +227,8 @@ export default function RiskLibrary() {
   }
   
   return (
-    <div>
+    <Layout>
+      <div>
       <div className="mb-6 flex items-center gap-2">
         <Button 
           variant="default" 
