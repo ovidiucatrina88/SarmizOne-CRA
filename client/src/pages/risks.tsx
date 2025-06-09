@@ -167,6 +167,7 @@ export default function Risks() {
           />
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </Layout>
   );
 }

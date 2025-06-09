@@ -105,6 +105,7 @@ export default function Assets() {
           <AssetForm asset={selectedAsset} onClose={handleClose} />
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </Layout>
   );
 }
