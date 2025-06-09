@@ -31,12 +31,12 @@ app.use(session({
   }
 }));
 
-// Initialize Passport - TEMPORARILY DISABLED FOR DEVELOPMENT
-// app.use(passport.initialize());
-// app.use(passport.session());
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
-// Configure Passport strategies - TEMPORARILY DISABLED FOR DEVELOPMENT
-// configurePassport();
+// Configure Passport strategies
+configurePassport();
 
 app.use((req, res, next) => {
   const start = Date.now();

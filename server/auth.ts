@@ -1,22 +1,86 @@
 import passport from 'passport';
 import { Strategy as OpenIDConnectStrategy } from 'passport-openidconnect';
+import { Strategy as LocalStrategy } from 'passport-local';
 import { Request, Response, NextFunction } from 'express';
+import bcrypt from 'bcryptjs';
 import { db } from './db';
 import { users } from '@shared/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 
-// Configure OpenID Connect strategy
+// Configure both Local and OpenID Connect strategies
 export const configurePassport = () => {
-  // Only configure if all required environment variables are set
+  // Configure Local Strategy for username/password authentication
+  passport.use(new LocalStrategy(
+    {
+      usernameField: 'username',
+      passwordField: 'password',
+    },
+    async (username, password, done) => {
+      try {
+        const [user] = await db
+          .select()
+          .from(users)
+          .where(and(
+            eq(users.username, username),
+            eq(users.authType, 'local'),
+            eq(users.isActive, true)
+          ))
+          .limit(1);
+
+        if (!user) {
+          return done(null, false, { message: 'Invalid username or password' });
+        }
+
+        // Check if account is locked
+        if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
+          return done(null, false, { message: 'Account is temporarily locked' });
+        }
+
+        // Verify password
+        const isValidPassword = await bcrypt.compare(password, user.passwordHash!);
+        
+        if (!isValidPassword) {
+          // Increment failed login attempts
+          const failedAttempts = (user.failedLoginAttempts || 0) + 1;
+          await db.update(users)
+            .set({
+              failedLoginAttempts: failedAttempts,
+              lastFailedLogin: new Date(),
+              // Lock account after 5 failed attempts for 5 minutes
+              ...(failedAttempts >= 5 && {
+                accountLockedUntil: new Date(Date.now() + 5 * 60 * 1000)
+              })
+            })
+            .where(eq(users.id, user.id));
+
+          return done(null, false, { message: 'Invalid username or password' });
+        }
+
+        // Successful login - reset failed attempts and update last login
+        await db.update(users)
+          .set({
+            failedLoginAttempts: 0,
+            lastFailedLogin: null,
+            accountLockedUntil: null,
+            lastLogin: new Date(),
+            loginCount: (user.loginCount || 0) + 1,
+          })
+          .where(eq(users.id, user.id));
+
+        return done(null, user);
+      } catch (error) {
+        return done(error);
+      }
+    }
+  ));
+
+  // Configure OpenID Connect strategy only if environment variables are set
   if (
-    !process.env.OIDC_ISSUER ||
-    !process.env.OIDC_CLIENT_ID ||
-    !process.env.OIDC_CLIENT_SECRET ||
-    !process.env.OIDC_CALLBACK_URL
+    process.env.OIDC_ISSUER &&
+    process.env.OIDC_CLIENT_ID &&
+    process.env.OIDC_CLIENT_SECRET &&
+    process.env.OIDC_CALLBACK_URL
   ) {
-    console.warn('OpenID Connect not configured. Some environment variables are missing.');
-    return;
-  }
 
   passport.use(
     new OpenIDConnectStrategy(
@@ -76,6 +140,10 @@ export const configurePassport = () => {
       }
     )
   );
+  console.log('OpenID Connect strategy configured');
+  } else {
+    console.log('OpenID Connect not configured - missing environment variables');
+  }
 
   passport.serializeUser((user: any, done) => {
     done(null, user.id);
@@ -93,6 +161,8 @@ export const configurePassport = () => {
       done(err);
     }
   });
+
+  console.log('Passport strategies configured');
 };
 
 // Middleware to check if the user is authenticated
