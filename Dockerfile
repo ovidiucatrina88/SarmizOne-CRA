@@ -1,8 +1,8 @@
-# Multi-stage Dockerfile for Risk Quantification Platform
+# Multi-stage Dockerfile for Risk Quantification Platform (External Database)
 FROM node:18-alpine AS builder
 
-# Install system dependencies
-RUN apk add --no-cache postgresql-client curl
+# Install build dependencies
+RUN apk add --no-cache curl
 
 # Set working directory
 WORKDIR /app
@@ -21,7 +21,7 @@ RUN npm run build
 FROM node:18-alpine AS production
 
 # Install runtime dependencies
-RUN apk add --no-cache postgresql-client curl
+RUN apk add --no-cache curl
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs && \
@@ -39,7 +39,6 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/dist/public ./public
 
 # Copy necessary runtime files
-COPY --chown=appuser:nodejs database_dumps ./database_dumps
 COPY --chown=appuser:nodejs shared ./shared
 
 # Change ownership and switch to non-root user
@@ -51,7 +50,7 @@ EXPOSE 5000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:5000/health || exit 1
+  CMD curl -f http://localhost:${PORT:-5000}/health || exit 1
 
 # Start the application
 CMD ["node", "dist/index.js"]
