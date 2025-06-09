@@ -71,6 +71,9 @@ app.use((req, res, next) => {
 (async () => {
   console.log("Starting server without database schema fixes");
 
+  // Configure passport asynchronously
+  await configurePassport();
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

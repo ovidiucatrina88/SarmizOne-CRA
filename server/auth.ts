@@ -1,6 +1,8 @@
 import passport from 'passport';
-import { Strategy as OpenIDConnectStrategy } from 'passport-openidconnect';
 import { Strategy as LocalStrategy } from 'passport-local';
+
+// Handle OpenIDConnect import with fallback for production builds
+let OpenIDConnectStrategy: any = null;
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import { db } from './db';
@@ -8,7 +10,14 @@ import { users } from '@shared/schema';
 import { eq, and } from 'drizzle-orm';
 
 // Configure both Local and OpenID Connect strategies
-export const configurePassport = () => {
+export const configurePassport = async () => {
+  // Try to load OpenIDConnect strategy dynamically
+  try {
+    const oidcModule = await import('passport-openidconnect');
+    OpenIDConnectStrategy = oidcModule.Strategy || oidcModule.default?.Strategy;
+  } catch (error) {
+    console.log('OpenID Connect not configured - missing environment variables');
+  }
   // Configure Local Strategy for username/password authentication
   passport.use(new LocalStrategy(
     {
