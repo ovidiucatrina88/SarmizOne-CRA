@@ -78,10 +78,12 @@ app.use((req, res, next) => {
 // Production static file serving
 function serveStatic(app: express.Express) {
   const possiblePaths = [
-    path.resolve(__dirname, "../..", "dist", "public"),
-    path.resolve(__dirname, "../..", "public"),
+    path.resolve(__dirname, "..", "dist", "public"),
+    path.resolve(__dirname, "..", "public"),
     "/app/public",
-    path.resolve(__dirname, "../..", "dist", "client")
+    path.resolve(__dirname, "..", "dist", "client"),
+    path.resolve(process.cwd(), "dist", "client"),
+    path.resolve(process.cwd(), "public")
   ];
   
   let distPath = null;
