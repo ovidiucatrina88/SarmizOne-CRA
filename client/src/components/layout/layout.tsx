@@ -36,9 +36,9 @@ const navigation = [
     subItems: [
       { name: "Asset Inventory", href: "/assets" },
       { name: "Asset Hierarchy", href: "/assets/hierarchy" },
-      { name: "Enterprise Architecture", href: "/enterprise-architecture" },
-      { name: "Vulnerabilities", href: "/vulnerabilities" },
-      { name: "Import Vulnerabilities", href: "/vulnerabilities/import" }
+      { name: "Enterprise Architecture", href: "/assets/enterprise-architecture" },
+      { name: "Vulnerabilities", href: "/assets/vulnerabilities" },
+      { name: "Import Vulnerabilities", href: "/assets/vulnerabilities/import" }
     ]
   },
   { 
@@ -108,7 +108,7 @@ interface LayoutProps {
   children: React.ReactNode;
   pageTitle?: string;
   pageDescription?: string;
-  pageIcon?: string;
+  pageIcon?: string | React.ReactNode;
   pageActions?: React.ReactNode;
 }
 
@@ -281,7 +281,11 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
               <div className="flex items-center space-x-3">
                 {pageIcon && (
                   <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white text-sm font-bold">{pageIcon}</span>
+                    {typeof pageIcon === 'string' ? (
+                      <span className="text-white text-sm font-bold">{pageIcon}</span>
+                    ) : (
+                      <div className="text-white w-5 h-5">{pageIcon}</div>
+                    )}
                   </div>
                 )}
                 <div>
