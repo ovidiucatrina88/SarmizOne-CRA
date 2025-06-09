@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: risk-postgres
+    environment:
+      POSTGRES_DB: fair_risk_db
+      POSTGRES_USER: risk_app_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-secure_password_change_me}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database_dumps:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - risk-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U risk_app_user -d fair_risk_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Risk Quantification Application
+  risk-app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: risk-app
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://risk_app_user:${DB_PASSWORD:-secure_password_change_me}@postgres:5432/fair_risk_db
+      SESSION_SECRET: ${SESSION_SECRET:-your_very_secure_session_secret_at_least_32_characters}
+      BYPASS_AUTH: true
+      PRODUCTION_DEPLOYMENT: true
+    ports:
+      - "5000:5000"
+    networks:
+      - risk-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - ./database_dumps:/app/database_dumps:ro
+
+networks:
+  risk-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

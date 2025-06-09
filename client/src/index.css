@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+      --background: 0 0% 100%;
+--foreground: 20 14.3% 4.1%;
+--muted: 60 4.8% 95.9%;
+--muted-foreground: 25 5.3% 44.7%;
+--popover: 0 0% 100%;
+--popover-foreground: 20 14.3% 4.1%;
+--card: 0 0% 100%;
+--card-foreground: 20 14.3% 4.1%;
+--border: 20 5.9% 90%;
+--input: 20 5.9% 90%;
+--primary: 207 90% 54%;
+--primary-foreground: 211 100% 99%;
+--secondary: 60 4.8% 95.9%;
+--secondary-foreground: 24 9.8% 10%;
+--accent: 60 4.8% 95.9%;
+--accent-foreground: 24 9.8% 10%;
+--destructive: 0 84.2% 60.2%;
+--destructive-foreground: 60 9.1% 97.8%;
+--ring: 20 14.3% 4.1%;
+--radius: 0.5rem;
+  }
+  .dark {
+      --background: 240 10% 3.9%;
+--foreground: 0 0% 98%;
+--muted: 240 3.7% 15.9%;
+--muted-foreground: 240 5% 64.9%;
+--popover: 240 10% 3.9%;
+--popover-foreground: 0 0% 98%;
+--card: 240 10% 3.9%;
+--card-foreground: 0 0% 98%;
+--border: 240 3.7% 15.9%;
+--input: 240 3.7% 15.9%;
+--primary: 207 90% 54%;
+--primary-foreground: 211 100% 99%;
+--secondary: 240 3.7% 15.9%;
+--secondary-foreground: 0 0% 98%;
+--accent: 240 3.7% 15.9%;
+--accent-foreground: 0 0% 98%;
+--destructive: 0 62.8% 30.6%;
+--destructive-foreground: 0 0% 98%;
+--ring: 240 4.9% 83.9%;
+--radius: 0.5rem;
+  }
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+/* Custom risk visualization UI styles */
+.risk-detail-bg {
+  background-color: #121212;
+}
+
+.risk-card {
+  background-color: #1e1e1e;
+  border-radius: 0.75rem;
+}
+
+.risk-card-inner {
+  background-color: #1a1a1a;
+  border-radius: 0.75rem;
+}
+
+.risk-timeline-chart {
+  height: 80px;
+  width: 100%;
+}
+
+.risk-timeline-line {
+  fill: none;
+  stroke: #f97316;
+  stroke-width: 2;
+}
+
+.risk-chart-container {
+  background: linear-gradient(to bottom, rgba(249, 115, 22, 0.1), transparent);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.confidence-indicator {
+  @apply text-xs font-medium;
+}
+
+.confidence-low {
+  @apply text-amber-500;
+}
+
+.confidence-medium {
+  @apply text-orange-500;
+}
+
+.confidence-high {
+  @apply text-emerald-500;
+}
+
+.risk-control-badge {
+  @apply w-8 h-8 rounded flex items-center justify-center text-white text-sm font-medium;
+}
+
+.risk-control-network {
+  @apply bg-blue-600;
+}
+
+.risk-control-firewall {
+  @apply bg-blue-600;
+}
+
+.risk-control-cloud {
+  @apply bg-blue-600;
+}
+
+.risk-control-incident {
+  @apply bg-purple-600;
+}
+
+.risk-value-change {
+  @apply flex items-center;
+}
+
+.risk-reduction {
+  @apply text-green-500 flex items-center;
+}
+
+.risk-factors-view {
+  @apply bg-[#121212] text-white p-6 rounded-lg;
+}
+
+/* SVG Gradient Strokes for FAIR-U Risk Visualization */
+.stroke-gradient-orange {
+  stroke: #f97316;
+}
+
+.stroke-gradient-blue {
+  stroke: #3b82f6;
+}
+
+.stroke-gradient-purple {
+  stroke: #a855f7;
+}
+
+.stroke-gradient-indigo {
+  stroke: #6366f1;
+}
+
+.stroke-gradient-pink {
+  stroke: #ec4899;
+}
+
+.stroke-gradient-amber {
+  stroke: #f59e0b;
+}
+
+.stroke-gradient-green {
+  stroke: #22c55e;
+}
+
+.stroke-gradient-red {
+  stroke: #ef4444;
+}
+
+.stroke-gradient-lime {
+  stroke: #84cc16;
+}
+
+.stroke-gradient-violet {
+  stroke: #8b5cf6;
+}
+
+.stroke-gradient-fuchsia {
+  stroke: #d946ef;
+}
+

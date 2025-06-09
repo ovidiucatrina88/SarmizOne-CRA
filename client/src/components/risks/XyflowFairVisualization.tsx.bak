@@ -1,0 +1,918 @@
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import { RiskCalculationParams, Control } from '@shared/schema';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { InfoIcon } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { 
+  ReactFlow, 
+  Background, 
+  Controls, 
+  Node, 
+  Edge, 
+  ReactFlowProvider, 
+  Position, 
+  BackgroundVariant,
+  applyNodeChanges,
+  applyEdgeChanges,
+  NodeChange,
+  EdgeChange,
+  useReactFlow,
+  ConnectionLineType,
+  MarkerType
+} from '@xyflow/react';
+import '@xyflow/react/dist/style.css';
+import RiskNode from './components/RiskNode';
+import { getConfidenceColor, getRiskColor, getRiskLevel, formatValue } from './utils/visualization-configs';
+import { mapControlsToEffectiveness, adjustedLEF, adjustedLM } from '@shared/utils/fairCamCalculations';
+
+// Utility function to safely call adjustedLM with null-safety checks
+const safeAdjustedLM = (
+  pl: number, 
+  slef: number | undefined, 
+  slm: number | undefined, 
+  eDetect: number | undefined
+): number => {
+  return adjustedLM(
+    pl,
+    slef || 0,
+    slm || 0, 
+    eDetect || 0
+  );
+};
+
+interface XyflowFairVisualizationProps {
+  riskName: string;
+  riskId: string;
+  riskDescription?: string;
+  riskParams: RiskCalculationParams;
+  controls?: Control[];  // Add controls from Control Inventory
+  className?: string;
+  darkMode?: boolean;
+}
+
+// Define available node types for ReactFlow
+const nodeTypes = {
+  riskNode: RiskNode
+};
+
+const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
+  riskName,
+  riskId,
+  riskDescription,
+  riskParams,
+  controls = [],  // Default to empty array if not provided
+  className = '',
+  darkMode = true
+}) => {
+  const [nodes, setNodes] = useState<Node[]>([]);
+  const [edges, setEdges] = useState<Edge[]>([]);
+  const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  
+  // Use callbacks for node and edge changes - this makes dragging more fluid
+  const onNodesChange = useCallback(
+    (changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)),
+    [setNodes],
+  );
+  
+  const onEdgesChange = useCallback(
+    (changes: EdgeChange[]) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+    [setEdges],
+  );
+  
+  // Helper to determine if an edge is connected to the selected node
+  const isEdgeConnected = useCallback((edge: Edge, nodeId: string): boolean => {
+    return edge.source === nodeId || edge.target === nodeId;
+  }, []);
+
+  // Handler for node selection
+  const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
+    console.log('Node selected:', node.id);
+    
+    // If already selected, deselect it
+    if (selectedNode === node.id) {
+      setSelectedNode(null);
+      
+      // Reset edge styles
+      setEdges((edgs) =>
+        edgs.map((e) => ({
+          ...e,
+          animated: e.source === 'risk',
+          style: {
+            ...e.style,
+            stroke: e.source === 'risk' ? 'rgba(99, 102, 241, 0.7)' : '#94a3b8',
+            strokeWidth: e.source === 'risk' ? 2.5 : 1.5,
+            opacity: 0.7
+          }
+        }))
+      );
+      return;
+    }
+    
+    // Set the selected node
+    setSelectedNode(node.id);
+    
+    // Update edges - highlight only those connected to the selected node
+    setEdges((edgs) =>
+      edgs.map((e) => {
+        const isConnected = isEdgeConnected(e, node.id);
+        return {
+          ...e,
+          animated: isConnected, // Animate only edges connected to selected node
+          style: {
+            ...e.style,
+            stroke: isConnected ? '#6366f1' : '#94a3b8',  // Highlight connected edges
+            strokeWidth: isConnected ? 2.5 : 1.5,
+            opacity: isConnected ? 1 : 0.6,
+          }
+        };
+      })
+    );
+  }, [selectedNode, isEdgeConnected, setEdges]);
+  
+  // Handler for when nodes are dragged - this enhances visual feedback
+  const onNodeDrag = useCallback((event: React.MouseEvent, node: Node) => {
+    // Update connected edges while dragging for better visual feedback
+    setEdges((edgs) =>
+      edgs.map((e) => {
+        const isConnected = isEdgeConnected(e, node.id);
+        if (isConnected) {
+          return {
+            ...e,
+            animated: true,
+            style: {
+              ...e.style,
+              stroke: '#6366f1', // indigo-500
+              strokeWidth: 2.5,
+              opacity: 0.9,
+            }
+          };
+        }
+        return e;
+      })
+    );
+  }, [isEdgeConnected, setEdges]);
+  
+  // Extend riskParams with derived values and control effectiveness
+  const extendedParams = useMemo(() => {
+    // Map controls to effectiveness values for FAIR-CAM model
+    const controlEffectiveness = controls && controls.length > 0 
+      ? mapControlsToEffectiveness(controls) 
+      : { eAvoid: 0, eDeter: 0, eResist: 0, eDetect: 0 };
+      
+    // Log parameter changes to help with debugging
+    console.log('Calculating risk with updated parameters...', {
+      contactFrequencyMin: riskParams.contactFrequencyMin,
+      contactFrequencyAvg: riskParams.contactFrequencyAvg,
+      contactFrequencyMax: riskParams.contactFrequencyMax,
+      probabilityOfActionMin: riskParams.probabilityOfActionMin,
+      probabilityOfActionAvg: riskParams.probabilityOfActionAvg,
+      probabilityOfActionMax: riskParams.probabilityOfActionMax,
+      threatCapabilityMin: riskParams.threatCapabilityMin,
+      threatCapabilityAvg: riskParams.threatCapabilityAvg,
+      threatCapabilityMax: riskParams.threatCapabilityMax,
+      resistanceStrengthMin: riskParams.resistanceStrengthMin,
+      resistanceStrengthAvg: riskParams.resistanceStrengthAvg,
+      resistanceStrengthMax: riskParams.resistanceStrengthMax,
+      primaryLossMagnitudeMin: riskParams.primaryLossMagnitudeMin,
+      primaryLossMagnitudeAvg: riskParams.primaryLossMagnitudeAvg,
+      primaryLossMagnitudeMax: riskParams.primaryLossMagnitudeMax,
+      secondaryLossEventFrequencyMin: riskParams.secondaryLossEventFrequencyMin,
+      secondaryLossEventFrequencyAvg: riskParams.secondaryLossEventFrequencyAvg,
+      secondaryLossEventFrequencyMax: riskParams.secondaryLossEventFrequencyMax,
+      secondaryLossMagnitudeMin: riskParams.secondaryLossMagnitudeMin,
+      secondaryLossMagnitudeAvg: riskParams.secondaryLossMagnitudeAvg,
+      secondaryLossMagnitudeMax: riskParams.secondaryLossMagnitudeMax
+    });
+    
+    // Log control effectiveness values
+    if (controls && controls.length > 0) {
+      console.log('Using control effectiveness from inventory:', controlEffectiveness);
+    }
+    
+    return {
+      ...riskParams,
+      // Base FAIR parameters
+      threatEventFrequencyMin: riskParams.contactFrequencyMin * riskParams.probabilityOfActionMin,
+      threatEventFrequencyAvg: riskParams.contactFrequencyAvg * riskParams.probabilityOfActionAvg,
+      threatEventFrequencyMax: riskParams.contactFrequencyMax * riskParams.probabilityOfActionMax,
+      susceptibilityMin: riskParams.threatCapabilityMin / (riskParams.threatCapabilityMin + riskParams.resistanceStrengthMax),
+      susceptibilityAvg: riskParams.threatCapabilityAvg / (riskParams.threatCapabilityAvg + riskParams.resistanceStrengthAvg),
+      susceptibilityMax: riskParams.threatCapabilityMax / (riskParams.threatCapabilityMax + riskParams.resistanceStrengthMin),
+      
+      // Control effectiveness values from Control Inventory
+      controlEffectiveness,
+      eAvoid: controlEffectiveness.eAvoid,
+      eDeter: controlEffectiveness.eDeter,
+      eResist: controlEffectiveness.eResist,
+      eDetect: controlEffectiveness.eDetect
+    };
+  }, [
+    // Explicitly list all dependencies to ensure re-calculation when any value changes
+    riskParams.contactFrequencyMin, riskParams.contactFrequencyAvg, riskParams.contactFrequencyMax,
+    riskParams.probabilityOfActionMin, riskParams.probabilityOfActionAvg, riskParams.probabilityOfActionMax,
+    riskParams.threatCapabilityMin, riskParams.threatCapabilityAvg, riskParams.threatCapabilityMax,
+    riskParams.resistanceStrengthMin, riskParams.resistanceStrengthAvg, riskParams.resistanceStrengthMax,
+    riskParams.primaryLossMagnitudeMin, riskParams.primaryLossMagnitudeAvg, riskParams.primaryLossMagnitudeMax,
+    riskParams.secondaryLossEventFrequencyMin, riskParams.secondaryLossEventFrequencyAvg, riskParams.secondaryLossEventFrequencyMax,
+    riskParams.secondaryLossMagnitudeMin, riskParams.secondaryLossMagnitudeAvg, riskParams.secondaryLossMagnitudeMax,
+    controls // Add controls as a dependency so calculations update when controls change
+  ]);
+  
+  // Create nodes for the FAIR visualization
+  const createNodes = useCallback(() => {
+    const levelSpacing = 150;
+    const horizontalSpacing = 200;
+    
+    return [
+      // Level 0 (Top)
+      {
+        id: 'risk',
+        type: 'riskNode',
+        data: {
+          label: 'Risk (Loss Expectancy)',
+          // Calculate inherent risk (without controls)
+          // Based on monteCarlo.ts: inherentRisk = lefUn * lmUn
+          // Where:
+          // lefUn = cf * poa * sus
+          // lmUn = pl + slef * slm
+          inherentValue: (extendedParams.contactFrequencyAvg * extendedParams.probabilityOfActionAvg * 
+                  extendedParams.susceptibilityAvg) * 
+                  (extendedParams.primaryLossMagnitudeAvg + 
+                   ((extendedParams.secondaryLossEventFrequencyAvg || 0) * (extendedParams.secondaryLossMagnitudeAvg || 0))),
+          
+          // Calculate residual risk (with controls) using fairCam adjustments
+          value: controls && controls.length > 0 ? 
+                  // Using fairCamRisk formula from monteCarlo.ts with control adjustments
+                  adjustedLEF(
+                    extendedParams.contactFrequencyAvg,
+                    extendedParams.probabilityOfActionAvg,
+                    extendedParams.susceptibilityAvg,
+                    extendedParams.eAvoid,
+                    extendedParams.eDeter,
+                    extendedParams.eResist
+                  ) * 
+                  adjustedLM(
+                    extendedParams.primaryLossMagnitudeAvg,
+                    extendedParams.secondaryLossEventFrequencyAvg,
+                    extendedParams.secondaryLossMagnitudeAvg,
+                    extendedParams.eDetect
+                  )
+                :
+                  // If no controls, residual risk = inherent risk
+                  (extendedParams.contactFrequencyAvg * extendedParams.probabilityOfActionAvg * 
+                  extendedParams.susceptibilityAvg) * 
+                  (extendedParams.primaryLossMagnitudeAvg + 
+                   ((extendedParams.secondaryLossEventFrequencyAvg || 0) * (extendedParams.secondaryLossMagnitudeAvg || 0))),
+                 
+          // Show projections based on additional controls to be added (for demo purposes)
+          // Using the same formula but with an additional 75% reduction factor for future projections
+          futureValue: controls && controls.length > 0 ?
+                  adjustedLEF(
+                    extendedParams.contactFrequencyAvg,
+                    extendedParams.probabilityOfActionAvg,
+                    extendedParams.susceptibilityAvg,
+                    extendedParams.eAvoid,
+                    extendedParams.eDeter,
+                    extendedParams.eResist
+                  ) * 
+                  adjustedLM(
+                    extendedParams.primaryLossMagnitudeAvg,
+                    extendedParams.secondaryLossEventFrequencyAvg,
+                    extendedParams.secondaryLossMagnitudeAvg,
+                    extendedParams.eDetect
+                  ) * 0.75 // Additional 25% reduction for future projections
+                :
+                  // If no controls, use inherent risk with 25% reduction
+                  (extendedParams.contactFrequencyAvg * extendedParams.probabilityOfActionAvg * 
+                  extendedParams.susceptibilityAvg) * 
+                  (extendedParams.primaryLossMagnitudeAvg + 
+                  ((extendedParams.secondaryLossEventFrequencyAvg || 0) * (extendedParams.secondaryLossMagnitudeAvg || 0))) * 0.75,
+                 
+          // Min values using the same formula as the main calculation
+          min: controls && controls.length > 0 ?
+                adjustedLEF(
+                  extendedParams.contactFrequencyMin,
+                  extendedParams.probabilityOfActionMin,
+                  extendedParams.susceptibilityMin,
+                  extendedParams.eAvoid,
+                  extendedParams.eDeter,
+                  extendedParams.eResist
+                ) * 
+                adjustedLM(
+                  extendedParams.primaryLossMagnitudeMin,
+                  extendedParams.secondaryLossEventFrequencyMin || 0,
+                  extendedParams.secondaryLossMagnitudeMin || 0,
+                  extendedParams.eDetect || 0
+                )
+              :
+                // If no controls, calculate min inherent risk
+                (extendedParams.contactFrequencyMin * extendedParams.probabilityOfActionMin * 
+                extendedParams.susceptibilityMin) * 
+                (extendedParams.primaryLossMagnitudeMin + 
+                ((extendedParams.secondaryLossEventFrequencyMin || 0) * (extendedParams.secondaryLossMagnitudeMin || 0))),
+                
+          // Max values using the same formula as the main calculation
+          max: controls && controls.length > 0 ?
+                adjustedLEF(
+                  extendedParams.contactFrequencyMax,
+                  extendedParams.probabilityOfActionMax,
+                  extendedParams.susceptibilityMax,
+                  extendedParams.eAvoid,
+                  extendedParams.eDeter,
+                  extendedParams.eResist
+                ) * 
+                adjustedLM(
+                  extendedParams.primaryLossMagnitudeMax,
+                  extendedParams.secondaryLossEventFrequencyMax || 0,
+                  extendedParams.secondaryLossMagnitudeMax || 0,
+                  extendedParams.eDetect || 0
+                )
+              :
+                // If no controls, calculate max inherent risk
+                (extendedParams.contactFrequencyMax * extendedParams.probabilityOfActionMax * 
+                extendedParams.susceptibilityMax) * 
+                (extendedParams.primaryLossMagnitudeMax + 
+                ((extendedParams.secondaryLossEventFrequencyMax || 0) * (extendedParams.secondaryLossMagnitudeMax || 0))),
+          confidence: 'Medium',
+          isCurrency: true,
+          selected: false,
+          color: '#7e22ce', // purple-700
+        },
+        position: { x: horizontalSpacing * 2, y: 0 },
+        sourcePosition: Position.Bottom,
+      },
+      
+      // Level 1
+      {
+        id: 'lef',
+        type: 'riskNode',
+        data: {
+          label: 'Loss Event Frequency',
+          value: extendedParams.contactFrequencyAvg * extendedParams.probabilityOfActionAvg * extendedParams.susceptibilityAvg,
+          // Calculate future value (20% reduction for demo purposes)
+          futureValue: extendedParams.contactFrequencyAvg * extendedParams.probabilityOfActionAvg * extendedParams.susceptibilityAvg * 0.8,
+          min: extendedParams.contactFrequencyMin * extendedParams.probabilityOfActionMin * extendedParams.susceptibilityMin,
+          max: extendedParams.contactFrequencyMax * extendedParams.probabilityOfActionMax * extendedParams.susceptibilityMax,
+          confidence: 'Medium',
+          selected: false,
+          color: '#f97316', // orange-500
+        },
+        position: { x: horizontalSpacing, y: levelSpacing },
+        sourcePosition: Position.Bottom,
+        targetPosition: Position.Top,
+      },
+      {
+        id: 'lm',
+        type: 'riskNode',
+        data: {
+          label: 'Loss Magnitude',
+          value: extendedParams.primaryLossMagnitudeAvg,
+          // Calculate future value (10% reduction for demo purposes)
+          futureValue: extendedParams.primaryLossMagnitudeAvg * 0.9,
+          min: extendedParams.primaryLossMagnitudeMin,
+          max: extendedParams.primaryLossMagnitudeMax,
+          confidence: extendedParams.primaryLossMagnitudeConfidence,
+          isCurrency: true,
+          selected: false,
+          color: '#0ea5e9', // sky-500
+        },
+        position: { x: horizontalSpacing * 3, y: levelSpacing },
+        sourcePosition: Position.Bottom,
+        targetPosition: Position.Top,
+      },
+      
+      // Level 2
+      {
+        id: 'tef',
+        type: 'riskNode',
+        data: {
+          label: 'Threat Event Frequency',
+          value: extendedParams.threatEventFrequencyAvg,
+          min: extendedParams.threatEventFrequencyMin,
+          max: extendedParams.threatEventFrequencyMax,
+          confidence: 'Medium',
+          selected: false,
+        },
+        position: { x: horizontalSpacing * 0.5, y: levelSpacing * 2 },
+        sourcePosition: Position.Bottom,
+        targetPosition: Position.Top,
+      },
+      {
+        id: 'vuln',
+        type: 'riskNode',
+        data: {
+          label: 'Vulnerability',
+          value: extendedParams.susceptibilityAvg,
+          min: extendedParams.susceptibilityMin,
+          max: extendedParams.susceptibilityMax,
+          confidence: 'Medium',
+          selected: false,
+        },
+        position: { x: horizontalSpacing * 1.5, y: levelSpacing * 2 },
+        sourcePosition: Position.Bottom,
+        targetPosition: Position.Top,
+      },
+      {
+        id: 'pl',
+        type: 'riskNode',
+        data: {
+          label: 'Primary Loss',
+          value: extendedParams.primaryLossMagnitudeAvg,
+          min: extendedParams.primaryLossMagnitudeMin,
+          max: extendedParams.primaryLossMagnitudeMax,
+          confidence: extendedParams.primaryLossMagnitudeConfidence,
+          isCurrency: true,
+          selected: false,
+        },
+        position: { x: horizontalSpacing * 2.5, y: levelSpacing * 2 },
+        targetPosition: Position.Top,
+      },
+      {
+        id: 'sl',
+        type: 'riskNode',
+        data: {
+          label: 'Secondary Loss',
+          value: extendedParams.secondaryLossMagnitudeAvg || 0,
+          min: extendedParams.secondaryLossMagnitudeMin,
+          max: extendedParams.secondaryLossMagnitudeMax,
+          confidence: extendedParams.secondaryLossMagnitudeConfidence || 'Low',
+          isCurrency: true,
+          selected: false,
+        },
+        position: { x: horizontalSpacing * 3.5, y: levelSpacing * 2 },
+        sourcePosition: Position.Bottom,
+        targetPosition: Position.Top,
+      },
+      
+      // Level 3
+      {
+        id: 'cf',
+        type: 'riskNode',
+        data: {
+          label: 'Contact Frequency',
+          value: extendedParams.contactFrequencyAvg,
+          min: extendedParams.contactFrequencyMin,
+          max: extendedParams.contactFrequencyMax,
+          confidence: extendedParams.contactFrequencyConfidence,
+          selected: false,
+        },
+        position: { x: horizontalSpacing * 0.25, y: levelSpacing * 3 },
+        targetPosition: Position.Top,
+      },
+      {
+        id: 'poa',
+        type: 'riskNode',
+        data: {
+          label: 'Probability of Action',
+          value: extendedParams.probabilityOfActionAvg,
+          min: extendedParams.probabilityOfActionMin,
+          max: extendedParams.probabilityOfActionMax,
+          confidence: extendedParams.probabilityOfActionConfidence,
+          selected: false,
+        },
+        position: { x: horizontalSpacing * 0.75, y: levelSpacing * 3 },
+        targetPosition: Position.Top,
+      },
+      {
+        id: 'tcap',
+        type: 'riskNode',
+        data: {
+          label: 'Threat Capability',
+          value: extendedParams.threatCapabilityAvg,
+          min: extendedParams.threatCapabilityMin,
+          max: extendedParams.threatCapabilityMax,
+          confidence: extendedParams.threatCapabilityConfidence,
+          selected: false,
+        },
+        position: { x: horizontalSpacing * 1.25, y: levelSpacing * 3 },
+        targetPosition: Position.Top,
+      },
+      {
+        id: 'rs',
+        type: 'riskNode',
+        data: {
+          label: 'Resistance Strength',
+          value: extendedParams.resistanceStrengthAvg,
+          min: extendedParams.resistanceStrengthMin,
+          max: extendedParams.resistanceStrengthMax,
+          confidence: extendedParams.resistanceStrengthConfidence,
+          selected: false,
+        },
+        position: { x: horizontalSpacing * 1.75, y: levelSpacing * 3 },
+        targetPosition: Position.Top,
+      },
+      
+      // Level 4
+      {
+        id: 'slef',
+        type: 'riskNode',
+        data: {
+          label: 'Secondary Loss Event Frequency',
+          value: extendedParams.secondaryLossEventFrequencyAvg || 0,
+          min: extendedParams.secondaryLossEventFrequencyMin,
+          max: extendedParams.secondaryLossEventFrequencyMax,
+          confidence: extendedParams.secondaryLossEventFrequencyConfidence || 'Low',
+          selected: false,
+        },
+        position: { x: horizontalSpacing * 3.25, y: levelSpacing * 3 },
+        targetPosition: Position.Top,
+      },
+      {
+        id: 'slm',
+        type: 'riskNode',
+        data: {
+          label: 'Secondary Loss Magnitude',
+          value: extendedParams.secondaryLossMagnitudeAvg || 0,
+          min: extendedParams.secondaryLossMagnitudeMin,
+          max: extendedParams.secondaryLossMagnitudeMax,
+          confidence: extendedParams.secondaryLossMagnitudeConfidence || 'Low',
+          isCurrency: true,
+          selected: false,
+        },
+        position: { x: horizontalSpacing * 3.75, y: levelSpacing * 3 },
+        targetPosition: Position.Top,
+      }
+    ];
+  }, [extendedParams]);
+  
+  // Create edges for the FAIR visualization
+  const createEdges = useCallback(() => {
+    return [
+      // Top level connections
+      { 
+        id: 'e-risk-lef', 
+        source: 'risk', 
+        target: 'lef',
+        animated: true,
+        type: 'smoothstep',
+        style: { 
+          stroke: '#8b5cf6', // purple-600 to match RISK gradient
+          strokeWidth: 3,
+          transition: 'all 0.3s ease',
+          opacity: 0.8
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#8b5cf6', // purple-600 to match RISK gradient
+          width: 20,
+          height: 20,
+        }
+      },
+      { 
+        id: 'e-risk-lm', 
+        source: 'risk', 
+        target: 'lm',
+        animated: true,
+        type: 'smoothstep',
+        style: { 
+          stroke: '#8b5cf6', // purple-600 to match RISK gradient
+          strokeWidth: 3,
+          transition: 'all 0.3s ease',
+          opacity: 0.8
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#8b5cf6', // purple-600 to match RISK gradient
+          width: 20,
+          height: 20,
+        }
+      },
+      
+      // First level connections - LEF connections
+      { 
+        id: 'e-lef-tef', 
+        source: 'lef', 
+        target: 'tef',
+        type: 'smoothstep',
+        style: { 
+          stroke: '#ea580c', // orange-600 to match LEF gradient
+          strokeWidth: 2.5,
+          transition: 'all 0.3s ease',
+          opacity: 0.7
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#ea580c', // orange-600 to match LEF gradient
+          width: 15,
+          height: 15,
+        }
+      },
+      { 
+        id: 'e-lef-vuln', 
+        source: 'lef', 
+        target: 'vuln',
+        type: 'smoothstep',
+        style: { 
+          stroke: '#ea580c', // orange-600 to match LEF gradient
+          strokeWidth: 2.5,
+          transition: 'all 0.3s ease',
+          opacity: 0.7
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#ea580c', // orange-600 to match LEF gradient
+          width: 15,
+          height: 15,
+        }
+      },
+      
+      // First level connections - LM connections
+      { 
+        id: 'e-lm-pl', 
+        source: 'lm', 
+        target: 'pl',
+        type: 'smoothstep',
+        style: { 
+          stroke: '#0284c7', // sky-600 to match LM gradient
+          strokeWidth: 2.5,
+          transition: 'all 0.3s ease',
+          opacity: 0.7
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#0284c7', // sky-600 to match LM gradient
+          width: 15,
+          height: 15,
+        }
+      },
+      { 
+        id: 'e-lm-sl', 
+        source: 'lm', 
+        target: 'sl',
+        type: 'smoothstep',
+        style: { 
+          stroke: '#0284c7', // sky-600 to match LM gradient
+          strokeWidth: 2.5,
+          transition: 'all 0.3s ease',
+          opacity: 0.7
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#0284c7', // sky-600 to match LM gradient
+          width: 15,
+          height: 15,
+        }
+      },
+      
+      // Second level connections
+      { 
+        id: 'e-tef-cf', 
+        source: 'tef', 
+        target: 'cf',
+        type: 'smoothstep',
+        style: { 
+          stroke: '#3b82f6', // blue-500 to match TEF gradient
+          strokeWidth: 1.5,
+          transition: 'all 0.3s ease'
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#3b82f6', // blue-500 to match TEF gradient
+          width: 12,
+          height: 12,
+        }
+      },
+      { 
+        id: 'e-tef-poa', 
+        source: 'tef', 
+        target: 'poa',
+        type: 'smoothstep',
+        style: { 
+          stroke: '#3b82f6', // blue-500 to match TEF gradient
+          strokeWidth: 1.5,
+          transition: 'all 0.3s ease'
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#3b82f6', // blue-500 to match TEF gradient
+          width: 12,
+          height: 12,
+        }
+      },
+      { 
+        id: 'e-vuln-tcap', 
+        source: 'vuln', 
+        target: 'tcap',
+        type: 'smoothstep',
+        style: { 
+          stroke: '#d97706', // amber-600 to match VULN gradient
+          strokeWidth: 1.5,
+          transition: 'all 0.3s ease'
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#d97706', // amber-600 to match VULN gradient
+          width: 12,
+          height: 12,
+        }
+      },
+      { 
+        id: 'e-vuln-rs', 
+        source: 'vuln', 
+        target: 'rs',
+        type: 'smoothstep',
+        style: { 
+          stroke: '#d97706', // amber-600 to match VULN gradient
+          strokeWidth: 1.5,
+          transition: 'all 0.3s ease'
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#d97706', // amber-600 to match VULN gradient
+          width: 12,
+          height: 12,
+        }
+      },
+      
+      // Third level connections
+      { 
+        id: 'e-sl-slef', 
+        source: 'sl', 
+        target: 'slef',
+        type: 'smoothstep',
+        style: { 
+          stroke: '#8b5cf6', // purple-500 to match SL gradient
+          strokeWidth: 1.5,
+          transition: 'all 0.3s ease'
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#8b5cf6', // purple-500 to match SL gradient
+          width: 12,
+          height: 12,
+        }
+      },
+      { 
+        id: 'e-sl-slm', 
+        source: 'sl', 
+        target: 'slm',
+        type: 'smoothstep',
+        style: { 
+          stroke: '#8b5cf6', // purple-500 to match SL gradient
+          strokeWidth: 1.5,
+          transition: 'all 0.3s ease'
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#8b5cf6', // purple-500 to match SL gradient
+          width: 12,
+          height: 12,
+        }
+      },
+    ];
+  }, []);
+  
+  // Create the graph when risk parameters change
+  useEffect(() => {
+    try {
+      console.log("Initializing FAIR visualization with xyflow");
+      
+      // Create nodes and edges
+      const graphNodes = createNodes();
+      const graphEdges = createEdges();
+      
+      // Initialize the graph with the risk node selected by default
+      setNodes(graphNodes.map(node => ({
+        ...node,
+        data: {
+          ...node.data,
+          selected: node.id === 'risk' // Highlight the risk node by default
+        }
+      })));
+      
+      setEdges(graphEdges);
+      setSelectedNode('risk'); // Select the risk node by default
+      
+      console.log("FAIR visualization initialized with", graphNodes.length, "nodes and", graphEdges.length, "edges");
+    } catch (error) {
+      console.error("Failed to initialize FAIR visualization:", error);
+    }
+  }, [
+    createNodes,
+    createEdges,
+    // We don't need to include all the risk parameters individually since we're using the memoized extendedParams
+  ]);
+  
+  // Styling for the flow container
+  const flowStyles = {
+    background: darkMode ? 'radial-gradient(circle at center, #11152b, #070b1a)' : '#f8fafc',
+    height: '100%',
+    width: '100%',
+    boxShadow: 'inset 0 0 100px rgba(0,0,0,0.6)'
+  };
+  
+  // Handle pane click - deselect all nodes
+  const onPaneClick = useCallback(() => {
+    // Deselect nodes when clicking on the background
+    setSelectedNode(null);
+    setNodes(nds => nds.map(n => ({
+      ...n,
+      data: {
+        ...n.data,
+        selected: false
+      }
+    })));
+    
+    // Reset edge styles
+    setEdges(edgs => edgs.map(e => ({
+      ...e,
+      animated: e.source === 'risk', // Only keep top level animated
+      style: {
+        ...e.style,
+        stroke: e.source === 'risk' ? 'rgba(99, 102, 241, 0.7)' : '#94a3b8',
+        strokeWidth: e.source === 'risk' ? 2.5 : 1.5,
+        opacity: 0.7
+      }
+    })));
+  }, [setNodes, setEdges]);
+  
+  return (
+    <Card className={`overflow-hidden border-slate-800 bg-slate-950 shadow-2xl rounded-xl ${className}`}>
+      <CardHeader className="bg-gradient-to-r from-slate-900 to-slate-950 border-b border-slate-800 pb-3">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-xl font-bold mb-1 bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-indigo-500">
+              FAIR Risk Analysis
+            </CardTitle>
+          </div>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="p-1 rounded-full bg-slate-800 hover:bg-slate-700 cursor-help">
+                  <InfoIcon className="h-4 w-4 text-purple-400" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-md bg-slate-900 border-slate-700 p-3 text-white">
+                <p className="font-medium mb-2 text-indigo-400">FAIR Risk Analysis</p>
+                <p className="text-sm text-slate-300">
+                  This visualization follows the FAIR framework (Factor Analysis of Information Risk), 
+                  showing how different factors contribute to the overall risk. Nodes higher in the 
+                  hierarchy are derived from those below them.
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div style={{ height: '600px', width: '100%', position: 'relative' }}>
+          {/* Interactive visualization guide element removed */}
+          <ReactFlowProvider>
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              nodeTypes={nodeTypes}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              fitView
+              style={flowStyles}
+              defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+              minZoom={0.5}
+              maxZoom={1.5}
+              attributionPosition="bottom-left"
+              proOptions={{ hideAttribution: true }}
+              nodesDraggable={true}
+              elementsSelectable={true}
+              panOnScroll={true}
+              panOnDrag={true}
+              connectionLineType={ConnectionLineType.SmoothStep}
+              onNodeClick={onNodeClick}
+              onNodeDrag={onNodeDrag}
+              onNodeDragStop={(event, node) => {
+                console.log('Node drag stopped:', node.id);
+                // Reset edge styles when dragging stops
+                setEdges((edgs) =>
+                  edgs.map((e) => ({
+                    ...e,
+                    animated: e.source === 'risk',
+                    style: {
+                      ...e.style,
+                      stroke: e.source === 'risk' ? 'rgba(99, 102, 241, 0.7)' : '#94a3b8',
+                      strokeWidth: e.source === 'risk' ? 2.5 : 1.5,
+                      opacity: 0.7
+                    }
+                  }))
+                );
+              }}
+              onPaneClick={onPaneClick}
+            >
+              <Background
+                variant={BackgroundVariant.Dots}
+                gap={20}
+                size={1}
+                color={darkMode ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.05)'}
+                style={{ opacity: 0.6 }}
+              />
+              <Controls
+                showInteractive={false}
+                className="bg-slate-800 bg-opacity-70 backdrop-blur-sm border-slate-700 shadow-lg"
+              />
+            </ReactFlow>
+          </ReactFlowProvider>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export default XyflowFairVisualization;
