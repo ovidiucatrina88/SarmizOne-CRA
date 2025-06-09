@@ -65,12 +65,12 @@ export default function ControlDetailPage() {
       <div className="p-6">
         <div className="flex justify-between items-center mb-6">
           <Button variant="outline" size="sm" asChild>
-          <Link href="/controls">
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Back to Controls
-          </Link>
-        </Button>
-      </div>
+            <Link href="/controls">
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Back to Controls
+            </Link>
+          </Button>
+        </div>
       
       <div className="flex items-center gap-3 mb-6">
         <Shield className="h-7 w-7 text-primary" />

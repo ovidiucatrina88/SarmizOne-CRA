@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Users, UserPlus, Shield, ShieldCheck, UserX, RotateCcw, Calendar, Eye, EyeOff } from "lucide-react";
 import { z } from "zod";
+import { Layout } from "@/components/layout/layout";
 
 interface User {
   id: number;
@@ -207,7 +208,8 @@ export default function UserManagementPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
+    <Layout>
+      <div className="container mx-auto p-6 space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
