@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { 
   BarChart3, 
@@ -115,8 +115,26 @@ interface LayoutProps {
 export default function Layout({ children, pageTitle, pageDescription, pageIcon, pageActions }: LayoutProps) {
   const [location] = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => {
+    // Initialize from localStorage or default to true
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('darkMode');
+      return saved ? JSON.parse(saved) : true;
+    }
+    return true;
+  });
   const [expandedSections, setExpandedSections] = useState<string[]>(['Assets', 'Risks', 'Controls', 'Cost Modules', 'Admin']);
+
+  // Save dark mode preference to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('darkMode', JSON.stringify(darkMode));
+    }
+  }, [darkMode]);
+
+  const toggleDarkMode = () => {
+    setDarkMode(prev => !prev);
+  };
 
   const toggleSection = (sectionName: string) => {
     setExpandedSections(prev => 
@@ -278,22 +296,11 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
         <div className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-b px-6 py-4 flex items-center justify-between`}>
           <div className="flex-1">
             {pageTitle ? (
-              <div className="flex items-center space-x-3">
-                {pageIcon && (
-                  <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-blue-600 rounded-lg flex items-center justify-center">
-                    {typeof pageIcon === 'string' ? (
-                      <span className="text-white text-sm font-bold">{pageIcon}</span>
-                    ) : (
-                      <div className="text-white w-5 h-5">{pageIcon}</div>
-                    )}
-                  </div>
+              <div>
+                <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{pageTitle}</h1>
+                {pageDescription && (
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>{pageDescription}</p>
                 )}
-                <div>
-                  <h1 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>{pageTitle}</h1>
-                  {pageDescription && (
-                    <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'} mt-1`}>{pageDescription}</p>
-                  )}
-                </div>
               </div>
             ) : (
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{getPageSubtitle()}</p>
@@ -304,7 +311,7 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setDarkMode(!darkMode)}
+              onClick={toggleDarkMode}
               className={`${darkMode ? 'text-gray-300 hover:text-white hover:bg-gray-700' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'}`}
             >
               {darkMode ? (
