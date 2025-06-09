@@ -15,8 +15,6 @@ esbuild.build({
     'drizzle-orm',
     'bcryptjs',
     'passport',
-    'passport-local',
-    'passport-openidconnect',
     'express-session',
     'connect-pg-simple',
     'dotenv',

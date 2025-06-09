@@ -3,7 +3,7 @@ import { registerRoutes } from "./routes";
 import session from "express-session";
 import passport from "passport";
 import connectPgSimple from "connect-pg-simple";
-import { configurePassport } from "./auth";
+import { configurePassport } from "./production-auth";
 import { pool } from "./db";
 import fs from "fs";
 import path from "path";
