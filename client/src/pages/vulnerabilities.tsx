@@ -117,28 +117,7 @@ export default function VulnerabilitiesPage() {
   };
   
   return (
-    <Layout 
-      pageTitle="Vulnerability Management" 
-      pageIcon="🛡️" 
-      pageDescription="Track and manage vulnerabilities across your assets"
-      pageActions={
-        <div className="flex gap-2">
-          <Button 
-            variant="outline"
-            onClick={() => refetch()}
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh Data
-          </Button>
-          <Button variant="outline" asChild>
-            <Link href="/vulnerabilities/import">
-              <Plus className="h-4 w-4 mr-2" />
-              Import Vulnerabilities
-            </Link>
-          </Button>
-        </div>
-      }
-    >
+    <div>
       
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
         <div className="relative flex-1">
@@ -408,6 +387,6 @@ export default function VulnerabilitiesPage() {
           </div>
         </TabsContent>
       </Tabs>
-    
+    </div>
   );
 }

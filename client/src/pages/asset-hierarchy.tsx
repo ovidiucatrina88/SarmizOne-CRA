@@ -666,6 +666,6 @@ export default function AssetHierarchyPage() {
           )}
         </TabsContent>
       </Tabs>
-    
+    </div>
   );
 }

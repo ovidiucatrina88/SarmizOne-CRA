@@ -65,25 +65,18 @@ export default function Assets() {
 
   if (isLoading) {
     return (
-      <Layout
-        pageTitle="Asset Inventory"
-        pageIcon="AST"
-        pageDescription="Manage your organization's asset inventory and track their security impact across the enterprise."
-        pageActions={pageActions}
-      >
-        <div className="space-y-4">
-          <Card>
-            <div className="p-6">
-              <Skeleton className="h-8 w-full mb-4" />
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
+      <div className="space-y-4">
+        <Card>
+          <div className="p-6">
+            <Skeleton className="h-8 w-full mb-4" />
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
             </div>
-          </Card>
-        </div>
-      
+          </div>
+        </Card>
+      </div>
     );
   }
 
@@ -111,6 +104,6 @@ export default function Assets() {
           <AssetForm asset={selectedAsset} onClose={handleClose} />
         </DialogContent>
       </Dialog>
-    
+    </div>
   );
 }
