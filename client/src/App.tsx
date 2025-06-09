@@ -35,9 +35,10 @@ import ChangePasswordPage from "@/pages/change-password";
 import NotFound from "@/pages/not-found";
 import Layout from "@/components/layout/layout";
 
-function Router() {
+function AuthenticatedRoutes() {
   return (
-    <Switch>
+    <Layout>
+      <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/assets" component={Assets} />
         <Route path="/asset-hierarchy" component={AssetHierarchy} />
@@ -66,10 +67,35 @@ function Router() {
         <Route path="/cost-modules" component={CostModules} />
         <Route path="/admin" component={AdminPage} />
         <Route path="/change-password" component={ChangePasswordPage} />
-        <Route path="/login" component={LoginPage} />
         <Route component={NotFound} />
       </Switch>
+    </Layout>
   );
+}
+
+function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Switch>
+        <Route path="/login" component={LoginPage} />
+        <Route>
+          <LoginPage />
+        </Route>
+      </Switch>
+    );
+  }
+
+  return <AuthenticatedRoutes />;
 }
 
 function App() {
