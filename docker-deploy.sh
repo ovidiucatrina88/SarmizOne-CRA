@@ -3,11 +3,7 @@
 # Docker-based deployment script for Risk Quantification Platform (External Database)
 set -e
 
-echo "=== Risk Quantification Platform - Docker Deployment ==="
-echo "Database Host: 172.17.0.1"
-echo "Database Port: 5432"
-echo "Database Name: fair_risk_db"
-echo "Database User: risk_app_user"
+echo "=== Risk Quantification Platform - Docker Build and Deploy ==="
 
 # Function to check Docker installation
 check_docker() {
@@ -16,64 +12,94 @@ check_docker() {
         exit 1
     fi
     
-    if ! command -v docker-compose &> /dev/null; then
-        echo "ERROR: Docker Compose is not installed. Please install Docker Compose first."
+    echo "✓ Docker is available"
+}
+
+# Function to check environment file
+check_env_file() {
+    if [ ! -f ".env.production" ]; then
+        echo "ERROR: .env.production file not found"
+        echo "Please create .env.production with your database credentials"
+        echo "You can use .env.external-db as a template"
         exit 1
     fi
     
-    echo "✓ Docker and Docker Compose are available"
+    echo "✓ Environment file .env.production found"
 }
 
 # Function to test external database connection
 test_database_connection() {
     echo "Testing connection to external PostgreSQL database..."
     
+    # Extract database host from .env.production
+    DB_HOST=$(grep "^PGHOST=" .env.production | cut -d'=' -f2)
+    DB_PORT=$(grep "^PGPORT=" .env.production | cut -d'=' -f2)
+    
+    if [ -z "$DB_HOST" ] || [ -z "$DB_PORT" ]; then
+        echo "WARNING: Could not extract database host/port from .env.production"
+        echo "Assuming default 172.17.0.1:5432"
+        DB_HOST="172.17.0.1"
+        DB_PORT="5432"
+    fi
+    
     # Check if database is reachable
-    if ! nc -z 172.17.0.1 5432 2>/dev/null; then
-        echo "ERROR: Cannot reach database at 172.17.0.1:5432"
+    if ! nc -z "$DB_HOST" "$DB_PORT" 2>/dev/null; then
+        echo "ERROR: Cannot reach database at $DB_HOST:$DB_PORT"
         echo "Please ensure your PostgreSQL database is running and accessible"
         exit 1
     fi
     
-    echo "✓ External database is reachable"
+    echo "✓ External database at $DB_HOST:$DB_PORT is reachable"
 }
 
-# Function to create environment file for external database
-create_docker_env() {
-    echo "Creating Docker environment configuration for external database..."
+# Function to build application image
+build_application() {
+    echo "Building application Docker image..."
     
-    # Generate secure session secret
-    SESSION_SECRET=$(openssl rand -base64 32)
+    # Build the application image with your exact command
+    docker build -t risk-app:latest .
     
-    cat > .env << EOF
-# Docker Environment Configuration (External Database)
-NODE_ENV=production
-DATABASE_URL=postgresql://risk_app_user:KhViS-6cU9yufFkQZ9B3@172.17.0.1:5432/fair_risk_db
-PGHOST=172.17.0.1
-PGPORT=5432
-PGUSER=risk_app_user
-PGPASSWORD=KhViS-6cU9yufFkQZ9B3
-PGDATABASE=fair_risk_db
-HOST=0.0.0.0
-PORT=5000
-SESSION_SECRET=$SESSION_SECRET
-EOF
-    
-    chmod 600 .env
-    echo "✓ Environment configuration created for external database"
+    if [ $? -eq 0 ]; then
+        echo "✓ Application image built successfully"
+    else
+        echo "ERROR: Failed to build application image"
+        exit 1
+    fi
 }
 
-# Function to build and start application
-deploy_services() {
-    echo "Building and starting application container..."
+# Function to stop existing container if running
+stop_existing_container() {
+    echo "Checking for existing container..."
     
-    # Build the application image
-    docker-compose build --no-cache
+    if docker ps -q -f name=risk-quantification-app | grep -q .; then
+        echo "Stopping existing container..."
+        docker stop risk-quantification-app
+        docker rm risk-quantification-app
+        echo "✓ Existing container stopped and removed"
+    else
+        echo "✓ No existing container found"
+    fi
+}
+
+# Function to start application container
+start_application() {
+    echo "Starting application container..."
     
-    # Start the application container
-    docker-compose up -d
+    # Start the application container with your exact command
+    docker run -d \
+        --name risk-quantification-app \
+        --restart unless-stopped \
+        -p 5000:5000 \
+        --add-host=host.docker.internal:host-gateway \
+        --env-file .env.production \
+        risk-app:latest
     
-    echo "✓ Application container started successfully"
+    if [ $? -eq 0 ]; then
+        echo "✓ Application container started successfully"
+    else
+        echo "ERROR: Failed to start application container"
+        exit 1
+    fi
 }
 
 # Function to wait for application to be ready
@@ -96,7 +122,7 @@ wait_for_application() {
     
     if [ $attempt -eq $max_attempts ]; then
         echo "ERROR: Application failed to start within expected time"
-        echo "Check logs with: docker-compose logs risk-app"
+        echo "Check logs with: docker logs risk-quantification-app"
         exit 1
     fi
 }
@@ -106,9 +132,9 @@ verify_deployment() {
     echo "Verifying deployment..."
     
     # Check if container is running
-    if ! docker-compose ps | grep -q "Up"; then
+    if ! docker ps | grep -q "risk-quantification-app"; then
         echo "ERROR: Application container is not running"
-        docker-compose ps
+        docker ps
         exit 1
     fi
     
@@ -125,31 +151,33 @@ verify_deployment() {
     echo ""
     echo "=== Deployment Summary ==="
     echo "✓ Application container built and deployed"
-    echo "✓ Connected to external PostgreSQL database at 172.17.0.1:5432"
+    echo "✓ Connected to external PostgreSQL database"
     echo "✓ Risk Quantification Platform running"
     echo ""
     echo "Application URL: http://localhost:5000"
     echo ""
-    echo "Useful commands:"
-    echo "- View logs: docker-compose logs -f risk-app"
-    echo "- Stop application: docker-compose down"
-    echo "- Restart application: docker-compose restart"
-    echo "- View container status: docker-compose ps"
+    echo "Management commands:"
+    echo "- View logs: docker logs -f risk-quantification-app"
+    echo "- Stop application: docker stop risk-quantification-app"
+    echo "- Restart application: docker restart risk-quantification-app"
+    echo "- Remove container: docker rm -f risk-quantification-app"
     echo "- Test database: curl http://localhost:5000/api/assets"
 }
 
 # Function to show application logs
 show_logs() {
     echo "Recent application logs:"
-    docker-compose logs --tail=20 risk-app
+    docker logs --tail=20 risk-quantification-app
 }
 
 # Main deployment process
 main() {
     check_docker
+    check_env_file
     test_database_connection
-    create_docker_env
-    deploy_services
+    stop_existing_container
+    build_application
+    start_application
     wait_for_application
     verify_deployment
     show_logs
@@ -160,8 +188,8 @@ main() {
 # Handle cleanup on script exit
 cleanup() {
     if [ $? -ne 0 ]; then
-        echo "Deployment failed. Cleaning up..."
-        docker-compose down
+        echo "Deployment failed. Container may need manual cleanup."
+        echo "Run: docker rm -f risk-quantification-app"
     fi
 }
 

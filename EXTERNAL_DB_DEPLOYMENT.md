@@ -1,55 +1,66 @@
 # Risk Quantification Platform - External Database Deployment
 
 ## Overview
-Deploy only the application container connecting to your existing PostgreSQL database at 172.17.0.1:5432.
+Deploy only the application container connecting to your existing PostgreSQL database.
 
-## Quick Deployment
+## Production Deployment
 
-### Step 1: Run Deployment Script
+### Step 1: Create Environment File
+Copy the template and add your credentials:
+```bash
+cp .env.external-db .env.production
+# Edit .env.production with your actual database credentials
+```
+
+### Step 2: Run Deployment Script
 ```bash
 ./docker-deploy.sh
 ```
 
-### Step 2: Manual Deployment (Alternative)
+### Step 3: Manual Deployment (Alternative)
 ```bash
-# Copy environment template
-cp .env.external-db .env
+# Build application image
+docker build -t risk-app:latest .
 
-# Build and start application
-docker-compose build
-docker-compose up -d
-
-# Verify deployment
-curl http://localhost:5000/health
+# Start application container
+docker run -d \
+  --name risk-quantification-app \
+  --restart unless-stopped \
+  -p 5000:5000 \
+  --add-host=host.docker.internal:host-gateway \
+  --env-file .env.production \
+  risk-app:latest
 ```
 
 ## Configuration Details
 
-### Environment Variables
-Your application will use these settings:
+### Environment File Template (.env.production)
 ```
 NODE_ENV=production
-DATABASE_URL=postgresql://risk_app_user:KhViS-6cU9yufFkQZ9B3@172.17.0.1:5432/fair_risk_db
+DATABASE_URL=postgresql://YOUR_DB_USER:YOUR_DB_PASSWORD@172.17.0.1:5432/YOUR_DB_NAME
 PGHOST=172.17.0.1
 PGPORT=5432
-PGUSER=risk_app_user
-PGPASSWORD=KhViS-6cU9yufFkQZ9B3
-PGDATABASE=fair_risk_db
+PGUSER=YOUR_DB_USER
+PGPASSWORD=YOUR_DB_PASSWORD
+PGDATABASE=YOUR_DB_NAME
 HOST=0.0.0.0
 PORT=5000
+SESSION_SECRET=GENERATE_SECURE_SESSION_SECRET
+BYPASS_AUTH=true
+PRODUCTION_DEPLOYMENT=true
 ```
 
 ### Network Configuration
-- Container uses host network mode for external database connectivity
+- Container uses --add-host for external database connectivity
 - Application accessible at http://localhost:5000
-- Database connection through Docker host networking
+- Database connection through host.docker.internal gateway
 
 ## Verification Commands
 
 ### Check Application Status
 ```bash
 # Container status
-docker-compose ps
+docker ps | grep risk-quantification-app
 
 # Application health
 curl http://localhost:5000/health
@@ -61,40 +72,45 @@ curl http://localhost:5000/api/assets
 ### View Logs
 ```bash
 # Application logs
-docker-compose logs -f risk-app
+docker logs -f risk-quantification-app
 
 # Recent logs only
-docker-compose logs --tail=50 risk-app
+docker logs --tail=50 risk-quantification-app
 ```
 
 ### Management Commands
 ```bash
 # Stop application
-docker-compose down
+docker stop risk-quantification-app
 
 # Restart application
-docker-compose restart
+docker restart risk-quantification-app
+
+# Remove container
+docker rm -f risk-quantification-app
 
 # Rebuild and restart
-docker-compose build --no-cache
-docker-compose up -d
+docker build -t risk-app:latest .
+docker rm -f risk-quantification-app
+docker run -d --name risk-quantification-app --restart unless-stopped -p 5000:5000 --add-host=host.docker.internal:host-gateway --env-file .env.production risk-app:latest
 ```
 
 ## Troubleshooting
 
 ### Database Connection Issues
-1. Verify PostgreSQL is running: `systemctl status postgresql`
-2. Test direct connection: `psql -h 172.17.0.1 -U risk_app_user -d fair_risk_db`
+1. Verify PostgreSQL is running and accessible
+2. Test direct connection: `psql -h 172.17.0.1 -U your_user -d your_db`
 3. Check firewall settings for port 5432
+4. Verify credentials in .env.production
 
 ### Application Issues
-1. Check container logs: `docker-compose logs risk-app`
-2. Verify environment variables: `docker-compose exec risk-app env`
+1. Check container logs: `docker logs risk-quantification-app`
+2. Verify environment variables: `docker exec risk-quantification-app env`
 3. Test health endpoint: `curl -v http://localhost:5000/health`
 
 ### Build Issues
 1. Clear Docker cache: `docker system prune -a`
-2. Rebuild: `docker-compose build --no-cache`
+2. Rebuild: `docker build --no-cache -t risk-app:latest .`
 3. Check Dockerfile syntax and file paths
 
-Your application container will connect to the existing database without creating additional PostgreSQL containers or data volumes.
+Your application container connects to the existing database without creating additional PostgreSQL containers or data volumes.
