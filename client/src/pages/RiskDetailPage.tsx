@@ -209,35 +209,40 @@ export default function RiskDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <Loader className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <Layout>
+        <div className="flex items-center justify-center h-96">
+          <Loader className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Layout>
     );
   }
 
   if (!risk) {
     return (
-      <div className="text-center p-8">
-        <div className="flex flex-col items-center justify-center mb-4">
-          <AlertCircle className="h-12 w-12 text-amber-500 mb-4" />
-          <h2 className="text-2xl font-semibold mb-2">Risk Not Found</h2>
-          <p className="text-muted-foreground mb-6">
-            The risk with ID "{id}" couldn't be found. It may have been deleted
-            or the ID is incorrect.
-          </p>
+      <Layout>
+        <div className="text-center p-8">
+          <div className="flex flex-col items-center justify-center mb-4">
+            <AlertCircle className="h-12 w-12 text-amber-500 mb-4" />
+            <h2 className="text-2xl font-semibold mb-2">Risk Not Found</h2>
+            <p className="text-muted-foreground mb-6">
+              The risk with ID "{id}" couldn't be found. It may have been deleted
+              or the ID is incorrect.
+            </p>
+          </div>
+          <Button asChild>
+            <Link href="/risks">
+              <ChevronLeft className="mr-2 h-4 w-4" />
+              Back to Risks
+            </Link>
+          </Button>
         </div>
-        <Button asChild>
-          <Link href="/risks">
-            <ChevronLeft className="mr-2 h-4 w-4" />
-            Back to Risks
-          </Link>
-        </Button>
-      </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="container max-w-full mx-auto px-4 py-8">
+    <Layout>
+      <div className="container max-w-full mx-auto px-4 py-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
@@ -526,6 +531,7 @@ export default function RiskDetailPage() {
           />
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </Layout>
   );
 }
