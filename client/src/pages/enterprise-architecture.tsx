@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import Layout from "@/components/layout/layout";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { BarLoader } from "@/components/ui/barloader";
@@ -182,11 +182,8 @@ export default function EnterpriseArchitecturePage() {
   }, [allEnterpriseItems]);
 
   return (
-    <Layout 
-      pageTitle="Enterprise Architecture Hierarchy" 
-      pageIcon="🏛️" 
-      pageDescription="Visualize your organization's enterprise architecture capabilities and services"
-      pageActions={
+    <div>
+      <div className="mb-6">
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -200,8 +197,7 @@ export default function EnterpriseArchitecturePage() {
             <EnterpriseHierarchyForm onClose={() => setIsFormOpen(false)} />
           </DialogContent>
         </Dialog>
-      }
-    >
+      </div>
 
       {isLoadingEnterprise ? (
         <div className="bg-gray-800 rounded-lg border border-gray-600 mt-4">
@@ -295,6 +291,6 @@ export default function EnterpriseArchitecturePage() {
           </TabsContent>
         </Tabs>
       )}
-    </Layout>
+    </div>
   );
 }
