@@ -528,6 +528,7 @@ export default function RiskLibrary() {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </Layout>
   );
 }

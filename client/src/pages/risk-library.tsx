@@ -10,6 +10,7 @@ import { RiskForm } from "@/components/risks/risk-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import Layout from "@/components/layout/layout";
 import {
   Select,
   SelectContent,
@@ -156,7 +157,7 @@ export default function RiskLibrary() {
 
   if (errorTemplates) {
     return (
-      
+      <Layout>
         <div className="p-8 text-center">
           <h2 className="text-xl font-bold text-red-500">Error loading risk templates</h2>
           <p className="mt-2 text-gray-400">Please try again later or contact support.</p>
@@ -264,6 +265,7 @@ export default function RiskLibrary() {
           )}
         </DialogContent>
       </Dialog>
-    
+      </div>
+    </Layout>
   );
 }
