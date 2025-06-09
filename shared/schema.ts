@@ -792,6 +792,32 @@ export interface RiskCalculationParams {
 }
 
 // Vulnerability Status Enum
+// Authentication Configuration Table for Dynamic OIDC Setup
+export const authConfig = pgTable('auth_config', {
+  id: serial('id').primaryKey(),
+  
+  // Primary authentication method
+  authType: authTypeEnum('auth_type').notNull().default('local'),
+  
+  // OIDC Configuration (configurable via UI)
+  oidcEnabled: boolean('oidc_enabled').default(false),
+  oidcIssuer: text('oidc_issuer'),
+  oidcClientId: text('oidc_client_id'),
+  oidcClientSecret: text('oidc_client_secret'),
+  oidcCallbackUrl: text('oidc_callback_url'),
+  oidcScopes: json('oidc_scopes').$type<string[]>().default(['openid', 'profile', 'email']),
+  
+  // Security Settings
+  sessionTimeout: integer('session_timeout').default(3600), // seconds
+  maxLoginAttempts: integer('max_login_attempts').default(5),
+  lockoutDuration: integer('lockout_duration').default(300), // seconds
+  passwordMinLength: integer('password_min_length').default(8),
+  requirePasswordChange: boolean('require_password_change').default(false),
+  
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+});
+
 export const vulnerabilityStatusEnum = pgEnum('vulnerability_status', [
   'open',
   'in_progress', 
@@ -884,3 +910,29 @@ export type InsertVulnerabilityAsset = typeof vulnerabilityAssets.$inferInsert;
 // Zod schemas
 export const insertVulnerabilitySchema = createInsertSchema(vulnerabilities);
 export const insertVulnerabilityAssetSchema = createInsertSchema(vulnerabilityAssets);
+
+// Auth Configuration Schema and Types
+export const insertAuthConfigSchema = createInsertSchema(authConfig).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type AuthConfig = typeof authConfig.$inferSelect;
+export type InsertAuthConfig = z.infer<typeof insertAuthConfigSchema>;
+
+// User Management Types for Local Auth
+export type UserWithoutPassword = Omit<User, 'passwordHash'>;
+export type CreateUserRequest = {
+  username: string;
+  email?: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
+  role: 'admin' | 'analyst' | 'viewer';
+};
+
+export type LoginRequest = {
+  username: string;
+  password: string;
+};

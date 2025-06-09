@@ -1,312 +1,298 @@
-import { users, type User, type InsertUser } from "@shared/schema";
-import { db } from "../db";
-import { eq, and, sql } from "drizzle-orm";
-import { hashPassword, verifyPassword } from "@shared/utils/passwordUtils";
+import bcrypt from 'bcryptjs';
+import { db } from '../db';
+import { users, authConfig, type User, type UserWithoutPassword, type CreateUserRequest, type LoginRequest, type AuthConfig } from '@shared/schema';
+import { eq, and, lt } from 'drizzle-orm';
 
-export interface LoginResult {
-  success: boolean;
-  user?: User;
-  error?: string;
-}
-
-export interface CreateUserResult {
-  success: boolean;
-  user?: User;
-  error?: string;
-}
-
-/**
- * Authentication Service for dual Local/SSO authentication
- */
 export class AuthService {
-  
-  /**
-   * Create a new local user account
-   */
-  async createLocalUser(userData: {
-    username: string;
-    email: string;
-    password: string;
-    firstName?: string;
-    lastName?: string;
-    role: 'user' | 'admin';
-    createdBy?: number;
-  }): Promise<CreateUserResult> {
+  private static instance: AuthService;
+  private currentAuthConfig: AuthConfig | null = null;
+
+  private constructor() {}
+
+  static getInstance(): AuthService {
+    if (!AuthService.instance) {
+      AuthService.instance = new AuthService();
+    }
+    return AuthService.instance;
+  }
+
+  // Initialize authentication configuration
+  async initializeAuth(): Promise<void> {
     try {
-      // Check if username or email already exists
-      const existingUser = await db
-        .select()
-        .from(users)
-        .where(
-          and(
-            eq(users.authType, 'local'),
-            eq(users.username, userData.username)
-          )
-        )
-        .limit(1);
-
-      if (existingUser.length > 0) {
-        return { success: false, error: "Username already exists" };
-      }
-
-      const existingEmail = await db
-        .select()
-        .from(users)
-        .where(eq(users.email, userData.email))
-        .limit(1);
-
-      if (existingEmail.length > 0) {
-        return { success: false, error: "Email already exists" };
-      }
-
-      // Hash the password
-      const { hash, salt, iterations } = await hashPassword(userData.password);
-
-      // Create the user
-      const [newUser] = await db
-        .insert(users)
-        .values({
+      const [config] = await db.select().from(authConfig).limit(1);
+      
+      if (!config) {
+        // Create default configuration
+        const [defaultConfig] = await db.insert(authConfig).values({
           authType: 'local',
-          username: userData.username,
-          email: userData.email,
-          passwordHash: hash,
-          passwordSalt: salt,
-          passwordIterations: iterations,
-          firstName: userData.firstName || null,
-          lastName: userData.lastName || null,
-          displayName: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.username,
-          role: userData.role,
-          isActive: true,
-          isEmailVerified: false,
-          createdBy: userData.createdBy || null
-        })
-        .returning();
-
-      return { success: true, user: newUser };
+          oidcEnabled: false,
+          sessionTimeout: 3600,
+          maxLoginAttempts: 5,
+          lockoutDuration: 300,
+          passwordMinLength: 8,
+        }).returning();
+        
+        this.currentAuthConfig = defaultConfig;
+        console.log('Created default authentication configuration');
+      } else {
+        this.currentAuthConfig = config;
+      }
     } catch (error) {
-      console.error('Error creating local user:', error);
-      return { success: false, error: "Failed to create user account" };
+      console.error('Failed to initialize auth configuration:', error);
+      throw error;
     }
   }
 
-  /**
-   * Authenticate local user with username/password
-   */
-  async authenticateLocal(username: string, password: string): Promise<LoginResult> {
-    try {
-      // Find user by username
-      const [user] = await db
-        .select()
-        .from(users)
-        .where(
-          and(
-            eq(users.authType, 'local'),
-            eq(users.username, username),
-            eq(users.isActive, true)
-          )
-        )
-        .limit(1);
-
-      if (!user) {
-        return { success: false, error: "Invalid username or password" };
-      }
-
-      // Check if account is locked
-      if (user.accountLockedUntil && new Date() < user.accountLockedUntil) {
-        return { success: false, error: "Account is temporarily locked. Try again later." };
-      }
-
-      // Verify password
-      if (!user.passwordHash) {
-        return { success: false, error: "Invalid account configuration" };
-      }
-
-      const isPasswordValid = await verifyPassword(password, user.passwordHash);
-
-      if (!isPasswordValid) {
-        // Increment failed login attempts
-        await this.incrementFailedLoginAttempts(user.id);
-        return { success: false, error: "Invalid username or password" };
-      }
-
-      // Reset failed login attempts and update last login
-      await this.updateLoginSuccess(user.id);
-
-      return { success: true, user };
-    } catch (error) {
-      console.error('Error authenticating local user:', error);
-      return { success: false, error: "Authentication failed" };
+  // Get current authentication configuration
+  async getAuthConfig(): Promise<AuthConfig> {
+    if (!this.currentAuthConfig) {
+      await this.initializeAuth();
     }
+    return this.currentAuthConfig!;
   }
 
-  /**
-   * Create or update SSO user (for existing SSO integration)
-   */
-  async upsertSsoUser(ssoData: {
-    ssoSubject: string;
-    ssoProvider: string;
-    email: string;
-    firstName?: string;
-    lastName?: string;
-    profileImageUrl?: string;
-  }): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values({
-        authType: 'sso',
-        ssoSubject: ssoData.ssoSubject,
-        ssoProvider: ssoData.ssoProvider,
-        email: ssoData.email,
-        firstName: ssoData.firstName || null,
-        lastName: ssoData.lastName || null,
-        displayName: ssoData.firstName ? `${ssoData.firstName} ${ssoData.lastName || ''}`.trim() : ssoData.email,
-        profileImageUrl: ssoData.profileImageUrl || null,
-        role: 'user', // Default role for SSO users
-        isActive: true,
-        isEmailVerified: true, // Assume SSO emails are verified
-      })
-      .onConflictDoUpdate({
-        target: [users.ssoSubject, users.ssoProvider],
-        set: {
-          email: ssoData.email,
-          firstName: ssoData.firstName || null,
-          lastName: ssoData.lastName || null,
-          displayName: ssoData.firstName ? `${ssoData.firstName} ${ssoData.lastName || ''}`.trim() : ssoData.email,
-          profileImageUrl: ssoData.profileImageUrl || null,
-          updatedAt: new Date(),
-        },
-      })
+  // Update authentication configuration (for OIDC setup via UI)
+  async updateAuthConfig(updates: Partial<AuthConfig>): Promise<AuthConfig> {
+    const [updated] = await db.update(authConfig)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(authConfig.id, this.currentAuthConfig!.id))
       .returning();
-
-    await this.updateLoginSuccess(user.id);
-    return user;
+    
+    this.currentAuthConfig = updated;
+    console.log('Authentication configuration updated:', { 
+      authType: updated.authType, 
+      oidcEnabled: updated.oidcEnabled 
+    });
+    
+    return updated;
   }
 
-  /**
-   * Get user by ID
-   */
-  async getUserById(id: number): Promise<User | null> {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
+  // Local Authentication Methods
+  async createUser(userData: CreateUserRequest, createdBy?: number): Promise<UserWithoutPassword> {
+    const config = await this.getAuthConfig();
+    
+    // Validate password length
+    if (userData.password.length < config.passwordMinLength) {
+      throw new Error(`Password must be at least ${config.passwordMinLength} characters long`);
+    }
+
+    // Hash password
+    const passwordHash = await bcrypt.hash(userData.password, 12);
+
+    // Check if username already exists
+    const existingUser = await db.select().from(users).where(eq(users.username, userData.username)).limit(1);
+    if (existingUser.length > 0) {
+      throw new Error('Username already exists');
+    }
+
+    // Check if email already exists (if provided)
+    if (userData.email) {
+      const existingEmail = await db.select().from(users).where(eq(users.email, userData.email)).limit(1);
+      if (existingEmail.length > 0) {
+        throw new Error('Email already exists');
+      }
+    }
+
+    const [newUser] = await db.insert(users).values({
+      username: userData.username,
+      email: userData.email,
+      passwordHash,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      role: userData.role,
+      authType: 'local',
+      isActive: true,
+      emailVerified: true, // Auto-verify for admin-created users
+      createdBy,
+    }).returning();
+
+    // Return user without password hash
+    const { passwordHash: _, ...userWithoutPassword } = newUser;
+    return userWithoutPassword;
+  }
+
+  async authenticateLocal(credentials: LoginRequest): Promise<UserWithoutPassword | null> {
+    const config = await this.getAuthConfig();
+    
+    // Find user by username
+    const [user] = await db.select().from(users)
+      .where(and(
+        eq(users.username, credentials.username),
+        eq(users.authType, 'local'),
+        eq(users.isActive, true)
+      ))
       .limit(1);
 
-    return user || null;
-  }
-
-  /**
-   * Get all users (admin only)
-   */
-  async getAllUsers(): Promise<User[]> {
-    return await db
-      .select()
-      .from(users)
-      .orderBy(users.createdAt);
-  }
-
-  /**
-   * Update user role (admin only)
-   */
-  async updateUserRole(userId: number, role: 'user' | 'admin'): Promise<boolean> {
-    try {
-      const result = await db
-        .update(users)
-        .set({ role, updatedAt: new Date() })
-        .where(eq(users.id, userId));
-
-      return true;
-    } catch (error) {
-      console.error('Error updating user role:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Deactivate user account (admin only)
-   */
-  async deactivateUser(userId: number): Promise<boolean> {
-    try {
-      await db
-        .update(users)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(users.id, userId));
-
-      return true;
-    } catch (error) {
-      console.error('Error deactivating user:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Reset user password (admin only for local users)
-   */
-  async resetUserPassword(userId: number, newPassword: string): Promise<boolean> {
-    try {
-      const { hash, salt, iterations } = await hashPassword(newPassword);
-      
-      await db
-        .update(users)
-        .set({
-          passwordHash: hash,
-          passwordSalt: salt,
-          passwordIterations: iterations,
-          failedLoginAttempts: 0,
-          accountLockedUntil: null,
-          updatedAt: new Date()
-        })
-        .where(and(
-          eq(users.id, userId),
-          eq(users.authType, 'local')
-        ));
-
-      return true;
-    } catch (error) {
-      console.error('Error resetting user password:', error);
-      return false;
-    }
-  }
-
-  /**
-   * Private helper: Increment failed login attempts
-   */
-  private async incrementFailedLoginAttempts(userId: number): Promise<void> {
-    const user = await this.getUserById(userId);
-    if (!user) return;
-
-    const newFailedAttempts = (user.failedLoginAttempts || 0) + 1;
-    const updateData: any = {
-      failedLoginAttempts: newFailedAttempts,
-      lastFailedLogin: new Date(),
-      updatedAt: new Date()
-    };
-
-    // Lock account after 5 failed attempts for 15 minutes
-    if (newFailedAttempts >= 5) {
-      updateData.accountLockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+    if (!user) {
+      return null;
     }
 
-    await db
-      .update(users)
-      .set(updateData)
-      .where(eq(users.id, userId));
-  }
+    // Check if account is locked
+    if (user.accountLockedUntil && user.accountLockedUntil > new Date()) {
+      throw new Error('Account is temporarily locked due to too many failed login attempts');
+    }
 
-  /**
-   * Private helper: Update successful login
-   */
-  private async updateLoginSuccess(userId: number): Promise<void> {
-    await db
-      .update(users)
+    // Verify password
+    const isValidPassword = await bcrypt.compare(credentials.password, user.passwordHash!);
+    
+    if (!isValidPassword) {
+      // Increment failed login attempts
+      const failedAttempts = (user.failedLoginAttempts || 0) + 1;
+      const updates: any = {
+        failedLoginAttempts: failedAttempts,
+        lastFailedLogin: new Date(),
+      };
+
+      // Lock account if max attempts reached
+      if (failedAttempts >= config.maxLoginAttempts) {
+        updates.accountLockedUntil = new Date(Date.now() + config.lockoutDuration * 1000);
+      }
+
+      await db.update(users)
+        .set(updates)
+        .where(eq(users.id, user.id));
+
+      return null;
+    }
+
+    // Successful login - reset failed attempts and update last login
+    await db.update(users)
       .set({
-        lastLogin: new Date(),
         failedLoginAttempts: 0,
+        lastFailedLogin: null,
         accountLockedUntil: null,
-        updatedAt: new Date()
+        lastLogin: new Date(),
+        loginCount: (user.loginCount || 0) + 1,
       })
-      .where(eq(users.id, userId));
+      .where(eq(users.id, user.id));
+
+    // Return user without password hash
+    const { passwordHash: _, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
+
+  // User Management Methods
+  async getAllUsers(): Promise<UserWithoutPassword[]> {
+    const allUsers = await db.select().from(users);
+    return allUsers.map(user => {
+      const { passwordHash: _, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    });
+  }
+
+  async getUserById(id: number): Promise<UserWithoutPassword | null> {
+    const [user] = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    if (!user) return null;
+    
+    const { passwordHash: _, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
+
+  async updateUser(id: number, updates: Partial<User>): Promise<UserWithoutPassword> {
+    // Remove sensitive fields that shouldn't be updated directly
+    const { passwordHash, ...safeUpdates } = updates;
+    
+    const [updated] = await db.update(users)
+      .set({ ...safeUpdates, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+
+    const { passwordHash: _, ...userWithoutPassword } = updated;
+    return userWithoutPassword;
+  }
+
+  async changePassword(id: number, newPassword: string): Promise<void> {
+    const config = await this.getAuthConfig();
+    
+    if (newPassword.length < config.passwordMinLength) {
+      throw new Error(`Password must be at least ${config.passwordMinLength} characters long`);
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 12);
+    
+    await db.update(users)
+      .set({
+        passwordHash,
+        mustChangePassword: false,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id));
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    await db.update(users)
+      .set({ 
+        isActive: false,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id));
+  }
+
+  // OIDC Support Methods (for future implementation)
+  async upsertOidcUser(oidcProfile: any): Promise<UserWithoutPassword> {
+    // Check if user exists with OIDC sub
+    const [existingUser] = await db.select().from(users)
+      .where(eq(users.oidcSub, oidcProfile.sub))
+      .limit(1);
+
+    if (existingUser) {
+      // Update existing user
+      const [updated] = await db.update(users)
+        .set({
+          email: oidcProfile.email,
+          firstName: oidcProfile.given_name || oidcProfile.first_name,
+          lastName: oidcProfile.family_name || oidcProfile.last_name,
+          lastLogin: new Date(),
+          loginCount: (existingUser.loginCount || 0) + 1,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, existingUser.id))
+        .returning();
+
+      const { passwordHash: _, ...userWithoutPassword } = updated;
+      return userWithoutPassword;
+    }
+
+    // Create new OIDC user
+    const [newUser] = await db.insert(users).values({
+      username: oidcProfile.preferred_username || oidcProfile.email || `oidc_${oidcProfile.sub}`,
+      email: oidcProfile.email,
+      firstName: oidcProfile.given_name || oidcProfile.first_name,
+      lastName: oidcProfile.family_name || oidcProfile.last_name,
+      authType: 'oidc',
+      oidcSub: oidcProfile.sub,
+      role: 'viewer', // Default role for OIDC users
+      isActive: true,
+      emailVerified: true,
+      lastLogin: new Date(),
+      loginCount: 1,
+    }).returning();
+
+    const { passwordHash: _, ...userWithoutPassword } = newUser;
+    return userWithoutPassword;
+  }
+
+  // Check if system has any admin users
+  async hasAdminUsers(): Promise<boolean> {
+    const [adminUser] = await db.select().from(users)
+      .where(and(
+        eq(users.role, 'admin'),
+        eq(users.isActive, true)
+      ))
+      .limit(1);
+    
+    return !!adminUser;
+  }
+
+  // Create initial admin user
+  async createInitialAdmin(userData: CreateUserRequest): Promise<UserWithoutPassword> {
+    const hasAdmin = await this.hasAdminUsers();
+    if (hasAdmin) {
+      throw new Error('Admin user already exists');
+    }
+
+    return this.createUser({ ...userData, role: 'admin' });
   }
 }
 
-export const authService = new AuthService();
+export const authService = AuthService.getInstance();
