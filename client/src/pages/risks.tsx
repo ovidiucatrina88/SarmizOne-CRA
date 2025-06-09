@@ -13,6 +13,7 @@ import { RefreshCw, PlusCircle } from "lucide-react";
 import { RiskList } from "@/components/risks/risk-list";
 import { RiskForm } from "@/components/risks";
 import { Skeleton } from "@/components/ui/skeleton";
+import Layout from "@/components/layout/layout";
 import { Card } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";

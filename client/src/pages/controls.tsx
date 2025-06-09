@@ -9,6 +9,7 @@ import { ControlForm } from "@/components/controls/control-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import Layout from "@/components/layout/layout";
 
 export default function Controls() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import Layout from "@/components/layout/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -117,7 +118,7 @@ export default function LegalEntityPage() {
               <Button>Back to Legal Entities</Button>
             </Link>
           </div>
-        
+        </Layout>
       );
     }
 
@@ -162,7 +163,7 @@ export default function LegalEntityPage() {
             </Button>
           </CardContent>
         </Card>
-      
+      </Layout>
     );
   }
   
@@ -319,6 +320,6 @@ export default function LegalEntityPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    
+    </Layout>
   );
 }
