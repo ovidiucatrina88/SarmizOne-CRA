@@ -2,7 +2,6 @@ import { useState, useMemo } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { Asset } from "@shared/schema";
-import Layout from "@/components/layout/layout";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarLoader } from "@/components/ui/barloader";
@@ -667,6 +666,6 @@ export default function AssetHierarchyPage() {
           )}
         </TabsContent>
       </Tabs>
-    </Layout>
+    
   );
 }

@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import Layout from "@/components/layout/layout";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -338,7 +337,7 @@ export default function RiskCostMappingPage() {
   const chartData = getChartData();
   
   return (
-    <Layout>
+    
       <div className="container px-4 py-6 space-y-8">
       <div className="flex justify-between items-center">
         <div>
@@ -595,6 +594,6 @@ export default function RiskCostMappingPage() {
         </TabsContent>
       </Tabs>
       </div>
-    </Layout>
+    
   );
 }

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Risk, RiskLibraryItem, Asset } from "@shared/schema";
-import Layout from "@/components/layout/layout";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -535,6 +534,6 @@ export default function RiskLibrary() {
           </div>
         </DialogContent>
       </Dialog>
-    </Layout>
+    
   );
 }

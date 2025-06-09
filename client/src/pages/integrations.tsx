@@ -1,7 +1,6 @@
 import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { JiraIntegration } from "@/components/integrations/jira-integration";
-import Layout from "@/components/layout/layout";
 
 export default function IntegrationsPage() {
   return (
@@ -22,6 +21,6 @@ export default function IntegrationsPage() {
         
         {/* Add more integration tabs content here */}
       </Tabs>
-    </Layout>
+    
   );
 }

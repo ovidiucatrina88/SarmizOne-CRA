@@ -10,7 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { useLocation, useRoute } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import Layout from "@/components/layout/layout";
 
 export default function Assets() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -84,33 +83,22 @@ export default function Assets() {
             </div>
           </Card>
         </div>
-      </Layout>
+      
     );
   }
 
   if (error) {
     return (
-      <Layout
-        pageTitle="Asset Inventory"
-        pageIcon="AST"
-        pageDescription="Manage your organization's asset inventory and track their security impact across the enterprise."
-        pageActions={pageActions}
-      >
-        <div className="p-8 text-center">
+      <div className="p-8 text-center">
           <h2 className="text-xl font-bold text-red-500">Error loading assets</h2>
           <p className="mt-2 text-gray-600">Please try again later or contact support.</p>
         </div>
-      </Layout>
+      
     );
   }
 
   return (
-    <Layout
-      pageTitle="Asset Inventory"
-      pageIcon="AST"
-      pageDescription="Manage your organization's asset inventory and track their security impact across the enterprise."
-      pageActions={pageActions}
-    >
+    <div>
       <AssetList assets={assets} onEdit={handleEdit} />
 
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
@@ -123,6 +111,6 @@ export default function Assets() {
           <AssetForm asset={selectedAsset} onClose={handleClose} />
         </DialogContent>
       </Dialog>
-    </Layout>
+    
   );
 }

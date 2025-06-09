@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import Layout from "@/components/layout/layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -483,7 +482,7 @@ export default function AdminPage() {
                         (logs && typeof logs === 'object' && Array.isArray(logs)) ? logs : [];
   
   return (
-    <Layout>
+    
       <div className="container space-y-6 py-4">
       <div className="flex items-center justify-between">
         <div>
@@ -900,6 +899,6 @@ export default function AdminPage() {
         </TabsContent>
       </Tabs>
       </div>
-    </Layout>
+    
   );
 }

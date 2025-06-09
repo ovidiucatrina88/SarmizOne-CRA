@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Control, Risk, ControlLibraryItem, controlTypeEnum, controlCategoryEnum, implementationStatusEnum } from "@shared/schema";
-import Layout from "@/components/layout/layout";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -406,7 +405,7 @@ export default function ControlLibrary() {
   }
 
   return (
-    <Layout>
+    
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">Control Library</h2>
         <div className="flex items-center gap-2">
@@ -963,6 +962,6 @@ export default function ControlLibrary() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Layout>
+    
   );
 }

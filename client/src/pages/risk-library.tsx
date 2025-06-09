@@ -10,7 +10,6 @@ import { RiskForm } from "@/components/risks/risk-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
-import Layout from "@/components/layout/layout";
 import {
   Select,
   SelectContent,
@@ -134,7 +133,7 @@ export default function RiskLibrary() {
 
   if (isLoadingTemplates) {
     return (
-      <Layout pageTitle="Risk Library" pageIcon="⚠️" pageDescription="Manage risk templates and create risk instances">
+      
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <Skeleton className="h-9 w-32" />
@@ -151,18 +150,18 @@ export default function RiskLibrary() {
             </div>
           </div>
         </div>
-      </Layout>
+      
     );
   }
 
   if (errorTemplates) {
     return (
-      <Layout pageTitle="Risk Library" pageIcon="⚠️" pageDescription="Manage risk templates and create risk instances">
+      
         <div className="p-8 text-center">
           <h2 className="text-xl font-bold text-red-500">Error loading risk templates</h2>
           <p className="mt-2 text-gray-400">Please try again later or contact support.</p>
         </div>
-      </Layout>
+      
     );
   }
 
@@ -265,6 +264,6 @@ export default function RiskLibrary() {
           )}
         </DialogContent>
       </Dialog>
-    </Layout>
+    
   );
 }

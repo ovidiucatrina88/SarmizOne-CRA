@@ -16,7 +16,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
-import Layout from "@/components/layout/layout";
 
 export default function Risks() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -128,7 +127,7 @@ export default function Risks() {
             </div>
           </Card>
         </div>
-      </Layout>
+      
     );
   }
 
@@ -146,7 +145,7 @@ export default function Risks() {
             Please try again later or contact support.
           </p>
         </div>
-      </Layout>
+      
     );
   }
   
@@ -186,6 +185,6 @@ export default function Risks() {
           />
         </DialogContent>
       </Dialog>
-    </Layout>
+    
   );
 }

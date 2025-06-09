@@ -4,7 +4,6 @@ import { StatsCard } from "@/components/dashboard/stats-card";
 import { RiskBreakdown } from "@/components/dashboard/risk-breakdown";
 import { RiskResponseStatus } from "@/components/dashboard/risk-response-status";
 import { TopRisks } from "@/components/dashboard/top-risks";
-import Layout from "@/components/layout/layout";
 
 import { LossExceedanceCurveModern } from "@/components/ui/loss-exceedance-curve-modern";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -146,26 +145,20 @@ export default function Dashboard() {
   
   // Show loading state while data is being fetched
   if (isLoading) {
-    return (
-      <Layout>
-        <DashboardSkeleton />
-      </Layout>
-    );
+    return <DashboardSkeleton />;
   }
 
   // Show error state if there's an error
   if (error) {
     return (
-      <Layout>
-        <div className="flex justify-center items-center h-64">
-          <p className="text-lg text-red-500">Error loading dashboard data</p>
-        </div>
-      </Layout>
+      <div className="flex justify-center items-center h-64">
+        <p className="text-lg text-red-500">Error loading dashboard data</p>
+      </div>
     );
   }
   
   return (
-    <Layout>
+    <div>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
@@ -403,7 +396,7 @@ export default function Dashboard() {
           }}
         />
       </div>
-    </Layout>
+    </div>
   );
 }
 

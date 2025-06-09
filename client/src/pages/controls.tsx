@@ -9,7 +9,6 @@ import { ControlForm } from "@/components/controls/control-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import Layout from "@/components/layout/layout";
 
 export default function Controls() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -80,7 +79,7 @@ export default function Controls() {
             </div>
           </Card>
         </div>
-      </Layout>
+      
     );
   }
 
@@ -96,7 +95,7 @@ export default function Controls() {
           <h2 className="text-xl font-bold text-red-500">Error loading controls</h2>
           <p className="mt-2 text-gray-600">Please try again later or contact support.</p>
         </div>
-      </Layout>
+      
     );
   }
 
@@ -119,6 +118,6 @@ export default function Controls() {
           <ControlForm control={selectedControl} onClose={handleCloseControl} />
         </DialogContent>
       </Dialog>
-    </Layout>
+    
   );
 }

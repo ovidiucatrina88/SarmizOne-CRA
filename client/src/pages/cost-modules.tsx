@@ -2,7 +2,6 @@ import { CostModuleList } from "@/components/cost-modules/cost-module-list";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { Link } from "wouter";
-import Layout from "@/components/layout/layout";
 
 export default function CostModulesPage() {
   const pageActions = (
@@ -57,6 +56,6 @@ export default function CostModulesPage() {
           </div>
         </div>
       </div>
-    </Layout>
+    
   );
 }

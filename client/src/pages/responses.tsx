@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { RiskResponse, Risk } from "@shared/schema";
-import Layout from "@/components/layout/layout";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PlusCircle } from "lucide-react";
@@ -96,6 +95,6 @@ export default function Responses() {
           <ResponseForm response={selectedResponse} risks={risks} onClose={handleClose} />
         </DialogContent>
       </Dialog>
-    </Layout>
+    
   );
 }

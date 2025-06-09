@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import Layout from "@/components/layout/layout";
 import { 
   Table, 
   TableBody, 
@@ -111,7 +110,7 @@ export default function RiskResponses() {
 
   if (isLoading) {
     return (
-      <Layout pageTitle="Risk Responses" pageIcon="🛡️" pageDescription="Manage how you respond to identified risks">
+      
         <div className="space-y-6">
           <div className="flex justify-between">
             <Skeleton className="h-10 w-1/3" />
@@ -132,7 +131,7 @@ export default function RiskResponses() {
             </div>
           </div>
         </div>
-      </Layout>
+      
     );
   }
 
@@ -288,6 +287,6 @@ export default function RiskResponses() {
           </div>
         </div>
       </div>
-    </Layout>
+    
   );
 }
