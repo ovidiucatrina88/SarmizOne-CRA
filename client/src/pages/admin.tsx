@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { AlertTriangle, Database, RefreshCw, Settings, Shield, User, Users, Key, Globe, UserPlus, ShieldCheck, UserX, Calendar, Eye, EyeOff } from "lucide-react";
+import Layout from "@/components/layout/layout";
 import { 
   Table, 
   TableBody, 

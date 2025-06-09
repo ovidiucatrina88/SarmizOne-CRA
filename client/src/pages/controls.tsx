@@ -8,7 +8,6 @@ import { ControlList } from "@/components/controls/control-list";
 import { ControlForm } from "@/components/controls/control-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
-import Layout from "@/components/layout/layout";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/layout/layout";
 
@@ -88,10 +87,24 @@ export default function Controls() {
   }
 
   return (
-    <div>
-      <ControlList controls={controlInstances || []} onEdit={handleEditControl} />
+    <Layout>
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Controls</h1>
+            <p className="text-muted-foreground mt-1">
+              Manage and monitor security controls
+            </p>
+          </div>
+          <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
+            <PlusCircle className="h-4 w-4" />
+            Add New Control
+          </Button>
+        </div>
+
+        <ControlList controls={controlInstances || []} onEdit={handleEditControl} />
         
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>

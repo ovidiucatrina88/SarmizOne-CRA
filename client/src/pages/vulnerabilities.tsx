@@ -389,6 +389,7 @@ export default function VulnerabilitiesPage() {
           </div>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </Layout>
   );
 }

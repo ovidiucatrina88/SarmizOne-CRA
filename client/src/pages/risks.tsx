@@ -137,7 +137,8 @@ export default function Risks() {
   }
   
   return (
-    <div>
+    <Layout>
+      <div>
       {!Array.isArray(risks) || risks.length === 0 ? (
         <Card className="p-8">
           <div className="text-center">
