@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { 
   BarChart3, 
@@ -112,6 +112,19 @@ interface LayoutProps {
   pageActions?: React.ReactNode;
 }
 
+// Apply theme class to document root for CSS variable cascading
+const applyThemeToDocument = (darkMode: boolean) => {
+  if (typeof document !== 'undefined') {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
+  }
+};
+
 export default function Layout({ children, pageTitle, pageDescription, pageIcon, pageActions }: LayoutProps) {
   const [location] = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -125,12 +138,18 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
   });
   const [expandedSections, setExpandedSections] = useState<string[]>(['Assets', 'Risks', 'Controls', 'Cost Modules', 'Admin']);
 
-  // Save dark mode preference to localStorage whenever it changes
+  // Save dark mode preference to localStorage and apply theme whenever it changes
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('darkMode', JSON.stringify(darkMode));
+      applyThemeToDocument(darkMode);
     }
   }, [darkMode]);
+
+  // Apply theme on initial load
+  useEffect(() => {
+    applyThemeToDocument(darkMode);
+  }, []);
 
   const toggleDarkMode = () => {
     setDarkMode(prev => !prev);
