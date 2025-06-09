@@ -12,74 +12,6 @@ import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 
-function DashboardSkeleton() {
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-gray-800 rounded-lg border border-gray-600 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <Skeleton className="h-4 w-20 mb-2" />
-                <Skeleton className="h-8 w-16" />
-              </div>
-              <Skeleton className="h-10 w-10 rounded" />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="bg-gray-800 rounded-lg border border-gray-600">
-        <div className="bg-gray-700 px-6 py-4 border-b border-gray-600">
-          <Skeleton className="h-6 w-48" />
-        </div>
-        <div className="p-6">
-          <Skeleton className="h-80 w-full" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gray-800 rounded-lg border border-gray-600">
-          <div className="p-6">
-            <Skeleton className="h-6 w-1/3 mb-4" />
-            <div className="space-y-2">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Skeleton className="h-4 w-4 rounded mr-2" />
-                    <Skeleton className="h-4 w-20" />
-                  </div>
-                  <Skeleton className="h-4 w-8" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-gray-800 rounded-lg border border-gray-600">
-          <div className="p-6">
-            <Skeleton className="h-6 w-1/3 mb-4" />
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex justify-between">
-                  <div className="flex items-center">
-                    <Skeleton className="h-8 w-8 rounded-full mr-3" />
-                    <div>
-                      <Skeleton className="h-4 w-40 mb-1" />
-                      <Skeleton className="h-3 w-20" />
-                    </div>
-                  </div>
-                  <Skeleton className="h-5 w-24" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function Dashboard() {
   // UI state variables
   const [showHistoricalComparison, setShowHistoricalComparison] = useState(true);
@@ -127,30 +59,16 @@ export default function Dashboard() {
   });
 
   if (isLoading) {
-    return (
-      <Layout
-        pageTitle="Risk Dashboard"
-        pageIcon="DashboardIcon"
-        pageDescription="Overview of cybersecurity risks, controls, and key metrics across your organization."
-      >
-        <DashboardSkeleton />
-      </Layout>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (error) {
     console.error("Dashboard error:", error);
     return (
-      <Layout
-        pageTitle="Risk Dashboard"
-        pageIcon="DashboardIcon"
-        pageDescription="Overview of cybersecurity risks, controls, and key metrics across your organization."
-      >
-        <div className="p-8 text-center">
-          <h2 className="text-xl font-bold text-red-500">Error loading dashboard data</h2>
-          <p className="mt-2 text-gray-600">Please try again later or contact support.</p>
-        </div>
-      </Layout>
+      <div className="p-8 text-center">
+        <h2 className="text-xl font-bold text-red-500">Error loading dashboard data</h2>
+        <p className="mt-2 text-gray-600">Please try again later or contact support.</p>
+      </div>
     );
   }
   
@@ -225,6 +143,34 @@ export default function Dashboard() {
     reductionPercentage: apiData?.riskSummary?.riskReduction || 0
   };
   
+  // Show loading state while data is being fetched
+  if (isLoading) {
+    return (
+      <Layout
+        pageTitle="Risk Dashboard"
+        pageIcon="DashboardIcon"
+        pageDescription="Overview of cybersecurity risks, controls, and key metrics across your organization."
+      >
+        <DashboardSkeleton />
+      </Layout>
+    );
+  }
+
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <Layout
+        pageTitle="Risk Dashboard"
+        pageIcon="DashboardIcon"
+        pageDescription="Overview of cybersecurity risks, controls, and key metrics across your organization."
+      >
+        <div className="flex justify-center items-center h-64">
+          <p className="text-lg text-red-500">Error loading dashboard data</p>
+        </div>
+      </Layout>
+    );
+  }
+  
   return (
     <Layout
       pageTitle="Risk Dashboard"
@@ -271,6 +217,8 @@ export default function Dashboard() {
         />
       </div>
 
+
+
       {/* Loss Exceedance Curve */}
       <div className="grid grid-cols-1 gap-6 mb-8">
         <div className="bg-gray-800 rounded-lg border border-gray-600 overflow-hidden">
@@ -292,10 +240,93 @@ export default function Dashboard() {
                     <span>Historical Comparison</span>
                   </Label>
                 </div>
+                
+                {/* Filter options for Loss Exceedance Curve */}
+                <div className="flex items-center space-x-4">
+                  {/* Filter type selector */}
+                  <div className="flex items-center space-x-2">
+                    <select
+                      className="px-2 py-1 text-sm rounded border border-gray-300"
+                      value={filterType}
+                      onChange={(e) => {
+                        setFilterType(e.target.value as FilterType);
+                        setSelectedLegalEntity(null);
+                        setSelectedAsset(null);
+                        setSelectedArchitectureLevel(null);
+                      }}
+                    >
+                      <option value="all">All</option>
+                      <option value="l1">L1 - Strategy</option>
+                      <option value="l2">L2 - Business Architecture</option>
+                      <option value="l3">L3 - Information Systems</option>
+                      <option value="l4">L4 - Technology</option>
+                      <option value="entity">Legal Entity</option>
+                      <option value="asset">Asset</option>
+                    </select>
+                  </div>
+                  
+                  {/* Show entity selector when filter type is 'entity' */}
+                  {filterType === 'entity' && legalEntitiesData?.data && (
+                    <div className="flex items-center space-x-2">
+                      <select
+                        className="px-2 py-1 text-sm rounded border border-gray-300"
+                        value={selectedLegalEntity || ''}
+                        onChange={(e) => setSelectedLegalEntity(e.target.value || null)}
+                      >
+                        <option value="" disabled>Select Entity</option>
+                        {Array.isArray(legalEntitiesData.data) && legalEntitiesData.data.map((entity) => (
+                          <option key={entity.entityId} value={entity.entityId}>
+                            {entity.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                  
+                  {/* Show architecture level selector when filter type is L1-L4 */}
+                  {(filterType === 'l1' || filterType === 'l2' || filterType === 'l3' || filterType === 'l4') && enterpriseArchData?.data && (
+                    <div className="flex items-center space-x-2">
+                      <select
+                        className="px-2 py-1 text-sm rounded border border-gray-300"
+                        value={selectedArchitectureLevel || ''}
+                        onChange={(e) => setSelectedArchitectureLevel(e.target.value || null)}
+                      >
+                        <option value="" disabled>Select {filterType.toUpperCase()} Component</option>
+                        {Array.isArray(enterpriseArchData.data) && 
+                         enterpriseArchData.data
+                           .filter((arch) => arch.level === filterType.toUpperCase())
+                           .map((arch) => (
+                          <option key={arch.id} value={arch.id}>
+                            {arch.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Show asset selector when filter type is 'asset' */}
+                  {filterType === 'asset' && assetsData?.data && (
+                    <div className="flex items-center space-x-2">
+                      <select
+                        className="px-2 py-1 text-sm rounded border border-gray-300"
+                        value={selectedAsset || ''}
+                        onChange={(e) => setSelectedAsset(e.target.value || null)}
+                      >
+                        <option value="" disabled>Select Asset</option>
+                        {Array.isArray(assetsData.data) && assetsData.data.map((asset) => (
+                          <option key={asset.assetId} value={asset.assetId}>
+                            {asset.name} 
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
           <div className="p-6">
+            {/* Show loading state when fetching risk summary data */}
             {showHistoricalComparison && isLoadingRiskSummary ? (
               <div className="flex justify-center items-center h-96">
                 <p className="text-lg text-gray-500">Loading historical data...</p>
@@ -304,17 +335,21 @@ export default function Dashboard() {
               <LossExceedanceCurveModern 
                 risks={risksData?.data || []} 
                 currentExposure={riskSummaryData?.current ? {
+                  // Primary fields (preferred)
                   minimumExposure: riskSummaryData.current.minimumExposure,
                   averageExposure: riskSummaryData.current.averageExposure,
                   maximumExposure: riskSummaryData.current.maximumExposure,
+                  // Legacy fields (for backward compatibility)
                   tenthPercentile: riskSummaryData.current.tenthPercentileExposure,
                   mostLikely: riskSummaryData.current.mostLikelyExposure,
                   ninetiethPercentile: riskSummaryData.current.ninetiethPercentileExposure
                 } : undefined}
                 previousExposure={showHistoricalComparison && riskSummaryData?.previous ? {
+                  // Primary fields (preferred)
                   minimumExposure: riskSummaryData.previous.minimumExposure,
                   averageExposure: riskSummaryData.previous.averageExposure,
                   maximumExposure: riskSummaryData.previous.maximumExposure,
+                  // Legacy fields (for backward compatibility)
                   tenthPercentile: riskSummaryData.previous.tenthPercentileExposure,
                   mostLikely: riskSummaryData.previous.mostLikelyExposure,
                   ninetiethPercentile: riskSummaryData.previous.ninetiethPercentileExposure
@@ -331,11 +366,13 @@ export default function Dashboard() {
 
       {/* Risk Breakdown and Top Risks */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* Risk by Severity */}
         <RiskBreakdown 
           title="Risk by Severity"
           items={riskBySeverity}
         />
         
+        {/* Top Risks */}
         <TopRisks 
           risks={[]}
           maxItems={5}
@@ -344,11 +381,13 @@ export default function Dashboard() {
 
       {/* Risk Response Status and Category Breakdown */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* Risk Response Status */}
         <RiskResponseStatus 
           responseTypeData={responseTypeData}
           riskReduction={riskReduction}
         />
         
+        {/* Risk by Category */}
         <RiskBreakdown 
           title="Risk by Category"
           items={{
@@ -374,6 +413,73 @@ export default function Dashboard() {
             }
           }}
         />
+      </div>
+    </Layout>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="bg-gray-800 rounded-lg border border-gray-600">
+            <div className="p-6">
+              <Skeleton className="h-6 w-2/3 mb-2" />
+              <Skeleton className="h-10 w-5/6" />
+              <div className="mt-4 flex items-center">
+                <Skeleton className="h-4 w-10 mr-2" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      <div className="bg-gray-800 rounded-lg border border-gray-600">
+        <div className="p-6 flex flex-col space-y-6">
+          <Skeleton className="h-8 w-1/4" />
+          <Skeleton className="h-80 w-full" />
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-gray-800 rounded-lg border border-gray-600">
+          <div className="p-6">
+            <Skeleton className="h-6 w-1/3 mb-4" />
+            <div className="space-y-4">
+              {[...Array(4)].map((_, i) => (
+                <div key={i}>
+                  <div className="flex justify-between mb-1">
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                  <Skeleton className="h-2 w-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-gray-800 rounded-lg border border-gray-600">
+          <div className="p-6">
+            <Skeleton className="h-6 w-1/3 mb-4" />
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="flex justify-between">
+                  <div className="flex items-center">
+                    <Skeleton className="h-8 w-8 rounded-full mr-3" />
+                    <div>
+                      <Skeleton className="h-4 w-40 mb-1" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-5 w-24" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </Layout>
   );

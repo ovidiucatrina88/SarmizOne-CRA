@@ -8,6 +8,7 @@ import { ResponseList } from "@/components/responses/response-list";
 import { ResponseForm } from "@/components/responses/response-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
+import Layout from "@/components/layout/layout";
 
 export default function Responses() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -95,6 +96,6 @@ export default function Responses() {
           <ResponseForm response={selectedResponse} risks={risks} onClose={handleClose} />
         </DialogContent>
       </Dialog>
-    
+    </Layout>
   );
 }

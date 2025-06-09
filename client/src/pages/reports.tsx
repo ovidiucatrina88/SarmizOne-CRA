@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ReportGenerator } from "@/components/reports/report-generator";
 import { exportToPdf } from "@/utils/export-pdf";
 import { exportToExcel } from "@/utils/export-excel";
+import Layout from "@/components/layout/layout";
 
 export default function Reports() {
   const [reportType, setReportType] = useState("risks");
@@ -169,7 +170,6 @@ export default function Reports() {
             </TabsContent>
           </Tabs>
         </div>
-      </div>
-    
+    </Layout>
   );
 }
