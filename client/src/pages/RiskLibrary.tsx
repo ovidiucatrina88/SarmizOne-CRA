@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Edit } from "lucide-react";
+import Layout from "@/components/layout/layout";
 
 export default function RiskLibrary() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);

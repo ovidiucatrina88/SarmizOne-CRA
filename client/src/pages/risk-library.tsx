@@ -175,12 +175,12 @@ export default function RiskLibrary() {
             <p className="text-gray-400">Manage risk templates and create risk instances</p>
           </div>
           <Button onClick={handleCreateNew}>
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add New Risk Template
-        </Button>
-      }
-    >
-      {/* Risk Templates List */}
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add New Risk Template
+          </Button>
+        </div>
+
+        {/* Risk Templates List */}
       <RiskList 
         risks={riskTemplates || []} 
         onEdit={handleEdit} 

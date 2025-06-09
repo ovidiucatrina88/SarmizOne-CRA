@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { RiskResponseForm } from "@/components/risk-responses/risk-response-form";
 import { Skeleton } from "@/components/ui/skeleton";
+import Layout from "@/components/layout/layout";
 
 export default function RiskResponses() {
   const { toast } = useToast();
@@ -136,7 +137,8 @@ export default function RiskResponses() {
   }
 
   return (
-    <div>
+    <Layout>
+      <div className="container mx-auto p-6 space-y-6">
       <div className="mb-6 flex gap-2">
         <Button 
           onClick={() => refetchResponses()} 
