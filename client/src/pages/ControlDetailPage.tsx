@@ -29,37 +29,42 @@ export default function ControlDetailPage() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader className="h-8 w-8 animate-spin text-primary" />
-        <span className="ml-2 text-lg">Loading control details...</span>
-      </div>
+      <Layout>
+        <div className="flex items-center justify-center h-full">
+          <Loader className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2 text-lg">Loading control details...</span>
+        </div>
+      </Layout>
     );
   }
   
   // Error state
   if (error || !control) {
     return (
-      <div className="p-6">
-        <div className="mb-4">
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/controls">
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              Back to Controls
-            </Link>
-          </Button>
+      <Layout>
+        <div className="p-6">
+          <div className="mb-4">
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/controls">
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Back to Controls
+              </Link>
+            </Button>
+          </div>
+          <Card className="p-6 bg-destructive/10 border-destructive">
+            <h1 className="text-2xl font-bold text-destructive mb-2">Error Loading Control</h1>
+            <p>Unable to load control details. Please try again later.</p>
+          </Card>
         </div>
-        <Card className="p-6 bg-destructive/10 border-destructive">
-          <h1 className="text-2xl font-bold text-destructive mb-2">Error Loading Control</h1>
-          <p>Unable to load control details. Please try again later.</p>
-        </Card>
-      </div>
+      </Layout>
     );
   }
   
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <Button variant="outline" size="sm" asChild>
+    <Layout>
+      <div className="p-6">
+        <div className="flex justify-between items-center mb-6">
+          <Button variant="outline" size="sm" asChild>
           <Link href="/controls">
             <ChevronLeft className="h-4 w-4 mr-1" />
             Back to Controls
@@ -182,7 +187,8 @@ export default function ControlDetailPage() {
             )}
           </Card>
         </div>
+        </div>
       </div>
-    </div>
+    </Layout>
   );
 }
