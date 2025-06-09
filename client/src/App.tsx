@@ -37,43 +37,45 @@ import Layout from "@/components/layout/layout";
 
 function AuthenticatedRoutes() {
   return (
-    <Switch>
-        <Route path="/" component={Dashboard} />
-        <Route path="/assets" component={Assets} />
-        <Route path="/asset-hierarchy" component={AssetHierarchy} />
-        <Route path="/assets/hierarchy" component={AssetHierarchy} />
-        <Route path="/assets/enterprise-architecture" component={EnterpriseArchitecture} />
-        <Route path="/assets/vulnerabilities" component={Vulnerabilities} />
-        <Route path="/assets/vulnerabilities/import" component={VulnerabilityImport} />
-        <Route path="/assets/vulnerabilities/:id" component={VulnerabilityDetails} />
-        <Route path="/assets/:assetId" component={AssetDetail} />
-        
-        {/* Legacy routes for backward compatibility */}
-        <Route path="/enterprise-architecture" component={EnterpriseArchitecture} />
-        <Route path="/vulnerabilities" component={Vulnerabilities} />
-        <Route path="/vulnerabilities/import" component={VulnerabilityImport} />
-        <Route path="/vulnerabilities/:id" component={VulnerabilityDetails} />
-        <Route path="/risks" component={Risks} />
-        <Route path="/risk-library" component={RiskLibrary} />
-        <Route path="/risks/templates" component={RiskLibrary} />
-        <Route path="/risks/:id" component={RiskDetailPage} />
-        <Route path="/risk-responses" component={RiskResponses} />
-        <Route path="/controls" component={Controls} />
-        <Route path="/control-library" component={ControlLibrary} />
-        <Route path="/controls/:id" component={ControlDetailPage} />
-        <Route path="/control-roi" component={ControlROI} />
-        <Route path="/responses" component={Responses} />
-        <Route path="/reports" component={Reports} />
-        <Route path="/integrations" component={Integrations} />
-        <Route path="/legal-entities" component={LegalEntityPage} />
-        <Route path="/legal-entities/:id" component={LegalEntityPage} />
-        <Route path="/cost-modules/risk-mapping" component={RiskCostMappingPage} />
-        <Route path="/cost-modules/:id" component={CostModuleDetail} />
-        <Route path="/cost-modules" component={CostModules} />
-        <Route path="/admin" component={AdminPage} />
-        <Route path="/change-password" component={ChangePasswordPage} />
-        <Route component={NotFound} />
-      </Switch>
+    <Layout>
+      <Switch>
+          <Route path="/" component={Dashboard} />
+          <Route path="/assets" component={Assets} />
+          <Route path="/asset-hierarchy" component={AssetHierarchy} />
+          <Route path="/assets/hierarchy" component={AssetHierarchy} />
+          <Route path="/assets/enterprise-architecture" component={EnterpriseArchitecture} />
+          <Route path="/assets/vulnerabilities" component={Vulnerabilities} />
+          <Route path="/assets/vulnerabilities/import" component={VulnerabilityImport} />
+          <Route path="/assets/vulnerabilities/:id" component={VulnerabilityDetails} />
+          <Route path="/assets/:assetId" component={AssetDetail} />
+          
+          {/* Legacy routes for backward compatibility */}
+          <Route path="/enterprise-architecture" component={EnterpriseArchitecture} />
+          <Route path="/vulnerabilities" component={Vulnerabilities} />
+          <Route path="/vulnerabilities/import" component={VulnerabilityImport} />
+          <Route path="/vulnerabilities/:id" component={VulnerabilityDetails} />
+          <Route path="/risks" component={Risks} />
+          <Route path="/risk-library" component={RiskLibrary} />
+          <Route path="/risks/templates" component={RiskLibrary} />
+          <Route path="/risks/:id" component={RiskDetailPage} />
+          <Route path="/risk-responses" component={RiskResponses} />
+          <Route path="/controls" component={Controls} />
+          <Route path="/control-library" component={ControlLibrary} />
+          <Route path="/controls/:id" component={ControlDetailPage} />
+          <Route path="/control-roi" component={ControlROI} />
+          <Route path="/responses" component={Responses} />
+          <Route path="/reports" component={Reports} />
+          <Route path="/integrations" component={Integrations} />
+          <Route path="/legal-entities" component={LegalEntityPage} />
+          <Route path="/legal-entities/:id" component={LegalEntityPage} />
+          <Route path="/cost-modules/risk-mapping" component={RiskCostMappingPage} />
+          <Route path="/cost-modules/:id" component={CostModuleDetail} />
+          <Route path="/cost-modules" component={CostModules} />
+          <Route path="/admin" component={AdminPage} />
+          <Route path="/change-password" component={ChangePasswordPage} />
+          <Route component={NotFound} />
+        </Switch>
+    </Layout>
   );
 }
 

@@ -4,7 +4,7 @@ import { StatsCard } from "@/components/dashboard/stats-card";
 import { RiskBreakdown } from "@/components/dashboard/risk-breakdown";
 import { RiskResponseStatus } from "@/components/dashboard/risk-response-status";
 import { TopRisks } from "@/components/dashboard/top-risks";
-import Layout from "@/components/layout/layout";
+
 import { LossExceedanceCurveModern } from "@/components/ui/loss-exceedance-curve-modern";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
@@ -127,30 +127,16 @@ export default function Dashboard() {
   });
 
   if (isLoading) {
-    return (
-      <Layout
-        pageTitle="Risk Dashboard"
-        pageIcon="DashboardIcon"
-        pageDescription="Overview of cybersecurity risks, controls, and key metrics across your organization."
-      >
-        <DashboardSkeleton />
-      </Layout>
-    );
+    return <DashboardSkeleton />;
   }
 
   if (error) {
     console.error("Dashboard error:", error);
     return (
-      <Layout
-        pageTitle="Risk Dashboard"
-        pageIcon="DashboardIcon"
-        pageDescription="Overview of cybersecurity risks, controls, and key metrics across your organization."
-      >
-        <div className="p-8 text-center">
-          <h2 className="text-xl font-bold text-red-500">Error loading dashboard data</h2>
-          <p className="mt-2 text-gray-600">Please try again later or contact support.</p>
-        </div>
-      </Layout>
+      <div className="p-8 text-center">
+        <h2 className="text-xl font-bold text-red-500">Error loading dashboard data</h2>
+        <p className="mt-2 text-gray-600">Please try again later or contact support.</p>
+      </div>
     );
   }
   
