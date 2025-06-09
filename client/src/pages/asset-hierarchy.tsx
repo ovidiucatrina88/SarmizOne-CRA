@@ -583,33 +583,31 @@ export default function AssetHierarchyPage() {
   };
 
   return (
-    <Layout 
-      pageTitle="Asset Hierarchy Structure" 
-      pageIcon="🏗️" 
-      pageDescription="Visualize your enterprise architecture assets in a hierarchical structure"
-      pageActions={
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add New Asset
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px] bg-gray-800 border-gray-700">
-            <DialogHeader>
-              <DialogTitle className="text-white">Create Hierarchy Asset</DialogTitle>
-              <DialogDescription className="text-gray-300">
-                Add a new asset to your enterprise architecture hierarchy
-              </DialogDescription>
-            </DialogHeader>
-            <HierarchyAssetForm 
-              allAssets={allAssets} 
-              onClose={() => setIsFormOpen(false)} 
-            />
-          </DialogContent>
-        </Dialog>
-      }
-    >
+    <div>
+      <div className="mb-6">
+        <Button 
+          onClick={() => setIsFormOpen(true)}
+          className="flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Add New Asset
+        </Button>
+      </div>
+
+      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+        <DialogContent className="sm:max-w-[600px] bg-gray-800 border-gray-700">
+          <DialogHeader>
+            <DialogTitle className="text-white">Create Hierarchy Asset</DialogTitle>
+            <DialogDescription className="text-gray-300">
+              Add a new asset to your enterprise architecture hierarchy
+            </DialogDescription>
+          </DialogHeader>
+          <HierarchyAssetForm 
+            allAssets={allAssets} 
+            onClose={() => setIsFormOpen(false)} 
+          />
+        </DialogContent>
+      </Dialog>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="hierarchy">Hierarchy Tree</TabsTrigger>

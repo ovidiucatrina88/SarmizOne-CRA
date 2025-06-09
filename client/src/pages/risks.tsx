@@ -109,53 +109,34 @@ export default function Risks() {
 
   if (isLoading) {
     return (
-      <Layout
-        pageTitle="Risk Management"
-        pageIcon="RSK"
-        pageDescription="Identify, assess, and manage security risks using the FAIR-U methodology for quantitative risk analysis."
-        pageActions={pageActions}
-      >
-        <div className="space-y-4">
-          <Card>
-            <div className="p-6">
-              <Skeleton className="h-8 w-full mb-4" />
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
+      <div className="space-y-4">
+        <Card>
+          <div className="p-6">
+            <Skeleton className="h-8 w-full mb-4" />
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
             </div>
-          </Card>
-        </div>
-      
+          </div>
+        </Card>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <Layout
-        pageTitle="Risk Management"
-        pageIcon="RSK"
-        pageDescription="Identify, assess, and manage security risks using the FAIR-U methodology for quantitative risk analysis."
-        pageActions={pageActions}
-      >
-        <div className="p-8 text-center">
-          <h2 className="text-xl font-bold text-red-500">Error loading risks</h2>
-          <p className="mt-2 text-gray-600">
-            Please try again later or contact support.
-          </p>
-        </div>
-      
+      <div className="p-8 text-center">
+        <h2 className="text-xl font-bold text-red-500">Error loading risks</h2>
+        <p className="mt-2 text-gray-600">
+          Please try again later or contact support.
+        </p>
+      </div>
     );
   }
   
   return (
-    <Layout
-      pageTitle="Risk Management"
-      pageIcon="RSK"
-      pageDescription="Identify, assess, and manage security risks using the FAIR-U methodology for quantitative risk analysis."
-      pageActions={pageActions}
-    >
+    <div>
       {!Array.isArray(risks) || risks.length === 0 ? (
         <Card className="p-8">
           <div className="text-center">
@@ -185,6 +166,6 @@ export default function Risks() {
           />
         </DialogContent>
       </Dialog>
-    
+    </div>
   );
 }
