@@ -212,11 +212,7 @@ export default function Dashboard() {
   };
   
   return (
-    <Layout
-      pageTitle="Risk Dashboard"
-      pageIcon="DashboardIcon"
-      pageDescription="Overview of cybersecurity risks, controls, and key metrics across your organization."
-    >
+    <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
@@ -361,6 +357,6 @@ export default function Dashboard() {
           }}
         />
       </div>
-    </Layout>
+    </div>
   );
 }
