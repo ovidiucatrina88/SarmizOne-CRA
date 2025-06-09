@@ -595,6 +595,6 @@ export default function RiskCostMappingPage() {
         </TabsContent>
       </Tabs>
       </div>
-    
+    </Layout>
   );
 }

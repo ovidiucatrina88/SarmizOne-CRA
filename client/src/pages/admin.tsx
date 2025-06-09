@@ -19,7 +19,6 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import Layout from "@/components/layout/layout";
 import { z } from "zod";
 
 // User interfaces and schemas
@@ -484,7 +483,7 @@ export default function AdminPage() {
                         (logs && typeof logs === 'object' && Array.isArray(logs)) ? logs : [];
   
   return (
-    
+    <Layout>
       <div className="container space-y-6 py-4">
       <div className="flex items-center justify-between">
         <div>
