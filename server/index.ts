@@ -35,8 +35,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Configure Passport strategies
-configurePassport();
+// Passport will be configured in the main function
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -71,8 +70,8 @@ app.use((req, res, next) => {
 (async () => {
   console.log("Starting server without database schema fixes");
 
-  // Configure passport asynchronously
-  await configurePassport();
+  // Configure passport
+  configurePassport();
   
   const server = await registerRoutes(app);
 
