@@ -37,8 +37,7 @@ import Layout from "@/components/layout/layout";
 
 function AuthenticatedRoutes() {
   return (
-    <Layout>
-      <Switch>
+    <Switch>
         <Route path="/" component={Dashboard} />
         <Route path="/assets" component={Assets} />
         <Route path="/asset-hierarchy" component={AssetHierarchy} />
@@ -69,7 +68,6 @@ function AuthenticatedRoutes() {
         <Route path="/change-password" component={ChangePasswordPage} />
         <Route component={NotFound} />
       </Switch>
-    </Layout>
   );
 }
 
