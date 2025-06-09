@@ -4,7 +4,7 @@ import { StatsCard } from "@/components/dashboard/stats-card";
 import { RiskBreakdown } from "@/components/dashboard/risk-breakdown";
 import { RiskResponseStatus } from "@/components/dashboard/risk-response-status";
 import { TopRisks } from "@/components/dashboard/top-risks";
-
+import Layout from "@/components/layout/layout";
 import { LossExceedanceCurveModern } from "@/components/ui/loss-exceedance-curve-modern";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
@@ -145,20 +145,38 @@ export default function Dashboard() {
   
   // Show loading state while data is being fetched
   if (isLoading) {
-    return <DashboardSkeleton />;
+    return (
+      <Layout
+        pageTitle="Risk Dashboard"
+        pageIcon="DashboardIcon"
+        pageDescription="Overview of cybersecurity risks, controls, and key metrics across your organization."
+      >
+        <DashboardSkeleton />
+      </Layout>
+    );
   }
 
   // Show error state if there's an error
   if (error) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <p className="text-lg text-red-500">Error loading dashboard data</p>
-      </div>
+      <Layout
+        pageTitle="Risk Dashboard"
+        pageIcon="DashboardIcon"
+        pageDescription="Overview of cybersecurity risks, controls, and key metrics across your organization."
+      >
+        <div className="flex justify-center items-center h-64">
+          <p className="text-lg text-red-500">Error loading dashboard data</p>
+        </div>
+      </Layout>
     );
   }
   
   return (
-    <div>
+    <Layout
+      pageTitle="Risk Dashboard"
+      pageIcon="DashboardIcon"
+      pageDescription="Overview of cybersecurity risks, controls, and key metrics across your organization."
+    >
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
         <StatsCard
@@ -396,7 +414,7 @@ export default function Dashboard() {
           }}
         />
       </div>
-    </div>
+    </Layout>
   );
 }
 
@@ -463,6 +481,6 @@ function DashboardSkeleton() {
           </div>
         </div>
       </div>
-    </div>
+    </Layout>
   );
 }

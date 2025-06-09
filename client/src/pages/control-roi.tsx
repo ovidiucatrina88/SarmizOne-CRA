@@ -1,4 +1,5 @@
 import { ControlROIAnalysis } from "@/components/controls/control-roi-analysis";
+import Layout from "@/components/layout/layout";
 
 export default function ControlROIPage() {
   return (
@@ -8,6 +9,6 @@ export default function ControlROIPage() {
       pageDescription="Analyze the effectiveness and financial impact of security controls to optimize your cybersecurity investment strategy."
     >
       <ControlROIAnalysis />
-    
+    </Layout>
   );
 }
