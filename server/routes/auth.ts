@@ -42,33 +42,33 @@ router.post('/auth/login/local', async (req, res) => {
   try {
     const { username, password } = loginSchema.parse(req.body);
     
-    const result = await authService.authenticateLocal(username, password);
+    const user = await authService.authenticateLocal({ username, password });
     
-    if (!result.success) {
+    if (!user) {
       return res.status(401).json({
         success: false,
-        error: result.error
+        error: 'Invalid username or password'
       });
     }
 
     // Set user session
     (req as any).session.user = {
-      id: result.user!.id,
+      id: user.id,
       authType: 'local',
-      role: result.user!.role,
-      username: result.user!.username,
-      email: result.user!.email,
-      displayName: result.user!.displayName
+      role: user.role,
+      username: user.username,
+      email: user.email,
+      displayName: user.displayName
     };
 
     res.json({
       success: true,
       user: {
-        id: result.user!.id,
-        username: result.user!.username,
-        email: result.user!.email,
-        displayName: result.user!.displayName,
-        role: result.user!.role,
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        displayName: user.displayName,
+        role: user.role,
         authType: 'local'
       }
     });
