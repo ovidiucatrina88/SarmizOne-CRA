@@ -8,6 +8,7 @@ import { ControlList } from "@/components/controls/control-list";
 import { ControlForm } from "@/components/controls/control-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
+import Layout from "@/components/layout/layout";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/layout/layout";
 
@@ -100,6 +101,7 @@ export default function Controls() {
           <ControlForm control={selectedControl} onClose={handleCloseControl} />
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </Layout>
   );
 }

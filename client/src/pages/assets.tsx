@@ -92,19 +92,20 @@ export default function Assets() {
   }
 
   return (
-    <div>
-      <AssetList assets={assets} onEdit={handleEdit} />
+    <Layout>
+      <div>
+        <AssetList assets={assets} onEdit={handleEdit} />
 
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="max-w-6xl w-full">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedAsset ? "Edit Asset" : "Add New Asset"}
-            </DialogTitle>
-          </DialogHeader>
-          <AssetForm asset={selectedAsset} onClose={handleClose} />
-        </DialogContent>
-      </Dialog>
+        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+          <DialogContent className="max-w-6xl w-full">
+            <DialogHeader>
+              <DialogTitle>
+                {selectedAsset ? "Edit Asset" : "Add New Asset"}
+              </DialogTitle>
+            </DialogHeader>
+            <AssetForm asset={selectedAsset} onClose={handleClose} />
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

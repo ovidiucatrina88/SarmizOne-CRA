@@ -118,7 +118,8 @@ export default function VulnerabilitiesPage() {
   };
   
   return (
-    <div>
+    <Layout>
+      <div>
       
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
         <div className="relative flex-1">

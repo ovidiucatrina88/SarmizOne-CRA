@@ -584,7 +584,8 @@ export default function AssetHierarchyPage() {
   };
 
   return (
-    <div>
+    <Layout>
+      <div>
       <div className="mb-6">
         <Button 
           onClick={() => setIsFormOpen(true)}
