@@ -1,37 +1,45 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useToast } from "@/hooks/use-toast";
-import { Shield, User, Lock, ExternalLink } from "lucide-react";
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useMutation } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+import { Lock, Shield, Eye, EyeOff } from 'lucide-react';
 
-interface LoginCredentials {
-  username: string;
-  password: string;
-}
+const loginSchema = z.object({
+  username: z.string().min(1, 'Username is required'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const [, setLocation] = useLocation();
-  const [credentials, setCredentials] = useState<LoginCredentials>({
-    username: "",
-    password: ""
-  });
+  const [showPassword, setShowPassword] = useState(false);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginForm>({
+    resolver: zodResolver(loginSchema),
+  });
 
   const loginMutation = useMutation({
-    mutationFn: async (creds: LoginCredentials) => {
+    mutationFn: async (data: LoginForm) => {
       const response = await fetch('/api/auth/login/local', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(creds),
+        body: JSON.stringify(data),
       });
 
       if (!response.ok) {
@@ -43,161 +51,117 @@ export default function LoginPage() {
     },
     onSuccess: (data) => {
       toast({
-        title: "Login Successful",
-        description: `Welcome back, ${data.user.displayName}!`,
+        title: 'Login Successful',
+        description: `Welcome back, ${data.user.displayName || data.user.username}!`,
       });
       
-      // Invalidate auth queries to refresh user data
-      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      
       // Redirect to dashboard
-      setLocation("/");
+      setLocation('/');
     },
     onError: (error: Error) => {
       toast({
-        title: "Login Failed",
+        title: 'Login Failed',
         description: error.message,
-        variant: "destructive",
+        variant: 'destructive',
       });
     },
   });
 
-  const handleLocalLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!credentials.username || !credentials.password) {
-      toast({
-        title: "Missing Credentials",
-        description: "Please enter both username and password",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    loginMutation.mutate(credentials);
-  };
-
-  const handleSSOLogin = () => {
-    // Redirect to SSO login endpoint
-    window.location.href = '/api/login';
+  const onSubmit = (data: LoginForm) => {
+    loginMutation.mutate(data);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 bg-blue-600 rounded-full">
-              <Shield className="h-8 w-8 text-white" />
-            </div>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="space-y-4 text-center">
+          <div className="mx-auto w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
+            <Shield className="h-6 w-6 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Cybersecurity Risk Platform
-          </h1>
-          <p className="text-gray-600">
-            Secure access to your risk management dashboard
-          </p>
-        </div>
-
-        <Card className="shadow-lg border-0">
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl text-center">Sign In</CardTitle>
-            <CardDescription className="text-center">
-              Choose your authentication method
+          <div>
+            <CardTitle className="text-2xl">Cybersecurity Risk Platform</CardTitle>
+            <CardDescription>
+              Sign in to your account to continue
             </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="local" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="local" className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Local Account
-                </TabsTrigger>
-                <TabsTrigger value="sso" className="flex items-center gap-2">
-                  <ExternalLink className="h-4 w-4" />
-                  Single Sign-On
-                </TabsTrigger>
-              </TabsList>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                type="text"
+                placeholder="Enter your username"
+                {...register('username')}
+              />
+              {errors.username && (
+                <p className="text-sm text-destructive">{errors.username.message}</p>
+              )}
+            </div>
 
-              <TabsContent value="local" className="space-y-4 mt-6">
-                <form onSubmit={handleLocalLogin} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                      id="username"
-                      type="text"
-                      placeholder="Enter your username"
-                      value={credentials.username}
-                      onChange={(e) => setCredentials(prev => ({ 
-                        ...prev, 
-                        username: e.target.value 
-                      }))}
-                      disabled={loginMutation.isPending}
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="Enter your password"
-                      value={credentials.password}
-                      onChange={(e) => setCredentials(prev => ({ 
-                        ...prev, 
-                        password: e.target.value 
-                      }))}
-                      disabled={loginMutation.isPending}
-                    />
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    className="w-full"
-                    disabled={loginMutation.isPending}
-                  >
-                    {loginMutation.isPending ? (
-                      <>
-                        <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" />
-                        Signing In...
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="h-4 w-4 mr-2" />
-                        Sign In
-                      </>
-                    )}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="sso" className="space-y-4 mt-6">
-                <Alert>
-                  <ExternalLink className="h-4 w-4" />
-                  <AlertDescription>
-                    You'll be redirected to the SSO provider to authenticate securely.
-                  </AlertDescription>
-                </Alert>
-                
-                <Button 
-                  onClick={handleSSOLogin}
-                  className="w-full"
-                  variant="outline"
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  {...register('password')}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowPassword(!showPassword)}
                 >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  Continue with SSO
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
                 </Button>
-              </TabsContent>
-            </Tabs>
-          </CardContent>
-        </Card>
+              </div>
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password.message}</p>
+              )}
+            </div>
 
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-600">
-            Need access? Contact your system administrator.
-          </p>
-        </div>
-      </div>
+            {loginMutation.isError && (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  {loginMutation.error?.message || 'Login failed. Please check your credentials.'}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loginMutation.isPending}
+            >
+              {loginMutation.isPending ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                  Signing in...
+                </>
+              ) : (
+                <>
+                  <Lock className="h-4 w-4 mr-2" />
+                  Sign In
+                </>
+              )}
+            </Button>
+          </form>
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Contact your administrator if you need access
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
