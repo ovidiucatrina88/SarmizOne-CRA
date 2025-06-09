@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { useLocation, useRoute } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import Layout from "@/components/layout/layout";
 
 export default function Assets() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);

@@ -5,6 +5,7 @@ import { Asset, Risk } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
+import Layout from "@/components/layout/layout";
 
 import {
   Card,

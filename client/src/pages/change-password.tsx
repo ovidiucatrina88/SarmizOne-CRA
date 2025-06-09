@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { CheckCircle, XCircle, Eye, EyeOff } from "lucide-react";
+import Layout from "@/components/layout/layout";
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, "Current password is required"),
