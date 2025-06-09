@@ -14,8 +14,11 @@ RUN npm ci
 # Copy application code
 COPY . .
 
-# Build the application
+# Build the client first
 RUN npm run build
+
+# Build the server with custom configuration to exclude dev dependencies
+RUN node build.config.js
 
 # Production stage
 FROM node:18-alpine AS production
@@ -52,4 +55,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD curl -f http://localhost:${PORT:-5000}/health || exit 1
 
 # Start the application
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/production.js"]

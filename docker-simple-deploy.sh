@@ -43,12 +43,14 @@ stop_existing() {
 # Function to build image
 build_image() {
     echo "Building Docker image..."
+    echo "This will create a production build without Vite dependencies..."
     docker build -t risk-app:latest .
     
     if [ $? -eq 0 ]; then
         echo "✓ Image built successfully"
     else
         echo "ERROR: Failed to build image"
+        echo "Check build logs for details"
         exit 1
     fi
 }

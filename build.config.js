@@ -1,0 +1,25 @@
+// Build configuration for production
+const esbuild = require('esbuild');
+
+esbuild.build({
+  entryPoints: ['server/production.ts'],
+  bundle: true,
+  outdir: 'dist',
+  platform: 'node',
+  format: 'esm',
+  target: 'node18',
+  external: [
+    // External packages that should not be bundled
+    'pg',
+    'express',
+    'drizzle-orm',
+    'bcryptjs',
+    'passport',
+    'express-session',
+    'connect-pg-simple',
+    'dotenv'
+  ],
+  define: {
+    'process.env.NODE_ENV': '"production"'
+  }
+}).catch(() => process.exit(1));
