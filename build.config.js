@@ -14,7 +14,6 @@ esbuild.build({
     'express',
     'drizzle-orm',
     'bcryptjs',
-    'passport',
     'express-session',
     'connect-pg-simple',
     'dotenv',
@@ -22,6 +21,9 @@ esbuild.build({
     'ws',
     'openai',
     'axios',
+    'passport',
+    'passport-local',
+    'passport-openidconnect',
     // Node.js built-in modules
     'url',
     'crypto',

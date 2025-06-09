@@ -1,7 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import session from "express-session";
-import passport from "passport";
 import connectPgSimple from "connect-pg-simple";
 import { configurePassport } from "./production-auth";
 import { pool } from "./db";
@@ -32,10 +31,8 @@ app.use(session({
   }
 }));
 
-// Configure Passport
+// Configure Authentication (passport-free for ESM compatibility)
 configurePassport();
-app.use(passport.initialize());
-app.use(passport.session());
 
 // Logging middleware
 function log(message: string, source = "express") {

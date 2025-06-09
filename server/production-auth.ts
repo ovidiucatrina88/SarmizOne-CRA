@@ -1,20 +1,19 @@
-import passport from 'passport';
 import { Request, Response, NextFunction } from 'express';
 
-// Simplified production auth configuration without OIDC
+// Production auth configuration without passport dependencies
 export const configurePassport = () => {
-  console.log('Production mode: Authentication bypassed');
-  // No OIDC configuration in production
+  console.log('Production mode: Passport-free authentication configured');
+  // No passport configuration needed in production
 };
 
 export const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
-  // Bypass authentication in production
+  // Production deployment with bypassed authentication for ESM compatibility
   if (process.env.BYPASS_AUTH === 'true') {
     return next();
   }
   
-  // Default authentication check if bypass is disabled
-  if (req.isAuthenticated()) {
+  // Basic session check without passport dependency
+  if (req.session && (req.session as any).user) {
     return next();
   }
   res.status(401).json({ error: 'Authentication required' });
