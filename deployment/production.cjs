@@ -6527,7 +6527,10 @@ app.use((0, import_express_session.default)({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: true,
+    secure: false,
+    // Allow HTTP in production for direct server access
+    httpOnly: true,
+    sameSite: "lax",
     maxAge: 7 * 24 * 60 * 60 * 1e3
     // 1 week
   }
