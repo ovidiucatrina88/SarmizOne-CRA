@@ -61,25 +61,18 @@ export default function Controls() {
 
   if (isLoading) {
     return (
-      <Layout
-        pageTitle="Security Controls"
-        pageIcon="CTL"
-        pageDescription="Implement and monitor security controls to reduce risk exposure and improve your security posture."
-        pageActions={pageActions}
-      >
-        <div className="space-y-4">
-          <Card>
-            <div className="p-6">
-              <Skeleton className="h-8 w-full mb-4" />
-              <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" />
-                ))}
-              </div>
+      <div className="space-y-4">
+        <Card>
+          <div className="p-6">
+            <Skeleton className="h-8 w-full mb-4" />
+            <div className="space-y-2">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-12 w-full" />
+              ))}
             </div>
-          </Card>
-        </div>
-      
+          </div>
+        </Card>
+      </div>
     );
   }
 

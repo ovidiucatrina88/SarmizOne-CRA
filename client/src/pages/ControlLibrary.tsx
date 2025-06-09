@@ -405,7 +405,7 @@ export default function ControlLibrary() {
   }
 
   return (
-    
+    <div>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold">Control Library</h2>
         <div className="flex items-center gap-2">
@@ -962,6 +962,6 @@ export default function ControlLibrary() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    
+    </div>
   );
 }
