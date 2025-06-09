@@ -1,0 +1,53 @@
+Failed to initialize auth configuration: error: relation "auth_config" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async /app/node_modules/drizzle-orm/node-postgres/session.cjs:118:22
+    at async _AuthService.initializeAuth (/app/dist/production.cjs:5436:24)
+    at async _AuthService.getAuthConfig (/app/dist/production.cjs:5459:7)
+    at async _AuthService.authenticateLocal (/app/dist/production.cjs:5507:20)
+    at async /app/dist/production.cjs:5689:18 {
+  length: 111,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '277',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1392',
+  routine: 'parserOpenTable'
+}
+Local login error: error: relation "auth_config" does not exist
+    at /app/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async /app/node_modules/drizzle-orm/node-postgres/session.cjs:118:22
+    at async _AuthService.initializeAuth (/app/dist/production.cjs:5436:24)
+    at async _AuthService.getAuthConfig (/app/dist/production.cjs:5459:7)
+    at async _AuthService.authenticateLocal (/app/dist/production.cjs:5507:20)
+    at async /app/dist/production.cjs:5689:18 {
+  length: 111,
+  severity: 'ERROR',
+  code: '42P01',
+  detail: undefined,
+  hint: undefined,
+  position: '277',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '1392',
+  routine: 'parserOpenTable'
+}
+12:40:14 PM [express] POST /api/auth/login/local 400 in 14ms :: {"success":false,"error":"Invalid log…
