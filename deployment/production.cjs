@@ -6513,6 +6513,7 @@ init_db();
 var import_fs = __toESM(require("fs"), 1);
 var import_path = __toESM(require("path"), 1);
 var app = (0, import_express17.default)();
+app.set("trust proxy", 1);
 app.use(import_express17.default.json({ limit: "10mb" }));
 app.use(import_express17.default.urlencoded({ extended: true }));
 var PgSession = (0, import_connect_pg_simple.default)(import_express_session.default);
@@ -6526,11 +6527,15 @@ app.use((0, import_express_session.default)({
   secret: process.env.SESSION_SECRET || "keyboard cat",
   resave: false,
   saveUninitialized: false,
+  name: "sessionId",
   cookie: {
-    secure: false,
-    // Allow HTTP in production for direct server access
+    secure: true,
+    // Safe with HTTPS proxy
     httpOnly: true,
     sameSite: "lax",
+    domain: void 0,
+    // Let browser decide
+    path: "/",
     maxAge: 7 * 24 * 60 * 60 * 1e3
     // 1 week
   }

@@ -8,6 +8,7 @@ import fs from "fs";
 import path from "path";
 
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy (Nginx)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -25,10 +26,13 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'keyboard cat',
   resave: false,
   saveUninitialized: false,
+  name: 'sessionId',
   cookie: { 
-    secure: false, // Allow HTTP in production for direct server access
+    secure: true, // Safe with HTTPS proxy
     httpOnly: true,
     sameSite: 'lax',
+    domain: undefined, // Let browser decide
+    path: '/',
     maxAge: 7 * 24 * 60 * 60 * 1000 // 1 week
   }
 }));
