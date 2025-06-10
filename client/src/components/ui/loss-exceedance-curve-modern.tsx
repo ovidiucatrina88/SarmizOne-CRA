@@ -610,6 +610,11 @@ export function LossExceedanceCurveModern({
       const unacceptableRisk = probability > toleranceProbability 
         ? (probability - toleranceProbability) 
         : 0;
+      
+      // Calculate acceptable risk buffer (tolerance exceeding current risk)
+      const acceptableRiskBuffer = toleranceProbability > probability 
+        ? (toleranceProbability - probability) 
+        : 0;
         
       // Add data point
       data.push({
@@ -618,6 +623,7 @@ export function LossExceedanceCurveModern({
         previousProbability,
         toleranceProbability,
         unacceptableRisk,
+        acceptableRiskBuffer,
         formattedLoss: formatExposureValue(lossExposure),
         isThresholdPoint: false,
         exposureData: {
