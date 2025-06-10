@@ -388,18 +388,42 @@ export function RiskList({
                       {/* Actions */}
                       <div className="flex items-center justify-end space-x-1" onClick={(e) => e.stopPropagation()}>
                         {isTemplateView && onCreateFromTemplate ? (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onCreateFromTemplate(risk.id);
-                            }}
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            <ExternalLink className="h-4 w-4 mr-1" />
-                            Assign
-                          </Button>
+                          <>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onCreateFromTemplate(risk.id);
+                              }}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              <ExternalLink className="h-4 w-4 mr-1" />
+                              Assign
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(risk);
+                              }}
+                              className="text-gray-300 hover:bg-gray-600"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(risk);
+                              }}
+                              className="text-gray-300 hover:bg-gray-600 hover:text-red-400"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
                         ) : (
                           <>
                             <Button
@@ -426,30 +450,30 @@ export function RiskList({
                                 <ExternalLink className="h-4 w-4" />
                               </Link>
                             </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(risk);
+                              }}
+                              className="text-gray-300 hover:bg-gray-600"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteClick(risk);
+                              }}
+                              className="text-gray-300 hover:bg-gray-600 hover:text-red-400"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </>
                         )}
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEdit(risk);
-                          }}
-                          className="text-gray-300 hover:bg-gray-600"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteClick(risk);
-                          }}
-                          className="text-gray-300 hover:bg-gray-600 hover:text-red-400"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
                   </div>
