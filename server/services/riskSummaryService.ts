@@ -118,7 +118,7 @@ export class RiskSummaryService {
       const exposureCurveData = this.generateExposureCurveData(riskData);
       
       const now = new Date();
-      const summaryData: InsertRiskSummary = {
+      const summaryData = {
         year: now.getFullYear(),
         month: now.getMonth() + 1,
         legalEntityId: legalEntityId || null,
@@ -143,7 +143,7 @@ export class RiskSummaryService {
         percentile99Exposure: stats.p99,
         
         // Exposure curve data for visualization
-        exposureCurveData: JSON.stringify(exposureCurveData),
+        exposureCurveData: exposureCurveData,
         
         // Legacy compatibility fields
         averageExposure: stats.avg,
