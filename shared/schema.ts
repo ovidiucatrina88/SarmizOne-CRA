@@ -632,8 +632,8 @@ export const insertAssetRelationshipSchema = createInsertSchema(assetRelationshi
 export type InsertAssetRelationship = z.infer<typeof insertAssetRelationshipSchema>;
 
 /**
- * Risk Summary table to store annual risk exposure data
- * Used for Loss Exceedance Curve historical comparison
+ * Risk Summary table to store comprehensive risk analytics and exposure data
+ * Used for dashboard metrics and Loss Exceedance Curve calculations
  */
 export const riskSummaries = pgTable('risk_summaries', {
   id: serial('id').primaryKey(),
@@ -641,16 +641,33 @@ export const riskSummaries = pgTable('risk_summaries', {
   month: integer('month').notNull(),
   legalEntityId: text('legal_entity_id'), // Reference to entity_id in legalEntities
   
-  // SIMPLIFIED APPROACH - These are the primary fields to use going forward
-  // for all risk exposure calculations and visualizations:
-  minimumExposure: real('minimum_exposure').notNull().default(0),      // Represents 10th percentile
-  averageExposure: real('average_exposure').notNull().default(0),      // Represents most likely value
-  maximumExposure: real('maximum_exposure').notNull().default(0),      // Represents 90th percentile
+  // Risk Count Metrics
+  totalRisks: integer('total_risks').notNull().default(0),
+  criticalRisks: integer('critical_risks').notNull().default(0),
+  highRisks: integer('high_risks').notNull().default(0),
+  mediumRisks: integer('medium_risks').notNull().default(0),
+  lowRisks: integer('low_risks').notNull().default(0),
   
-  // DEPRECATED FIELDS - These are duplicates that should be phased out:
-  tenthPercentileExposure: real('tenth_percentile_exposure').notNull().default(0),       // Same as minimumExposure
-  mostLikelyExposure: real('most_likely_exposure').notNull().default(0),                 // Same as averageExposure
-  ninetiethPercentileExposure: real('ninetieth_percentile_exposure').notNull().default(0), // Same as maximumExposure
+  // Risk Value Metrics
+  totalInherentRisk: real('total_inherent_risk').notNull().default(0),
+  totalResidualRisk: real('total_residual_risk').notNull().default(0),
+  
+  // Exposure Statistics for Loss Exceedance Curve
+  minimumExposure: real('minimum_exposure').notNull().default(0),
+  maximumExposure: real('maximum_exposure').notNull().default(0),
+  meanExposure: real('mean_exposure').notNull().default(0),
+  medianExposure: real('median_exposure').notNull().default(0),
+  percentile95Exposure: real('percentile_95_exposure').notNull().default(0),
+  percentile99Exposure: real('percentile_99_exposure').notNull().default(0),
+  
+  // Exposure Curve Data (JSON array of probability/impact pairs)
+  exposureCurveData: json('exposure_curve_data').$type<Array<{probability: number, impact: number}>>().default([]),
+  
+  // DEPRECATED FIELDS - Legacy compatibility
+  averageExposure: real('average_exposure').notNull().default(0),
+  tenthPercentileExposure: real('tenth_percentile_exposure').notNull().default(0),
+  mostLikelyExposure: real('most_likely_exposure').notNull().default(0),
+  ninetiethPercentileExposure: real('ninetieth_percentile_exposure').notNull().default(0),
   
   // Standard date tracking
   createdAt: timestamp('created_at').notNull().defaultNow(),

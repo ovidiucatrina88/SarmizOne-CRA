@@ -51,8 +51,31 @@ router.get('/summary', async (req, res) => {
     const recentLogs = allLogs.slice(0, 10);
     
     // Return dashboard data
+    // Get latest risk summary from centralized service
+    const latestRiskSummary = await riskSummaryService.getLatestRiskSummary();
+    
     return sendSuccess(res, {
-      riskSummary: {
+      riskSummary: latestRiskSummary ? {
+        totalRisks: latestRiskSummary.totalRisks,
+        criticalRisks: latestRiskSummary.criticalRisks,
+        highRisks: latestRiskSummary.highRisks,
+        mediumRisks: latestRiskSummary.mediumRisks,
+        lowRisks: latestRiskSummary.lowRisks,
+        totalInherentRisk: latestRiskSummary.totalInherentRisk,
+        totalResidualRisk: latestRiskSummary.totalResidualRisk,
+        riskReduction: latestRiskSummary.totalInherentRisk > 0 
+          ? (1 - (latestRiskSummary.totalResidualRisk / latestRiskSummary.totalInherentRisk)) * 100 
+          : 0,
+        // Include exposure curve data
+        exposureCurveData: latestRiskSummary.exposureCurveData,
+        minimumExposure: latestRiskSummary.minimumExposure,
+        maximumExposure: latestRiskSummary.maximumExposure,
+        meanExposure: latestRiskSummary.meanExposure,
+        medianExposure: latestRiskSummary.medianExposure,
+        percentile95Exposure: latestRiskSummary.percentile95Exposure,
+        percentile99Exposure: latestRiskSummary.percentile99Exposure
+      } : {
+        // Fallback to calculated values if no summary exists
         totalRisks,
         criticalRisks,
         highRisks,
@@ -89,6 +112,22 @@ router.get('/summary', async (req, res) => {
       },
       recentActivity: recentLogs || []
     });
+  } catch (error) {
+    return sendError(res, error);
+  }
+});
+
+// Get latest risk summary (dedicated endpoint for exposure curve data)
+router.get('/risk-summary/latest', async (req, res) => {
+  try {
+    const { entityId } = req.query;
+    const summary = await riskSummaryService.getLatestRiskSummary(entityId as string);
+    
+    if (!summary) {
+      return sendError(res, { message: 'No risk summary found' }, 404);
+    }
+    
+    return sendSuccess(res, summary);
   } catch (error) {
     return sendError(res, error);
   }
