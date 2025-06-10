@@ -18,10 +18,13 @@ import {
   activityLogs,
   legalEntities,
   riskControls,
+  riskCosts,
   riskSummaries,
   InsertRiskSummary,
   controlLibrary,
-  riskLibrary
+  riskLibrary,
+  assetRelationships,
+  vulnerabilityAssets
 } from "@shared/schema";
 import { db } from "../db";
 import { eq, desc, inArray, sql, and, or, isNull } from "drizzle-orm";
@@ -108,6 +111,116 @@ export class DatabaseStorage {
   async deleteAsset(id: number): Promise<boolean> {
     await db.delete(assets).where(eq(assets.id, id));
     return true;
+  }
+
+  async deleteAssetWithCascade(id: number): Promise<boolean> {
+    // Get the asset to find its assetId
+    const asset = await this.getAsset(id);
+    if (!asset) {
+      return false;
+    }
+
+    console.log(`Starting cascade deletion for asset ${asset.assetId} (ID: ${id})`);
+
+    try {
+      // Step 1: Find all risks associated with this asset
+      const allRisks = await db.select().from(risks);
+      const affectedRisks = allRisks.filter(risk => 
+        risk.associatedAssets && risk.associatedAssets.includes(asset.assetId)
+      );
+
+      console.log(`Found ${affectedRisks.length} risks associated with asset ${asset.assetId}`);
+
+      // Step 2: For each affected risk, remove the asset reference or delete the risk if it becomes orphaned
+      for (const risk of affectedRisks) {
+        const updatedAssets = risk.associatedAssets.filter(a => a !== asset.assetId);
+        
+        if (updatedAssets.length === 0) {
+          // Risk has no more assets - delete the risk and its dependencies
+          console.log(`Risk ${risk.riskId} has no remaining assets - deleting risk and dependencies`);
+          
+          // Delete risk-control relationships
+          await db.delete(riskControls).where(eq(riskControls.riskId, risk.id));
+          
+          // Delete risk responses
+          await db.delete(riskResponses).where(eq(riskResponses.riskId, risk.riskId));
+          
+          // Delete risk costs
+          await db.delete(riskCosts).where(eq(riskCosts.riskId, risk.id));
+          
+          // Delete the risk itself
+          await db.delete(risks).where(eq(risks.id, risk.id));
+          
+          console.log(`Deleted risk ${risk.riskId} and all its dependencies`);
+        } else {
+          // Update the risk to remove the asset reference
+          await db.update(risks)
+            .set({ associatedAssets: updatedAssets })
+            .where(eq(risks.id, risk.id));
+          
+          console.log(`Updated risk ${risk.riskId} - removed asset ${asset.assetId} from associations`);
+        }
+      }
+
+      // Step 3: Delete asset relationships
+      await db.delete(assetRelationships)
+        .where(or(
+          eq(assetRelationships.sourceAssetId, id),
+          eq(assetRelationships.targetAssetId, id)
+        ));
+
+      console.log(`Deleted asset relationships for asset ${asset.assetId}`);
+
+      // Step 4: Update vulnerability_assets table if it exists
+      try {
+        await db.delete(vulnerabilityAssets).where(eq(vulnerabilityAssets.assetId, id));
+        console.log(`Deleted vulnerability associations for asset ${asset.assetId}`);
+      } catch (error) {
+        // Vulnerability table might not exist or be empty - continue
+        console.log(`No vulnerability associations to delete for asset ${asset.assetId}`);
+      }
+
+      // Step 5: Delete the asset itself
+      await db.delete(assets).where(eq(assets.id, id));
+      console.log(`Deleted asset ${asset.assetId} (ID: ${id})`);
+
+      // Step 6: Update risk summaries to reflect the changes
+      try {
+        const { riskSummaryService } = await import('./riskSummaryService');
+        await riskSummaryService.updateRiskSummaries();
+        console.log(`Updated risk summaries after asset deletion`);
+      } catch (error) {
+        console.error(`Failed to update risk summaries:`, error);
+      }
+
+      // Step 7: Log the cascade deletion activity
+      await this.createActivityLog({
+        entityType: 'asset',
+        entityId: id.toString(),
+        actionType: 'cascade_delete',
+        description: `Asset ${asset.assetId} deleted with cascade operations affecting ${affectedRisks.length} risks`,
+        userId: 'system',
+        timestamp: new Date(),
+        details: JSON.stringify({
+          deletedAssetId: asset.assetId,
+          affectedRisksCount: affectedRisks.length,
+          cascadeOperations: [
+            'asset_relationships_deleted',
+            'vulnerability_associations_deleted', 
+            'risk_references_updated',
+            'orphaned_risks_deleted',
+            'risk_summaries_updated'
+          ]
+        })
+      });
+
+      console.log(`Completed cascade deletion for asset ${asset.assetId}`);
+      return true;
+
+    } catch (error) {
+      console.error(`Error during cascade deletion of asset ${asset.assetId}:`, error);
+      throw error;
+    }
   }
 
   /**

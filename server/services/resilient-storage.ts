@@ -113,6 +113,10 @@ export class ResilientStorage implements IStorage {
   async deleteAsset(id: number): Promise<boolean> {
     return this.getCurrentStorage().deleteAsset(id);
   }
+
+  async deleteAssetWithCascade(id: number): Promise<boolean> {
+    return this.getCurrentStorage().deleteAssetWithCascade(id);
+  }
   
   // RISK METHODS
   

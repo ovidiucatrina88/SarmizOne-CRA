@@ -35,6 +35,7 @@ export interface IStorage {
   createAsset(asset: InsertAsset): Promise<Asset>;
   updateAsset(id: number, asset: Partial<Asset>): Promise<Asset | undefined>;
   deleteAsset(id: number): Promise<boolean>;
+  deleteAssetWithCascade(id: number): Promise<boolean>;
 
   // Risks
   getAllRisks(): Promise<Risk[]>;
@@ -248,6 +249,12 @@ export class MemStorage implements IStorage {
     
     // Now delete the asset
     return this.assets.delete(id);
+  }
+
+  async deleteAssetWithCascade(id: number): Promise<boolean> {
+    // For in-memory storage, cascade deletion is the same as regular deletion
+    // since we already handle risk associations in deleteAsset
+    return this.deleteAsset(id);
   }
 
   // Risks
