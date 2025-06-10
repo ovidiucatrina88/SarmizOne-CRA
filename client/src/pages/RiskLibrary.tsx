@@ -10,7 +10,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { RefreshCw, PlusCircle, Plus, Search } from "lucide-react";
+import { RefreshCw, PlusCircle, Plus, Search, Trash2 } from "lucide-react";
 import { RiskList } from "@/components/risks/risk-list";
 import { RiskForm } from "@/components/risks";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -91,6 +91,37 @@ export default function RiskLibrary() {
   const handleEdit = (risk: Risk) => {
     setSelectedRisk(risk);
     setIsCreateModalOpen(true);
+  };
+
+  const handleDelete = async (template: RiskLibraryItem) => {
+    if (!confirm(`Are you sure you want to delete the risk template "${template.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/risk-library/${template.id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete risk template');
+      }
+
+      // Invalidate queries to refresh the list
+      queryClient.invalidateQueries({ queryKey: ["/api/risks", "templates"] });
+      
+      toast({
+        title: "Template deleted",
+        description: "Risk template has been successfully deleted."
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error deleting template",
+        description: error.message || "Failed to delete risk template",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleClose = () => {
@@ -389,6 +420,14 @@ export default function RiskLibrary() {
                                 className="border-gray-500 text-gray-300 hover:bg-gray-600"
                               >
                                 <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => handleDelete(template)}
+                                className="border-red-500 text-red-300 hover:bg-red-600 hover:text-white"
+                              >
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                               <Button 
                                 size="sm" 
