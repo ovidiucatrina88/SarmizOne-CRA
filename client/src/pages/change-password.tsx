@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { CheckCircle, XCircle, Eye, EyeOff } from "lucide-react";
@@ -106,18 +107,24 @@ export default function ChangePasswordPage() {
       pageTitle="Change Password"
       pageDescription="Update your account password securely"
     >
-      <div className="container mx-auto p-6 max-w-2xl">
-        <Card>
-          <CardHeader>
-            <CardTitle>Change Password</CardTitle>
-            <CardDescription>
-              Update your account password. Make sure to use a strong password.
-            </CardDescription>
-          </CardHeader>
-        <CardContent>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Current Password */}
-            <div className="space-y-2">
+      <div className="container mx-auto p-6 max-w-4xl">
+        <Tabs defaultValue="change-password" className="w-full">
+          <TabsList className="grid w-full grid-cols-1">
+            <TabsTrigger value="change-password">Change Password</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="change-password">
+            <Card>
+              <CardHeader>
+                <CardTitle>Change Password</CardTitle>
+                <CardDescription>
+                  Update your account password. Make sure to use a strong password.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    {/* Current Password */}
+                    <div className="space-y-2">
               <Label htmlFor="currentPassword">Current Password</Label>
               <div className="relative">
                 <Input
@@ -267,8 +274,10 @@ export default function ChangePasswordPage() {
               {changePasswordMutation.isPending ? "Changing Password..." : "Change Password"}
             </Button>
           </form>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+          </TabsContent>
+        </Tabs>
       </div>
     </Layout>
   );
