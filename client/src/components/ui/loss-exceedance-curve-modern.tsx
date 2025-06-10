@@ -93,11 +93,11 @@ const formatExposure = (value: number | undefined) => {
 
 // Default tolerance thresholds
 const DEFAULT_THRESHOLDS = {
-  FULL_ACCEPTANCE: 10000000,      // 100% probability at $10M
-  HIGH_ACCEPTANCE: 50000000,      // 75% probability at $50M
-  MEDIUM_ACCEPTANCE: 75000000,    // 50% probability at $75M
-  LOW_ACCEPTANCE: 100000000,      // 25% probability at $100M
-  ZERO_ACCEPTANCE: 500000000      // 0% probability at $500M+
+  FULL_ACCEPTANCE: 2600000,       // 100% acceptable at $2.6M
+  HIGH_ACCEPTANCE: 5000000,       // 75% acceptable at $5M
+  MEDIUM_ACCEPTANCE: 10000000,    // 50% acceptable at $10M
+  LOW_ACCEPTANCE: 20000000,       // 25% acceptable at $20M
+  ZERO_ACCEPTANCE: 50000000       // 0% acceptable at $50M+
 };
 
 // Custom tooltip for the Loss Exceedance Curve
@@ -519,100 +519,71 @@ export function LossExceedanceCurveModern({
       toleranceThresholds.zeroAcceptance // 0% acceptance
     ].filter(p => p <= maxExposure * 1.2);
     
+    // Extract actual risk exposure values from database
+    const riskExposures = filteredRisks.map(risk => {
+      const residualRisk = ensureFiniteNumber(risk.residualRisk || risk.inherentRisk || 0);
+      return residualRisk;
+    }).filter(exposure => exposure > 0).sort((a, b) => b - a); // Sort descending for exceedance calculation
+    
+    const totalRisks = riskExposures.length;
+    if (totalRisks === 0) return [];
+    
     // Create evenly distributed points between 0 and maxExposure*1.2
     for (let i = 0; i <= numPoints; i++) {
       const lossExposure = i * (maxExposure * 1.2 / numPoints);
       
-      // Calculate probability based on position relative to exposure values - more realistic curve
-      let probability;
-      if (lossExposure <= 0) {
-        probability = 85; // Start lower to allow green buffer areas
-      } 
-      else if (lossExposure <= minExposure) {
-        // Between $0 and minimum: probability drops from 85% to 70%
-        probability = 85 - ((lossExposure / minExposure) * 15);
-      } 
-      else if (lossExposure <= avgExposure) {
-        // Between minimum and average: probability drops from 70% to 40%
-        const positionRatio = (lossExposure - minExposure) / (avgExposure - minExposure);
-        probability = 70 - (positionRatio * 30);
-      } 
-      else if (lossExposure <= maxExposure) {
-        // Between average and maximum: probability drops from 40% to 15%
-        const positionRatio = (lossExposure - avgExposure) / (maxExposure - avgExposure);
-        probability = 40 - (positionRatio * 25);
-      } 
-      else {
-        // Above maximum: probability approaches 0%
-        probability = Math.max(0, 15 - ((lossExposure - maxExposure) / (maxExposure * 0.2)) * 15);
-      }
+      // Calculate actual probability based on database risk values
+      // Probability = percentage of risks that have exposure >= lossExposure
+      const risksExceedingLoss = riskExposures.filter(exposure => exposure >= lossExposure);
+      const probability = (risksExceedingLoss.length / totalRisks) * 100;
       
-      // Previous probability (optionally)
+      // Previous probability based on actual historical data
       let previousProbability = null;
-      if (previousData) {
-        const prevMinExposure = previousData.minimum;
-        const prevMaxExposure = previousData.maximum;
-        const prevAvgExposure = previousData.average;
+      if (previousData && filteredRisks.length > 0) {
+        // Use inherent risk as proxy for previous risk values
+        const previousRiskExposures = filteredRisks.map(risk => {
+          const inherentRisk = ensureFiniteNumber(risk.inherentRisk || 0);
+          return inherentRisk;
+        }).filter(exposure => exposure > 0);
         
-        if (lossExposure <= 0) {
-          previousProbability = 100;
-        } 
-        else if (lossExposure <= prevMinExposure) {
-          previousProbability = 100 - ((lossExposure / prevMinExposure) * 10);
-        } 
-        else if (lossExposure <= prevAvgExposure) {
-          const positionRatio = (lossExposure - prevMinExposure) / (prevAvgExposure - prevMinExposure);
-          previousProbability = 90 - (positionRatio * 40);
-        } 
-        else if (lossExposure <= prevMaxExposure) {
-          const positionRatio = (lossExposure - prevAvgExposure) / (prevMaxExposure - prevAvgExposure);
-          previousProbability = 50 - (positionRatio * 40);
-        } 
-        else {
-          previousProbability = Math.max(0, 10 - ((lossExposure - prevMaxExposure) / (prevMaxExposure * 0.2)) * 10);
+        if (previousRiskExposures.length > 0) {
+          const prevRisksExceedingLoss = previousRiskExposures.filter(exposure => exposure >= lossExposure);
+          previousProbability = (prevRisksExceedingLoss.length / previousRiskExposures.length) * 100;
         }
       }
       
-      // Calculate tolerance level based on thresholds with smooth gradients
+      // Calculate tolerance level based on fixed organizational thresholds
       let toleranceProbability;
       
-      // Create adaptive tolerance curve that scales with actual data
-      // Use data-driven thresholds instead of fixed values
-      const dataMinThreshold = minExposure * 0.8;      // 100% tolerance at 80% of min exposure
-      const dataLowThreshold = avgExposure * 0.6;      // 85% tolerance at 60% of avg exposure
-      const dataMedThreshold = avgExposure * 1.0;      // 70% tolerance at avg exposure
-      const dataHighThreshold = avgExposure * 1.4;     // 45% tolerance at 140% of avg exposure
-      const dataMaxThreshold = maxExposure * 0.8;      // 0% tolerance at 80% of max exposure
-      
-      // Smooth tolerance curve using interpolation between data-driven thresholds
-      if (lossExposure <= dataMinThreshold) {
-        toleranceProbability = 100;
-      } else if (lossExposure <= dataLowThreshold) {
-        // Interpolate between 100% and 85%
-        const range = dataLowThreshold - dataMinThreshold;
-        const position = lossExposure - dataMinThreshold;
+      // Use fixed tolerance thresholds (organizational risk appetite)
+      if (lossExposure <= toleranceThresholds.fullAcceptance) {
+        toleranceProbability = 100; // 100% acceptable
+      } else if (lossExposure <= toleranceThresholds.highAcceptance) {
+        // Interpolate between 100% and 75%
+        const range = toleranceThresholds.highAcceptance - toleranceThresholds.fullAcceptance;
+        const position = lossExposure - toleranceThresholds.fullAcceptance;
         const ratio = range > 0 ? position / range : 0;
-        toleranceProbability = 100 - (15 * ratio); // 100% to 85%
-      } else if (lossExposure <= dataMedThreshold) {
-        // Interpolate between 85% and 70%
-        const range = dataMedThreshold - dataLowThreshold;
-        const position = lossExposure - dataLowThreshold;
+        toleranceProbability = 100 - (25 * ratio); // 100% to 75%
+      } else if (lossExposure <= toleranceThresholds.mediumAcceptance) {
+        // Interpolate between 75% and 50%
+        const range = toleranceThresholds.mediumAcceptance - toleranceThresholds.highAcceptance;
+        const position = lossExposure - toleranceThresholds.highAcceptance;
         const ratio = range > 0 ? position / range : 0;
-        toleranceProbability = 85 - (15 * ratio); // 85% to 70%
-      } else if (lossExposure <= dataHighThreshold) {
-        // Interpolate between 70% and 45%
-        const range = dataHighThreshold - dataMedThreshold;
-        const position = lossExposure - dataMedThreshold;
+        toleranceProbability = 75 - (25 * ratio); // 75% to 50%
+      } else if (lossExposure <= toleranceThresholds.lowAcceptance) {
+        // Interpolate between 50% and 25%
+        const range = toleranceThresholds.lowAcceptance - toleranceThresholds.mediumAcceptance;
+        const position = lossExposure - toleranceThresholds.mediumAcceptance;
         const ratio = range > 0 ? position / range : 0;
-        toleranceProbability = 70 - (25 * ratio); // 70% to 45%
-      } else if (lossExposure <= dataMaxThreshold) {
-        // Interpolate between 45% and 0%
-        const range = dataMaxThreshold - dataHighThreshold;
-        const position = lossExposure - dataHighThreshold;
+        toleranceProbability = 50 - (25 * ratio); // 50% to 25%
+      } else if (lossExposure <= toleranceThresholds.zeroAcceptance) {
+        // Interpolate between 25% and 0%
+        const range = toleranceThresholds.zeroAcceptance - toleranceThresholds.lowAcceptance;
+        const position = lossExposure - toleranceThresholds.lowAcceptance;
         const ratio = range > 0 ? position / range : 0;
-        toleranceProbability = 45 - (45 * ratio); // 45% to 0%
+        toleranceProbability = 25 - (25 * ratio); // 25% to 0%
       } else {
-        toleranceProbability = 0;
+        toleranceProbability = 0; // 0% acceptable
       }
       
       // Calculate unacceptable risk (risk exceeding tolerance)
@@ -884,10 +855,11 @@ export function LossExceedanceCurveModern({
                 <CartesianGrid stroke="rgba(255,255,255,0.1)" />
                 
                 <XAxis 
-                  dataKey="formattedLoss" 
+                  dataKey="lossExposure" 
                   tick={{ fill: 'rgba(255,255,255,0.7)' }}
                   tickLine={{ stroke: 'rgba(255,255,255,0.2)' }}
                   axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                  tickFormatter={(value) => formatExposureValue(value)}
                 />
                 
                 <YAxis 
