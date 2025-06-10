@@ -92,7 +92,7 @@ export class AssetService {
     
     if (success) {
       // Log the cascade deletion activity
-      await this.logAssetActivity(id, 'cascade_delete', `Asset ${asset.assetId} deleted with cascade operations`);
+      await this.logAssetActivity(id, 'Deleted asset with cascade', asset.name);
     }
     
     return success;
@@ -116,16 +116,13 @@ export class AssetService {
   /**
    * Helper to log asset activity
    */
-  private async logAssetActivity(assetId: number, actionType: string, description: string): Promise<void> {
+  private async logAssetActivity(assetId: number, activity: string, entity: string): Promise<void> {
     await this.repository.createActivityLog({
+      activity,
+      user: 'System User',
+      entity,
       entityType: 'asset',
       entityId: assetId.toString(),
-      actionType,
-      description,
-      userId: 'system', // Default to system for now, could be passed from controller
-      timestamp: new Date(),
-      createdAt: new Date(),
-      details: JSON.stringify({})
     });
   }
 }
