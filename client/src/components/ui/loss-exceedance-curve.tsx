@@ -276,11 +276,11 @@ const generateSummaryData = (
 // Looking at the console logs, we see values like $90M, $57M, $63M
 // so set our max threshold at around $500M
 const DEFAULT_THRESHOLDS = {
-  FULL_ACCEPTANCE: 10000000,      // 100% probability at $10M
-  HIGH_ACCEPTANCE: 50000000,      // 75% probability at $50M
-  MEDIUM_ACCEPTANCE: 75000000,    // 50% probability at $75M
-  LOW_ACCEPTANCE: 100000000,      // 25% probability at $100M
-  ZERO_ACCEPTANCE: 500000000      // 0% probability at $500M+
+  FULL_ACCEPTANCE: 2000000,       // 100% probability at $2M
+  HIGH_ACCEPTANCE: 8000000,       // 75% probability at $8M
+  MEDIUM_ACCEPTANCE: 15000000,    // 50% probability at $15M
+  LOW_ACCEPTANCE: 25000000,       // 25% probability at $25M
+  ZERO_ACCEPTANCE: 50000000       // 0% probability at $50M+
 };
 
 export function LossExceedanceCurve({ 
@@ -1188,16 +1188,6 @@ export function LossExceedanceCurve({
 
               {/* Using a custom curve to highlight acceptable risk where tolerance exceeds probability */}
               {showToleranceCurve && combinedData.map((entry, index) => {
-                // Debug logging for green area calculation
-                if (index < 5) {
-                  console.log(`Green area check ${index}:`, {
-                    lossExposure: entry.lossExposure,
-                    probability: entry.probability,
-                    toleranceProbability: entry.toleranceProbability,
-                    willShow: entry.toleranceProbability > entry.probability && index > 0
-                  });
-                }
-                
                 // Only draw areas where tolerance exceeds probability (acceptable risk)
                 if (entry.toleranceProbability <= entry.probability || index === 0) {
                   return null;
@@ -1211,7 +1201,7 @@ export function LossExceedanceCurve({
                     y1={entry.probability}
                     y2={entry.toleranceProbability}
                     fill="#10B981"
-                    fillOpacity={0.5}
+                    fillOpacity={0.4}
                     stroke="none"
                   />
                 );
