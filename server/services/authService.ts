@@ -72,8 +72,8 @@ export class AuthService {
     const config = await this.getAuthConfig();
     
     // Validate password length
-    if (userData.password.length < config.passwordMinLength) {
-      throw new Error(`Password must be at least ${config.passwordMinLength} characters long`);
+    if (userData.password.length < (config.passwordMinLength || 8)) {
+      throw new Error(`Password must be at least ${config.passwordMinLength || 8} characters long`);
     }
 
     // Hash password
@@ -81,14 +81,14 @@ export class AuthService {
 
     // Check if username already exists
     const existingUser = await db.select().from(users).where(eq(users.username, userData.username)).limit(1);
-    if (existingUser.length > 0) {
+    if (Array.isArray(existingUser) && existingUser.length > 0) {
       throw new Error('Username already exists');
     }
 
     // Check if email already exists (if provided)
     if (userData.email) {
       const existingEmail = await db.select().from(users).where(eq(users.email, userData.email)).limit(1);
-      if (existingEmail.length > 0) {
+      if (Array.isArray(existingEmail) && existingEmail.length > 0) {
         throw new Error('Email already exists');
       }
     }
@@ -204,8 +204,8 @@ export class AuthService {
   async changePassword(id: number, newPassword: string): Promise<void> {
     const config = await this.getAuthConfig();
     
-    if (newPassword.length < config.passwordMinLength) {
-      throw new Error(`Password must be at least ${config.passwordMinLength} characters long`);
+    if (newPassword.length < (config.passwordMinLength || 8)) {
+      throw new Error(`Password must be at least ${config.passwordMinLength || 8} characters long`);
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
@@ -217,6 +217,16 @@ export class AuthService {
         updatedAt: new Date(),
       })
       .where(eq(users.id, id));
+  }
+
+  async resetUserPassword(id: number, newPassword: string): Promise<boolean> {
+    try {
+      await this.changePassword(id, newPassword);
+      return true;
+    } catch (error) {
+      console.error('Error resetting user password:', error);
+      return false;
+    }
   }
 
   async deleteUser(id: number): Promise<void> {

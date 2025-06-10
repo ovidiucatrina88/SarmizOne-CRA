@@ -267,35 +267,18 @@ router.post('/auth/users', requireAdmin, async (req, res) => {
       }
     }
 
-    const result = await authService.createLocalUser({
+    const result = await authService.createUser({
       username: userData.username,
       email: userData.email,
       password: userData.password,
       firstName: userData.firstName,
       lastName: userData.lastName,
-      role: userData.role,
-      createdBy
-    });
-
-    if (!result.success) {
-      return res.status(400).json({
-        success: false,
-        error: result.error
-      });
-    }
+      role: userData.role
+    }, createdBy);
 
     res.status(201).json({
       success: true,
-      user: {
-        id: result.user!.id,
-        username: result.user!.username,
-        email: result.user!.email,
-        displayName: result.user!.displayName,
-        role: result.user!.role,
-        authType: result.user!.authType,
-        isActive: result.user!.isActive,
-        createdAt: result.user!.createdAt
-      }
+      user: result
     });
   } catch (error) {
     console.error('Create user error:', error);
