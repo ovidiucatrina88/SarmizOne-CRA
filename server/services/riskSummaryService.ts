@@ -8,7 +8,7 @@ export class RiskSummaryService {
    */
   private calculateExposureStatistics(risks: any[]) {
     const exposures = risks
-      .map(risk => parseFloat(risk.residualRisk || risk.inherentRisk || '0'))
+      .map(risk => parseFloat(risk.residual_risk || risk.inherent_risk || '0'))
       .filter(exposure => exposure > 0)
       .sort((a, b) => a - b);
 
@@ -72,7 +72,7 @@ export class RiskSummaryService {
     
     // Extract residual risk values and sort them
     const residualRisks = risks
-      .map(r => parseFloat(r.residualRisk) || 0)
+      .map(r => parseFloat(r.residual_risk) || 0)
       .filter(v => v > 0)
       .sort((a, b) => b - a); // Sort descending for exceedance curve
     
@@ -106,8 +106,8 @@ export class RiskSummaryService {
       const lowRisks = riskData.filter(r => r.severity === 'low').length;
       
       // Calculate total risk values
-      const totalInherentRisk = riskData.reduce((sum, r) => sum + (parseFloat(r.inherentRisk) || 0), 0);
-      const totalResidualRisk = riskData.reduce((sum, r) => sum + (parseFloat(r.residualRisk) || 0), 0);
+      const totalInherentRisk = riskData.reduce((sum, r) => sum + (parseFloat(r.inherent_risk) || 0), 0);
+      const totalResidualRisk = riskData.reduce((sum, r) => sum + (parseFloat(r.residual_risk) || 0), 0);
       
       // Generate exposure curve data
       const exposureCurveData = this.generateExposureCurveData(riskData);
