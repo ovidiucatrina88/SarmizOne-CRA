@@ -2,9 +2,11 @@ import express from 'express';
 // import { isAuthenticated } from '../../auth';
 import { riskService, assetService, controlService } from '../../services';
 import { riskSummaryService } from '../../services/riskSummaryService';
+import { DatabaseStorage } from '../../services/repositoryStorage';
 import { sendError, sendSuccess } from '../common/responses/apiResponse';
 
 const router = express.Router();
+const repository = new DatabaseStorage();
 
 // Get dashboard summary data
 router.get('/summary', async (req, res) => {
@@ -46,8 +48,8 @@ router.get('/summary', async (req, res) => {
     const assets = await assetService.getAllAssets();
     
     // Get recent activity
-    // Using getAllActivityLogs instead of getLogs for compatibility
-    const allLogs = await riskService.getAllActivityLogs();
+    // Using repository directly for activity logs
+    const allLogs = await repository.getAllActivityLogs();
     const recentLogs = allLogs.slice(0, 10);
     
     // Return dashboard data
