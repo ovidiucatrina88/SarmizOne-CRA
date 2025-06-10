@@ -25,7 +25,8 @@ import {
 import {
   formatCurrency,
   formatNumberAbbreviated,
-  calculatePrimaryLossFromAssets
+  calculatePrimaryLossFromAssets,
+  calculateThreatEventFrequency
 } from "@shared/utils/calculations";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AssetSelection } from "./form-sections/AssetSelection";
@@ -654,24 +655,18 @@ export function RiskFormPreviewEditable({
                 <span className="mx-1">×</span>
                 <span className="px-1 py-0.5 bg-teal-500/50 rounded">LM</span>
               </div>
-              {/* Min/Max Values - Server calculated only */}
+              {/* Risk Values - Server calculated only */}
               <div className="bg-black/20 text-white p-1 rounded flex justify-between items-center text-white text-[10px] my-1">
                 <span>
-                  Min: $
+                  Inherent: $
                   {formatNumberAbbreviated(
-                    form.getValues().inherentRisk ? form.getValues().inherentRisk * 0.4 : 0,
+                    parseFloat(form.getValues().inherentRisk || '0')
                   )}
                 </span>
                 <span>
-                  Avg: $
+                  Residual: $
                   {formatNumberAbbreviated(
-                    form.getValues().inherentRisk || 0,
-                  )}
-                </span>
-                <span>
-                  Max: $
-                  {formatNumberAbbreviated(
-                    form.getValues().inherentRisk ? form.getValues().inherentRisk * 2 : 0,
+                    parseFloat(form.getValues().residualRisk || '0')
                   )}
                 </span>
               </div>
