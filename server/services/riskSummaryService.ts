@@ -54,14 +54,27 @@ export class RiskSummaryService {
    */
   private async getRisksForEntity(legalEntityId?: string) {
     const allRisks = await db.select().from(risks);
+    console.log(`DEBUG: Found ${allRisks.length} total risks in database`);
+    console.log(`DEBUG: Risk details:`, allRisks.map(r => ({ 
+      id: r.id, 
+      riskId: r.riskId, 
+      severity: r.severity, 
+      itemType: r.itemType,
+      inherentRisk: r.inherentRisk, 
+      residualRisk: r.residualRisk 
+    })));
+    
+    // Filter out template risks - only count instance risks
+    const instanceRisks = allRisks.filter(r => r.itemType === 'instance' || !r.itemType);
+    console.log(`DEBUG: After filtering for instances: ${instanceRisks.length} risks`);
     
     if (!legalEntityId) {
-      return allRisks;
+      return instanceRisks;
     }
 
     // Filter risks by legal entity if needed
     // This would require additional logic based on how risks are associated with legal entities
-    return allRisks;
+    return instanceRisks;
   }
 
   /**

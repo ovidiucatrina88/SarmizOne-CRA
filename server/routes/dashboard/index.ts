@@ -135,4 +135,17 @@ router.get('/risk-summary/latest', async (req, res) => {
   }
 });
 
+// Force risk summary update endpoint
+router.post('/risk-summary/force-update', async (req, res) => {
+  try {
+    console.log('Force updating risk summaries...');
+    await riskSummaryService.updateRiskSummaries();
+    console.log('Risk summaries force update completed');
+    return sendSuccess(res, { message: 'Risk summaries updated successfully' });
+  } catch (error) {
+    console.error('Error force updating risk summaries:', error);
+    return sendError(res, error);
+  }
+});
+
 export default router;
