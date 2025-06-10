@@ -162,6 +162,33 @@ export function LossExceedanceCurveModern({
   selectedAssetId = null,
   selectedArchitectureId = null
 }: LossExceedanceCurveModernProps) {
+  // Helper function to format exposure values
+  const formatExposureValue = useCallback((value: number | undefined) => {
+    if (value === undefined || isNaN(Number(value))) return '$0';
+    
+    const numValue = Number(value);
+    // For very large values (> 1 billion)
+    if (numValue >= 1000000000) {
+      return `$${(numValue / 1000000000).toFixed(1)}B`;
+    }
+    // For large values (> 1 million)
+    else if (numValue >= 1000000) {
+      return `$${(numValue / 1000000).toFixed(1)}M`;
+    } 
+    // For medium values (> 1 thousand)
+    else if (numValue >= 1000) {
+      return `$${(numValue / 1000).toFixed(1)}k`; 
+    } 
+    // For smaller values
+    else {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: numValue < 1 ? 2 : 0,
+      }).format(numValue);
+    }
+  }, []);
+
   // UI state
   const [showHistory, setShowHistory] = useState(!!previousExposure);
   const [showTolerance, setShowTolerance] = useState(true);
@@ -591,7 +618,7 @@ export function LossExceedanceCurveModern({
         previousProbability,
         toleranceProbability,
         unacceptableRisk,
-        formattedLoss: formatExposure(lossExposure),
+        formattedLoss: formatExposureValue(lossExposure),
         isThresholdPoint: false,
         exposureData: {
           minimum: minExposure,
