@@ -429,6 +429,28 @@ export function RiskFormPreviewEditable({
     );
   }, [allAssets, selectedAssets, localSelectedAssets, setSelectedAssets]);
   
+  // Populate global asset cache for calculations
+  useEffect(() => {
+    if (allAssets.length > 0) {
+      // Initialize cache if it doesn't exist
+      if (!window.__ASSET_CACHE__) {
+        window.__ASSET_CACHE__ = {};
+      }
+      
+      // Populate cache with all assets
+      allAssets.forEach(asset => {
+        window.__ASSET_CACHE__![asset.assetId] = {
+          id: asset.id,
+          name: asset.name,
+          assetValue: asset.assetValue,
+          currency: asset.currency
+        };
+      });
+      
+      console.log("Populated asset cache with", allAssets.length, "assets");
+    }
+  }, [allAssets]);
+  
   // Calculate primary loss from asset values
   useEffect(() => {
     if (selectedAssetObjects.length > 0) {
