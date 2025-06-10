@@ -12,7 +12,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { Lock, Shield, Eye, EyeOff } from 'lucide-react';
 import backgroundImage from '@assets/ChatGPT Image Jun 9, 2025, 12_01_45 AM_1749460665838.png';
-import Layout from "@/components/layout/layout";
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),
@@ -78,16 +77,15 @@ export default function LoginPage() {
   };
 
   return (
-    <Layout>
-      <div 
-        className="min-h-screen flex items-center justify-center p-4 relative"
-        style={{
-          backgroundImage: `url(${backgroundImage})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
-        }}
-      >
+    <div 
+      className="min-h-screen flex items-center justify-center p-4 relative"
+      style={{
+        backgroundImage: `url(${backgroundImage})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
       {/* Dark overlay for better readability */}
       <div className="absolute inset-0 bg-black/40" />
       
@@ -182,7 +180,6 @@ export default function LoginPage() {
           </div>
         </CardContent>
       </Card>
-      </div>
-    </Layout>
+    </div>
   );
 }
