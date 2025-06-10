@@ -20,44 +20,53 @@ const changePasswordSchema = z.object({
   newPassword: z.string().min(8, "Password must be at least 8 characters"),
   confirmPassword: z.string().min(8, "Please confirm your password")
 }).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "New passwords don't match",
+  message: "Passwords don't match",
   path: ["confirmPassword"],
 });
 
-type ChangePasswordForm = z.infer<typeof changePasswordSchema>;
+type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
+
+const passwordRequirements = [
+  { regex: /.{8,}/, text: "At least 8 characters" },
+  { regex: /[A-Z]/, text: "At least one uppercase letter" },
+  { regex: /[a-z]/, text: "At least one lowercase letter" },
+  { regex: /[0-9]/, text: "At least one number" },
+  { regex: /[^A-Za-z0-9]/, text: "At least one symbol" },
+];
+
+const getPasswordStrength = (password: string) => {
+  const metRequirements = passwordRequirements.filter(req => req.regex.test(password));
+  return {
+    score: metRequirements.length,
+    requirements: passwordRequirements.map(req => ({
+      ...req,
+      met: req.regex.test(password)
+    }))
+  };
+};
 
 export default function ChangePasswordPage() {
-  const [, setLocation] = useLocation();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
 
-  const form = useForm<ChangePasswordForm>({
+  const form = useForm<ChangePasswordFormData>({
     resolver: zodResolver(changePasswordSchema),
     defaultValues: {
       currentPassword: "",
       newPassword: "",
-      confirmPassword: ""
-    }
+      confirmPassword: "",
+    },
   });
 
   const changePasswordMutation = useMutation({
-    mutationFn: async (data: ChangePasswordForm) => {
-      const response = await fetch('/api/auth/change-password', {
-        method: 'POST',
+    mutationFn: async (data: ChangePasswordFormData) => {
+      return await apiRequest("/api/auth/change-password", {
+        method: "POST",
         body: JSON.stringify(data),
-        headers: {
-          'Content-Type': 'application/json'
-        }
       });
-      
-      if (!response.ok) {
-        const error = await response.json();
-        throw error;
-      }
-      
-      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -77,27 +86,11 @@ export default function ChangePasswordPage() {
         description: errorMessage,
         variant: "destructive",
       });
-    }
+    },
   });
 
-  const onSubmit = (data: ChangePasswordForm) => {
+  const onSubmit = (data: ChangePasswordFormData) => {
     changePasswordMutation.mutate(data);
-  };
-
-  // Password strength indicators
-  const getPasswordStrength = (password: string) => {
-    if (!password) return { score: 0, requirements: [] };
-    
-    const requirements = [
-      { met: password.length >= 8, text: "At least 8 characters" },
-      { met: /[A-Z]/.test(password), text: "One uppercase letter" },
-      { met: /[a-z]/.test(password), text: "One lowercase letter" },
-      { met: /\d/.test(password), text: "One number" },
-      { met: /[!@#$%^&*(),.?":{}|<>]/.test(password), text: "One special character" }
-    ];
-    
-    const score = requirements.filter(req => req.met).length;
-    return { score, requirements };
   };
 
   const passwordStrength = getPasswordStrength(form.watch("newPassword"));
@@ -122,160 +115,157 @@ export default function ChangePasswordPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    {/* Current Password */}
-                    <div className="space-y-2">
-              <Label htmlFor="currentPassword">Current Password</Label>
-              <div className="relative">
-                <Input
-                  id="currentPassword"
-                  type={showCurrentPassword ? "text" : "password"}
-                  {...form.register("currentPassword")}
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                >
-                  {showCurrentPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-              {form.formState.errors.currentPassword && (
-                <p className="text-sm text-red-600">
-                  {form.formState.errors.currentPassword.message}
-                </p>
-              )}
-            </div>
-
-            {/* New Password */}
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">New Password</Label>
-              <div className="relative">
-                <Input
-                  id="newPassword"
-                  type={showNewPassword ? "text" : "password"}
-                  {...form.register("newPassword")}
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                >
-                  {showNewPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-              
-              {/* Password Requirements */}
-              {form.watch("newPassword") && (
-                <div className="mt-3 p-3 bg-gray-50 rounded-md">
-                  <h4 className="text-sm font-medium mb-2">Password Requirements:</h4>
-                  <div className="space-y-1">
-                    {passwordStrength.requirements.map((req, index) => (
-                      <div key={index} className="flex items-center space-x-2 text-sm">
-                        {req.met ? (
-                          <CheckCircle className="h-4 w-4 text-green-600" />
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  {/* Current Password */}
+                  <div className="space-y-2">
+                    <Label htmlFor="currentPassword">Current Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="currentPassword"
+                        type={showCurrentPassword ? "text" : "password"}
+                        {...form.register("currentPassword")}
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      >
+                        {showCurrentPassword ? (
+                          <EyeOff className="h-4 w-4" />
                         ) : (
-                          <XCircle className="h-4 w-4 text-red-600" />
+                          <Eye className="h-4 w-4" />
                         )}
-                        <span className={req.met ? "text-green-700" : "text-red-700"}>
-                          {req.text}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-2">
-                    <div className="flex items-center space-x-2">
-                      <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div
-                          className={`h-2 rounded-full transition-all ${
-                            passwordStrength.score <= 2 ? "bg-red-500" :
-                            passwordStrength.score <= 4 ? "bg-yellow-500" : "bg-green-500"
-                          }`}
-                          style={{ width: `${(passwordStrength.score / 5) * 100}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-gray-600">
-                        {passwordStrength.score <= 2 ? "Weak" :
-                         passwordStrength.score <= 4 ? "Good" : "Strong"}
-                      </span>
+                      </Button>
                     </div>
+                    {form.formState.errors.currentPassword && (
+                      <p className="text-sm text-destructive">
+                        {form.formState.errors.currentPassword.message}
+                      </p>
+                    )}
                   </div>
-                </div>
-              )}
-              
-              {form.formState.errors.newPassword && (
-                <p className="text-sm text-red-600">
-                  {form.formState.errors.newPassword.message}
-                </p>
-              )}
-            </div>
 
-            {/* Confirm Password */}
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
-              <div className="relative">
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  {...form.register("confirmPassword")}
-                  className="pr-10"
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
+                  {/* New Password */}
+                  <div className="space-y-2">
+                    <Label htmlFor="newPassword">New Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="newPassword"
+                        type={showNewPassword ? "text" : "password"}
+                        {...form.register("newPassword")}
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowNewPassword(!showNewPassword)}
+                      >
+                        {showNewPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    {form.formState.errors.newPassword && (
+                      <p className="text-sm text-destructive">
+                        {form.formState.errors.newPassword.message}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Password Strength Indicator */}
+                  {form.watch("newPassword") && (
+                    <div className="space-y-2">
+                      <Label>Password Strength</Label>
+                      <div className="space-y-2">
+                        <div className="flex space-x-1">
+                          {Array.from({ length: 5 }, (_, i) => (
+                            <div
+                              key={i}
+                              className={`h-2 w-full rounded ${
+                                i < passwordStrength.score
+                                  ? passwordStrength.score <= 2
+                                    ? "bg-red-500"
+                                    : passwordStrength.score <= 3
+                                    ? "bg-yellow-500"
+                                    : "bg-green-500"
+                                  : "bg-gray-200"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-1 gap-1 text-sm">
+                          {passwordStrength.requirements.map((req, index) => (
+                            <div key={index} className="flex items-center space-x-2">
+                              {req.met ? (
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-gray-400" />
+                              )}
+                              <span className={req.met ? "text-green-700" : "text-gray-500"}>
+                                {req.text}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
                   )}
-                </Button>
-              </div>
-              {form.formState.errors.confirmPassword && (
-                <p className="text-sm text-red-600">
-                  {form.formState.errors.confirmPassword.message}
-                </p>
-              )}
-            </div>
 
-            {/* Error/Success Messages */}
-            {changePasswordMutation.error && (
-              <Alert variant="destructive">
-                <XCircle className="h-4 w-4" />
-                <AlertDescription>
-                  {(changePasswordMutation.error as any)?.error || "Failed to change password"}
-                </AlertDescription>
-              </Alert>
-            )}
+                  {/* Confirm Password */}
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        {...form.register("confirmPassword")}
+                        className="pr-10"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    {form.formState.errors.confirmPassword && (
+                      <p className="text-sm text-destructive">
+                        {form.formState.errors.confirmPassword.message}
+                      </p>
+                    )}
+                  </div>
 
-            {/* Submit Button */}
-            <Button 
-              type="submit" 
-              className="w-full"
-              disabled={changePasswordMutation.isPending || passwordStrength.score < 3}
-            >
-              {changePasswordMutation.isPending ? "Changing Password..." : "Change Password"}
-            </Button>
-          </form>
-            </CardContent>
-          </Card>
+                  {/* Security Notice */}
+                  <Alert>
+                    <AlertDescription>
+                      After changing your password, you'll be automatically redirected to the dashboard.
+                    </AlertDescription>
+                  </Alert>
+
+                  {/* Submit Button */}
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={changePasswordMutation.isPending}
+                  >
+                    {changePasswordMutation.isPending ? "Changing Password..." : "Change Password"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
