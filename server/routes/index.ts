@@ -15,6 +15,7 @@ import enterpriseArchitectureRouter from './enterprise-architecture';
 import authRouter from './auth';
 import adminRouter from './admin';
 import vulnerabilitiesRouter from './vulnerabilities';
+import riskSummaryRouter from './risk-summary';
 import { errorHandler } from './common/middleware/errorHandler';
 import { requestLogger } from './common/middleware/requestLogger';
 import { healthRouter } from './health';
@@ -43,6 +44,7 @@ export function registerRoutes(app: Express): Server {
   apiRouter.use('/control-library', controlLibraryRouter);
   apiRouter.use('/risk-library', riskLibraryRouter);
   apiRouter.use('/risk-responses', responsesRouter);
+  apiRouter.use('/risk-summary', riskSummaryRouter);
   apiRouter.use('/dashboard', dashboardRouter);
   apiRouter.use('/logs', logsRouter);
   apiRouter.use('/cost-modules', costModulesRouter);
