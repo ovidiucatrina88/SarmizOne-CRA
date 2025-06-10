@@ -18,7 +18,6 @@ import {
   activityLogs,
   legalEntities,
   riskControls,
-  riskCosts,
   riskSummaries,
   InsertRiskSummary,
   controlLibrary,
@@ -145,8 +144,8 @@ export class DatabaseStorage {
           // Delete risk responses
           await db.delete(riskResponses).where(eq(riskResponses.riskId, risk.riskId));
           
-          // Delete risk costs
-          await db.delete(riskCosts).where(eq(riskCosts.riskId, risk.id));
+          // Delete risk costs using SQL query since table uses snake_case naming
+          await db.execute(sql`DELETE FROM risk_costs WHERE risk_id = ${risk.id}`);
           
           // Delete the risk itself
           await db.delete(risks).where(eq(risks.id, risk.id));
@@ -195,23 +194,11 @@ export class DatabaseStorage {
 
       // Step 7: Log the cascade deletion activity
       await this.createActivityLog({
+        activity: 'cascade_delete',
+        user: 'System User',
+        entity: `Asset ${asset.assetId}`,
         entityType: 'asset',
-        entityId: id.toString(),
-        actionType: 'cascade_delete',
-        description: `Asset ${asset.assetId} deleted with cascade operations affecting ${affectedRisks.length} risks`,
-        userId: 'system',
-        timestamp: new Date(),
-        details: JSON.stringify({
-          deletedAssetId: asset.assetId,
-          affectedRisksCount: affectedRisks.length,
-          cascadeOperations: [
-            'asset_relationships_deleted',
-            'vulnerability_associations_deleted', 
-            'risk_references_updated',
-            'orphaned_risks_deleted',
-            'risk_summaries_updated'
-          ]
-        })
+        entityId: id.toString()
       });
 
       console.log(`Completed cascade deletion for asset ${asset.assetId}`);
