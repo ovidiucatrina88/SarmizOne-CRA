@@ -24,8 +24,10 @@ interface DataPoint {
   probability: number;
   previousProbability?: number | null;
   toleranceProbability?: number | null;
-  unacceptableRisk?: number;
-  acceptableRisk?: number;
+  redAreaTop?: number;
+  redAreaBottom?: number;
+  greenAreaTop?: number;
+  greenAreaBottom?: number;
   formattedLoss: string;
   isThresholdPoint?: boolean;
   exposureData?: {
@@ -580,15 +582,22 @@ export function LossExceedanceCurveModern({
         toleranceProbability = 0;
       }
       
-      // Calculate unacceptable risk (risk exceeding tolerance)
-      const unacceptableRisk = probability > toleranceProbability 
-        ? (probability - toleranceProbability) 
-        : 0;
+      // For areas between curves, we need to determine which curve is higher
+      // and create appropriate data fields for red and green areas
+      let redAreaTop = 0;
+      let redAreaBottom = 0;
+      let greenAreaTop = 0;
+      let greenAreaBottom = 0;
       
-      // Calculate acceptable risk (tolerance exceeding risk)
-      const acceptableRisk = toleranceProbability > probability 
-        ? (toleranceProbability - probability) 
-        : 0;
+      if (probability > toleranceProbability) {
+        // Red area: probability is higher than tolerance
+        redAreaTop = probability;
+        redAreaBottom = toleranceProbability;
+      } else if (toleranceProbability > probability) {
+        // Green area: tolerance is higher than probability  
+        greenAreaTop = toleranceProbability;
+        greenAreaBottom = probability;
+      }
         
       // Add data point
       data.push({
@@ -596,8 +605,10 @@ export function LossExceedanceCurveModern({
         probability,
         previousProbability,
         toleranceProbability,
-        unacceptableRisk,
-        acceptableRisk,
+        redAreaTop,
+        redAreaBottom,
+        greenAreaTop,
+        greenAreaBottom,
         formattedLoss: formatExposure(lossExposure),
         isThresholdPoint: false,
         exposureData: {
@@ -665,13 +676,31 @@ export function LossExceedanceCurveModern({
           toleranceProbability = 0;
         }
         
+        // Calculate area values for this threshold point
+        let redAreaTop = 0;
+        let redAreaBottom = 0;
+        let greenAreaTop = 0;
+        let greenAreaBottom = 0;
+        
+        if (probability > toleranceProbability) {
+          // Red area: probability is higher than tolerance
+          redAreaTop = probability;
+          redAreaBottom = toleranceProbability;
+        } else if (toleranceProbability > probability) {
+          // Green area: tolerance is higher than probability  
+          greenAreaTop = toleranceProbability;
+          greenAreaBottom = probability;
+        }
+        
         data.push({
           lossExposure: point,
           probability,
           previousProbability: null,
           toleranceProbability,
-          unacceptableRisk: probability > toleranceProbability ? (probability - toleranceProbability) : 0,
-          acceptableRisk: toleranceProbability > probability ? (toleranceProbability - probability) : 0,
+          redAreaTop,
+          redAreaBottom,
+          greenAreaTop,
+          greenAreaBottom,
           formattedLoss: formatExposure(point),
           isThresholdPoint: true,
           exposureData: {
@@ -861,35 +890,43 @@ export function LossExceedanceCurveModern({
                 
                 <Tooltip content={<CustomTooltip />} />
                 
-                {/* Base area for probability (transparent, just for stacking) */}
-                {chartData.length > 1 && (
+                {/* Red shaded area - where probability exceeds tolerance */}
+                {chartData.length > 1 && showTolerance && (
                   <Area
-                    dataKey="probability"
+                    dataKey="redAreaTop"
                     stroke="none"
-                    fill="transparent"
-                    stackId="risk"
+                    fill="url(#riskAreaGradient)"
+                    fillOpacity={0.7}
+                    stackId="1"
                   />
                 )}
                 
-                {/* Green shaded area for acceptable risk - where tolerance exceeds probability */}
-                {chartData.length > 1 && (
+                {chartData.length > 1 && showTolerance && (
                   <Area
-                    dataKey="acceptableRisk"
+                    dataKey="redAreaBottom"
+                    stroke="none"
+                    fill="transparent"
+                    stackId="1"
+                  />
+                )}
+                
+                {/* Green shaded area - where tolerance exceeds probability */}
+                {chartData.length > 1 && showTolerance && (
+                  <Area
+                    dataKey="greenAreaTop"
                     stroke="none"
                     fill="url(#acceptableAreaGradient)"
                     fillOpacity={0.6}
-                    stackId="risk"
+                    stackId="2"
                   />
                 )}
                 
-                {/* Red shaded area for unacceptable risk - where probability exceeds tolerance */}
-                {chartData.length > 1 && (
+                {chartData.length > 1 && showTolerance && (
                   <Area
-                    dataKey="unacceptableRisk"
+                    dataKey="greenAreaBottom"
                     stroke="none"
-                    fill="url(#riskAreaGradient)"
-                    fillOpacity={0.5}
-                    stackId="unacceptable"
+                    fill="transparent"
+                    stackId="2"
                   />
                 )}
                 
