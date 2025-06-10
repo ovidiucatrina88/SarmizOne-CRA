@@ -284,6 +284,79 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <h3 className="text-xl font-bold text-white">Loss Exceedance Curve</h3>
               <div className="flex items-center space-x-4">
+                {/* Filter Controls */}
+                <div className="flex items-center space-x-2">
+                  <select
+                    className="px-3 py-1 text-sm rounded border border-gray-500 bg-gray-600 text-white"
+                    value={filterType}
+                    onChange={(e) => {
+                      setFilterType(e.target.value as FilterType);
+                      setSelectedLegalEntity(null);
+                      setSelectedAsset(null);
+                      setSelectedArchitectureLevel(null);
+                    }}
+                  >
+                    <option value="all">All</option>
+                    <option value="l1">L1 - Strategy</option>
+                    <option value="l2">L2 - Business Architecture</option>
+                    <option value="l3">L3 - Information Systems</option>
+                    <option value="l4">L4 - Technology</option>
+                    <option value="entity">Legal Entity</option>
+                    <option value="asset">Asset</option>
+                  </select>
+                  
+                  {/* Show entity selector when filter type is 'entity' */}
+                  {filterType === 'entity' && legalEntitiesData?.data && (
+                    <select
+                      className="px-3 py-1 text-sm rounded border border-gray-500 bg-gray-600 text-white"
+                      value={selectedLegalEntity || ''}
+                      onChange={(e) => setSelectedLegalEntity(e.target.value || null)}
+                    >
+                      <option value="" disabled>Select Entity</option>
+                      {Array.isArray(legalEntitiesData.data) && legalEntitiesData.data.map((entity: any) => (
+                        <option key={entity.entityId} value={entity.entityId}>
+                          {entity.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  
+                  {/* Show asset selector when filter type is 'asset' */}
+                  {filterType === 'asset' && assetsData?.data && (
+                    <select
+                      className="px-3 py-1 text-sm rounded border border-gray-500 bg-gray-600 text-white"
+                      value={selectedAsset || ''}
+                      onChange={(e) => setSelectedAsset(e.target.value || null)}
+                    >
+                      <option value="" disabled>Select Asset</option>
+                      {Array.isArray(assetsData.data) && assetsData.data.map((asset: any) => (
+                        <option key={asset.assetId} value={asset.assetId}>
+                          {asset.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  
+                  {/* Show architecture level selector when filter type is L1-L4 */}
+                  {(filterType === 'l1' || filterType === 'l2' || filterType === 'l3' || filterType === 'l4') && enterpriseArchData?.data && (
+                    <select
+                      className="px-3 py-1 text-sm rounded border border-gray-500 bg-gray-600 text-white"
+                      value={selectedArchitectureLevel || ''}
+                      onChange={(e) => setSelectedArchitectureLevel(e.target.value || null)}
+                    >
+                      <option value="" disabled>Select {filterType.toUpperCase()} Component</option>
+                      {Array.isArray(enterpriseArchData.data) && 
+                       enterpriseArchData.data
+                         .filter((arch: any) => arch.level === filterType.toUpperCase())
+                         .map((arch: any) => (
+                        <option key={arch.id} value={arch.id}>
+                          {arch.name}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+                
                 <div className="flex items-center space-x-2">
                   <Switch 
                     id="historical-comparison"
