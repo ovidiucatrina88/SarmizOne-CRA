@@ -54,9 +54,11 @@ export class RiskSummaryService {
    */
   private async getRisksForEntity(legalEntityId?: string) {
     const allRisks = await db.select().from(risks);
+    console.log(`[RiskSummary] Found ${allRisks.length} total risks`);
     
     // Filter out template risks - only count instance risks
     const instanceRisks = allRisks.filter(r => r.itemType === 'instance' || !r.itemType);
+    console.log(`[RiskSummary] After filtering instances: ${instanceRisks.length} risks`);
     
     if (!legalEntityId) {
       return instanceRisks;

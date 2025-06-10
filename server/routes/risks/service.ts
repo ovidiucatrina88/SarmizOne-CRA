@@ -130,13 +130,15 @@ export class RiskService {
       }
       
       // Automatically update risk summaries after creation
-      try {
-        await riskSummaryService.updateRiskSummaries();
-        console.log('Risk summaries updated after risk creation');
-      } catch (summaryError) {
-        console.error('Error updating risk summaries after creation:', summaryError);
-        // Continue without failing - the risk creation itself succeeded
-      }
+      // Add a small delay to ensure database transaction is committed
+      setTimeout(async () => {
+        try {
+          await riskSummaryService.updateRiskSummaries();
+          console.log('Risk summaries updated after risk creation');
+        } catch (summaryError) {
+          console.error('Error updating risk summaries after creation:', summaryError);
+        }
+      }, 100);
       
       // Fetch the updated risk
       return await storage.getRisk(risk.id) || risk;
@@ -163,13 +165,15 @@ export class RiskService {
         }
         
         // Automatically update risk summaries after modification
-        try {
-          await riskSummaryService.updateRiskSummaries();
-          console.log('Risk summaries updated after risk modification');
-        } catch (summaryError) {
-          console.error('Error updating risk summaries after modification:', summaryError);
-          // Continue without failing - the risk update itself succeeded
-        }
+        // Add a small delay to ensure database transaction is committed
+        setTimeout(async () => {
+          try {
+            await riskSummaryService.updateRiskSummaries();
+            console.log('Risk summaries updated after risk modification');
+          } catch (summaryError) {
+            console.error('Error updating risk summaries after modification:', summaryError);
+          }
+        }, 100);
         
         // Fetch the updated risk again
         return await storage.getRisk(id);
@@ -190,13 +194,15 @@ export class RiskService {
       
       // Automatically update risk summaries after deletion
       if (result) {
-        try {
-          await riskSummaryService.updateRiskSummaries();
-          console.log('Risk summaries updated after risk deletion');
-        } catch (summaryError) {
-          console.error('Error updating risk summaries after deletion:', summaryError);
-          // Continue without failing - the risk deletion itself succeeded
-        }
+        // Add a small delay to ensure database transaction is committed
+        setTimeout(async () => {
+          try {
+            await riskSummaryService.updateRiskSummaries();
+            console.log('Risk summaries updated after risk deletion');
+          } catch (summaryError) {
+            console.error('Error updating risk summaries after deletion:', summaryError);
+          }
+        }, 100);
       }
       
       return result;
