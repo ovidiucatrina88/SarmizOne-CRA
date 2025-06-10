@@ -389,6 +389,33 @@ router.patch('/auth/users/:id/deactivate', requireAdmin, async (req, res) => {
   }
 });
 
+// Activate user (admin only)
+router.patch('/auth/users/:id/activate', requireAdmin, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    
+    const success = await authService.activateUser(userId);
+    
+    if (!success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Failed to activate user'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'User activated successfully'
+    });
+  } catch (error) {
+    console.error('Activate user error:', error);
+    res.status(400).json({
+      success: false,
+      error: 'Invalid request'
+    });
+  }
+});
+
 // Reset user password (admin only, local users only)
 router.patch('/auth/users/:id/reset-password', requireAdmin, async (req, res) => {
   try {

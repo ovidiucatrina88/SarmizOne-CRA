@@ -228,6 +228,36 @@ export class AuthService {
       .where(eq(users.id, id));
   }
 
+  async deactivateUser(id: number): Promise<boolean> {
+    try {
+      await db.update(users)
+        .set({ 
+          isActive: false,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deactivating user:', error);
+      return false;
+    }
+  }
+
+  async activateUser(id: number): Promise<boolean> {
+    try {
+      await db.update(users)
+        .set({ 
+          isActive: true,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error activating user:', error);
+      return false;
+    }
+  }
+
   // OIDC Support Methods (for future implementation)
   async upsertOidcUser(oidcProfile: any): Promise<UserWithoutPassword> {
     // Check if user exists with OIDC sub
