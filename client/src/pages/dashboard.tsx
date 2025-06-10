@@ -17,24 +17,30 @@ function DashboardSkeleton() {
     <div className="space-y-6">
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-gray-800 rounded-lg border border-gray-600 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <Skeleton className="h-4 w-20 mb-2" />
-                <Skeleton className="h-8 w-16" />
+          <div key={i} className="relative overflow-hidden bg-gradient-to-br from-background via-background to-muted/20 shadow-lg rounded-xl border-0 p-6">
+            <div className="flex items-center space-x-4">
+              <Skeleton className="h-12 w-12 rounded-xl" />
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-6 w-16" />
               </div>
-              <Skeleton className="h-10 w-10 rounded" />
+            </div>
+            <div className="mt-6 pt-4 border-t border-border/50">
+              <div className="flex items-center space-x-2">
+                <Skeleton className="h-5 w-12 rounded-full" />
+                <Skeleton className="h-3 w-20" />
+              </div>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="bg-gray-800 rounded-lg border border-gray-600">
-        <div className="bg-gray-700 px-6 py-4 border-b border-gray-600">
+      <div className="relative overflow-hidden bg-gradient-to-br from-background via-background to-muted/20 shadow-lg rounded-xl border-0">
+        <div className="bg-gradient-to-r from-muted/50 to-muted/20 px-6 py-4">
           <Skeleton className="h-6 w-48" />
         </div>
         <div className="p-6">
-          <Skeleton className="h-80 w-full" />
+          <Skeleton className="h-80 w-full rounded-lg" />
         </div>
       </div>
 

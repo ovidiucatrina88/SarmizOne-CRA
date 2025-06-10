@@ -142,7 +142,7 @@ export function CostModuleList() {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-background via-background to-muted/20 shadow-lg">
         <CardHeader>
           <CardTitle>Cost Modules</CardTitle>
           <CardDescription>Loading cost modules...</CardDescription>
@@ -158,7 +158,7 @@ export function CostModuleList() {
 
   if (error) {
     return (
-      <Card>
+      <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-background via-background to-muted/20 shadow-lg">
         <CardHeader>
           <CardTitle>Cost Modules</CardTitle>
           <CardDescription>Error loading cost modules</CardDescription>
@@ -176,16 +176,17 @@ export function CostModuleList() {
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-background via-background to-muted/20 shadow-lg">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/10 opacity-50" />
+      <CardHeader className="relative">
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Cost Modules</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-foreground">Cost Modules</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Manage cost factors associated with CIS controls
             </CardDescription>
           </div>
-          <Button onClick={() => setIsCreateDialogOpen(true)}>
+          <Button onClick={() => setIsCreateDialogOpen(true)} className="shadow-md hover:shadow-lg transition-shadow">
             <PlusCircle className="mr-2 h-4 w-4" />
             Add Cost Module
           </Button>
@@ -203,16 +204,18 @@ export function CostModuleList() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {costModules.map((module: any) => (
-              <Card key={module.id} className="bg-gray-800 border-gray-700 hover:border-gray-600 transition-colors">
-                <CardHeader className="pb-3">
+              <Card key={module.id} className="group relative overflow-hidden border-0 bg-gradient-to-br from-background via-background to-muted/20 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <CardHeader className="relative pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                      <div className="relative w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow duration-300">
                         <DollarSign className="w-5 h-5 text-white" />
+                        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                       </div>
                       <div>
-                        <CardTitle className="text-white text-lg">{module.name}</CardTitle>
-                        <div className="text-sm text-gray-400">
+                        <CardTitle className="text-foreground text-lg font-bold">{module.name}</CardTitle>
+                        <div className="text-sm text-muted-foreground uppercase tracking-wide font-medium">
                           {formatCostType(module.costType || module.cost_type)}
                         </div>
                       </div>
@@ -221,7 +224,7 @@ export function CostModuleList() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-700"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors duration-200"
                         onClick={() => {
                           setEditModule(module);
                           setIsEditDialogOpen(true);
@@ -232,7 +235,7 @@ export function CostModuleList() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-gray-400 hover:text-red-400 hover:bg-gray-700"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-200"
                         onClick={() => {
                           setModuleToDelete(module);
                           setIsDeleteDialogOpen(true);

@@ -63,10 +63,21 @@ export default function ChangePasswordPage() {
 
   const changePasswordMutation = useMutation({
     mutationFn: async (data: ChangePasswordFormData) => {
-      return await apiRequest("/api/auth/change-password", {
+      const response = await fetch("/api/auth/change-password", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(data),
+        credentials: "include",
       });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to change password");
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
