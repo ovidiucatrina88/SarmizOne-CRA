@@ -683,7 +683,6 @@ export function LossExceedanceCurveModern({
           probability,
           previousProbability: null,
           toleranceProbability,
-          unacceptableRisk: probability > toleranceProbability ? (probability - toleranceProbability) : 0,
           formattedLoss: formatExposure(point),
           isThresholdPoint: true,
           exposureData: {
@@ -861,6 +860,7 @@ export function LossExceedanceCurveModern({
                   tick={{ fill: 'rgba(255,255,255,0.7)' }}
                   tickLine={{ stroke: 'rgba(255,255,255,0.2)' }}
                   axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
+                  reversed={true}
                 />
                 
                 <YAxis 
