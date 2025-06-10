@@ -176,67 +176,85 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
     const results: any[] = [];
 
     // Search risks
-    if (risksData && (risksData as any).data) {
-      const risks = (risksData as any).data as Risk[];
-      const filteredRisks = risks.filter(risk =>
-        risk.name.toLowerCase().includes(searchLower) ||
-        risk.riskId.toLowerCase().includes(searchLower) ||
-        risk.description?.toLowerCase().includes(searchLower) ||
-        risk.threatCommunity.toLowerCase().includes(searchLower)
-      ).slice(0, 5);
+    try {
+      if (risksData && typeof risksData === 'object' && 'data' in risksData) {
+        const risks = (risksData as any).data as Risk[];
+        if (Array.isArray(risks)) {
+          const filteredRisks = risks.filter(risk =>
+            risk.name?.toLowerCase().includes(searchLower) ||
+            risk.riskId?.toLowerCase().includes(searchLower) ||
+            risk.description?.toLowerCase().includes(searchLower) ||
+            risk.threatCommunity?.toLowerCase().includes(searchLower)
+          ).slice(0, 5);
 
-      filteredRisks.forEach(risk => {
-        results.push({
-          type: 'risk',
-          id: risk.riskId,
-          name: risk.name,
-          description: `Risk ID: ${risk.riskId}`,
-          severity: risk.severity,
-          url: `/risks/${risk.riskId}`
-        });
-      });
+          filteredRisks.forEach(risk => {
+            results.push({
+              type: 'risk',
+              id: risk.riskId,
+              name: risk.name,
+              description: `Risk ID: ${risk.riskId}`,
+              severity: risk.severity,
+              url: `/risks/${risk.riskId}`
+            });
+          });
+        }
+      }
+    } catch (error) {
+      console.warn('Error searching risks:', error);
     }
 
     // Search assets
-    if (assetsData && (assetsData as any).data) {
-      const assets = (assetsData as any).data as Asset[];
-      const filteredAssets = assets.filter(asset =>
-        asset.name.toLowerCase().includes(searchLower) ||
-        asset.assetId.toLowerCase().includes(searchLower) ||
-        asset.description?.toLowerCase().includes(searchLower)
-      ).slice(0, 5);
+    try {
+      if (assetsData && typeof assetsData === 'object' && 'data' in assetsData) {
+        const assets = (assetsData as any).data as Asset[];
+        if (Array.isArray(assets)) {
+          const filteredAssets = assets.filter(asset =>
+            asset.name?.toLowerCase().includes(searchLower) ||
+            asset.assetId?.toLowerCase().includes(searchLower) ||
+            asset.description?.toLowerCase().includes(searchLower)
+          ).slice(0, 5);
 
-      filteredAssets.forEach(asset => {
-        results.push({
-          type: 'asset',
-          id: asset.assetId,
-          name: asset.name,
-          description: `Asset ID: ${asset.assetId}`,
-          assetType: asset.type,
-          url: `/assets/${asset.assetId}`
-        });
-      });
+          filteredAssets.forEach(asset => {
+            results.push({
+              type: 'asset',
+              id: asset.assetId,
+              name: asset.name,
+              description: `Asset ID: ${asset.assetId}`,
+              assetType: asset.type,
+              url: `/assets/${asset.assetId}`
+            });
+          });
+        }
+      }
+    } catch (error) {
+      console.warn('Error searching assets:', error);
     }
 
     // Search controls
-    if (controlsData && (controlsData as any).data) {
-      const controls = (controlsData as any).data as Control[];
-      const filteredControls = controls.filter(control =>
-        control.name.toLowerCase().includes(searchLower) ||
-        control.controlId.toLowerCase().includes(searchLower) ||
-        control.description?.toLowerCase().includes(searchLower)
-      ).slice(0, 5);
+    try {
+      if (controlsData && typeof controlsData === 'object' && 'data' in controlsData) {
+        const controls = (controlsData as any).data as Control[];
+        if (Array.isArray(controls)) {
+          const filteredControls = controls.filter(control =>
+            control.name?.toLowerCase().includes(searchLower) ||
+            control.controlId?.toLowerCase().includes(searchLower) ||
+            control.description?.toLowerCase().includes(searchLower)
+          ).slice(0, 5);
 
-      filteredControls.forEach(control => {
-        results.push({
-          type: 'control',
-          id: control.controlId,
-          name: control.name,
-          description: `Control ID: ${control.controlId}`,
-          status: control.implementationStatus,
-          url: `/controls/${control.controlId}`
-        });
-      });
+          filteredControls.forEach(control => {
+            results.push({
+              type: 'control',
+              id: control.controlId,
+              name: control.name,
+              description: `Control ID: ${control.controlId}`,
+              status: control.implementationStatus,
+              url: `/controls/${control.controlId}`
+            });
+          });
+        }
+      }
+    } catch (error) {
+      console.warn('Error searching controls:', error);
     }
 
     setSearchResults(results);
