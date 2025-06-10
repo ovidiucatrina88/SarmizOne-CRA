@@ -10,7 +10,7 @@ import {
   DialogDescription,
   DialogFooter
 } from "@/components/ui/dialog";
-import { RefreshCw, Search, Plus, PlusCircle, Trash2 } from "lucide-react";
+import { RefreshCw, Search, Plus, PlusCircle, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
@@ -86,6 +86,16 @@ export default function ControlLibrary() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState("all");
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   
   // Form for creating a new control library item
   const form = useForm<ControlLibraryFormValues>({
@@ -173,6 +183,50 @@ export default function ControlLibrary() {
     // Default to empty array
     return [] as ControlLibraryItem[];
   }, [controlLibraryResponse]);
+
+  // Filter and search controls
+  const filteredControls = React.useMemo(() => {
+    let filtered = controlLibrary;
+
+    // Apply search filter
+    if (searchQuery) {
+      const searchLower = searchQuery.toLowerCase();
+      filtered = filtered.filter(control =>
+        control.name?.toLowerCase().includes(searchLower) ||
+        control.controlId?.toLowerCase().includes(searchLower) ||
+        control.description?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    // Apply type filter
+    if (filterType !== "all") {
+      filtered = filtered.filter(control => control.controlType === filterType);
+    }
+
+    // Apply category filter
+    if (filterCategory !== "all") {
+      filtered = filtered.filter(control => control.controlCategory === filterCategory);
+    }
+
+    // Apply status filter
+    if (filterStatus !== "all") {
+      filtered = filtered.filter(control => control.implementationStatus === filterStatus);
+    }
+
+    return filtered;
+  }, [controlLibrary, searchQuery, filterType, filterCategory, filterStatus]);
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredControls.length / itemsPerPage);
+  const paginatedControls = React.useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredControls.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredControls, currentPage, itemsPerPage]);
+
+  // Reset pagination when filters change
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterType, filterCategory, filterStatus]);
   
   // Fetch all risks (for the risk selection dialog)
   const { data: risksResponse, isLoading: isLoadingRisks, error: risksError } = useQuery({
@@ -444,12 +498,86 @@ export default function ControlLibrary() {
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-medium">Control Templates</h3>
           <div className="text-sm text-gray-500">
-            {controlLibrary.length} templates available
+            {filteredControls.length} of {controlLibrary.length} templates {searchQuery || filterType !== "all" || filterCategory !== "all" || filterStatus !== "all" ? "shown" : "available"}
+          </div>
+        </div>
+        
+        {/* Search and Filter Controls */}
+        <div className="bg-gray-800 rounded-lg border border-gray-600 mb-6">
+          <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
+            <div className="flex items-center space-x-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                <Input
+                  type="search"
+                  placeholder="Search controls..."
+                  className="w-full pl-8 bg-gray-600 border-gray-500 text-white placeholder-gray-400 focus:border-blue-500"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setCurrentPage(1); // Reset to first page on search
+                  }}
+                />
+              </div>
+              <Select
+                value={filterType}
+                onValueChange={(value) => {
+                  setFilterType(value);
+                  setCurrentPage(1); // Reset to first page on filter change
+                }}
+              >
+                <SelectTrigger className="w-40 bg-gray-600 border-gray-500 text-white">
+                  <SelectValue placeholder="Type" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-700 border-gray-600">
+                  <SelectItem value="all" className="text-white hover:bg-gray-600">All Types</SelectItem>
+                  <SelectItem value="preventive" className="text-white hover:bg-gray-600">Preventive</SelectItem>
+                  <SelectItem value="detective" className="text-white hover:bg-gray-600">Detective</SelectItem>
+                  <SelectItem value="corrective" className="text-white hover:bg-gray-600">Corrective</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={filterCategory}
+                onValueChange={(value) => {
+                  setFilterCategory(value);
+                  setCurrentPage(1); // Reset to first page on filter change
+                }}
+              >
+                <SelectTrigger className="w-40 bg-gray-600 border-gray-500 text-white">
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-700 border-gray-600">
+                  <SelectItem value="all" className="text-white hover:bg-gray-600">All Categories</SelectItem>
+                  <SelectItem value="technical" className="text-white hover:bg-gray-600">Technical</SelectItem>
+                  <SelectItem value="administrative" className="text-white hover:bg-gray-600">Administrative</SelectItem>
+                  <SelectItem value="physical" className="text-white hover:bg-gray-600">Physical</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={filterStatus}
+                onValueChange={(value) => {
+                  setFilterStatus(value);
+                  setCurrentPage(1); // Reset to first page on filter change
+                }}
+              >
+                <SelectTrigger className="w-48 bg-gray-600 border-gray-500 text-white">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-700 border-gray-600">
+                  <SelectItem value="all" className="text-white hover:bg-gray-600">All Statuses</SelectItem>
+                  <SelectItem value="fully_implemented" className="text-white hover:bg-gray-600">Fully Implemented</SelectItem>
+                  <SelectItem value="partially_implemented" className="text-white hover:bg-gray-600">Partially Implemented</SelectItem>
+                  <SelectItem value="in_progress" className="text-white hover:bg-gray-600">In Progress</SelectItem>
+                  <SelectItem value="planned" className="text-white hover:bg-gray-600">Planned</SelectItem>
+                  <SelectItem value="not_implemented" className="text-white hover:bg-gray-600">Not Implemented</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
         
         {/* Control Library Table */}
-        <div className="rounded-md border">
+        <div className="bg-gray-800 rounded-lg border border-gray-600">
           <Table>
             <TableHeader>
               <TableRow>

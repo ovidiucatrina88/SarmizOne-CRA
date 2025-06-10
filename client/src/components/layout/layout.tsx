@@ -19,14 +19,11 @@ import {
   ChevronDown,
   ChevronUp,
   DollarSign,
-  LogOut,
-  Search
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Risk, Asset, Control } from "@shared/schema";
 
 const navigation = [
   { 
@@ -142,134 +139,10 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
     return true;
   });
   const [expandedSections, setExpandedSections] = useState<string[]>(['Assets', 'Risks', 'Controls', 'Cost Modules', 'Admin']);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [showSearchResults, setShowSearchResults] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Fetch all data for search functionality
-  const { data: risksData } = useQuery({
-    queryKey: ["/api/risks"],
-    enabled: searchQuery.length > 0
-  });
 
-  const { data: assetsData } = useQuery({
-    queryKey: ["/api/assets"],
-    enabled: searchQuery.length > 0
-  });
-
-  const { data: controlsData } = useQuery({
-    queryKey: ["/api/controls"],
-    enabled: searchQuery.length > 0
-  });
-
-  // Search functionality - similar to risks page
-  useEffect(() => {
-    if (searchQuery.length < 2) {
-      setSearchResults([]);
-      setShowSearchResults(false);
-      return;
-    }
-
-    const searchLower = searchQuery.toLowerCase();
-    const results: any[] = [];
-
-    // Search risks
-    try {
-      if (risksData && typeof risksData === 'object' && 'data' in risksData) {
-        const risks = (risksData as any).data as Risk[];
-        if (Array.isArray(risks)) {
-          const filteredRisks = risks.filter(risk =>
-            risk.name?.toLowerCase().includes(searchLower) ||
-            risk.riskId?.toLowerCase().includes(searchLower) ||
-            risk.description?.toLowerCase().includes(searchLower) ||
-            risk.threatCommunity?.toLowerCase().includes(searchLower)
-          ).slice(0, 5);
-
-          filteredRisks.forEach(risk => {
-            results.push({
-              type: 'risk',
-              id: risk.riskId,
-              name: risk.name,
-              description: `Risk ID: ${risk.riskId}`,
-              severity: risk.severity,
-              url: `/risks/${risk.riskId}`
-            });
-          });
-        }
-      }
-    } catch (error) {
-      console.warn('Error searching risks:', error);
-    }
-
-    // Search assets
-    try {
-      if (assetsData && typeof assetsData === 'object' && 'data' in assetsData) {
-        const assets = (assetsData as any).data as Asset[];
-        if (Array.isArray(assets)) {
-          const filteredAssets = assets.filter(asset =>
-            asset.name?.toLowerCase().includes(searchLower) ||
-            asset.assetId?.toLowerCase().includes(searchLower) ||
-            asset.description?.toLowerCase().includes(searchLower)
-          ).slice(0, 5);
-
-          filteredAssets.forEach(asset => {
-            results.push({
-              type: 'asset',
-              id: asset.assetId,
-              name: asset.name,
-              description: `Asset ID: ${asset.assetId}`,
-              assetType: asset.type,
-              url: `/assets/${asset.assetId}`
-            });
-          });
-        }
-      }
-    } catch (error) {
-      console.warn('Error searching assets:', error);
-    }
-
-    // Search controls
-    try {
-      if (controlsData && typeof controlsData === 'object' && 'data' in controlsData) {
-        const controls = (controlsData as any).data as Control[];
-        if (Array.isArray(controls)) {
-          const filteredControls = controls.filter(control =>
-            control.name?.toLowerCase().includes(searchLower) ||
-            control.controlId?.toLowerCase().includes(searchLower) ||
-            control.description?.toLowerCase().includes(searchLower)
-          ).slice(0, 5);
-
-          filteredControls.forEach(control => {
-            results.push({
-              type: 'control',
-              id: control.controlId,
-              name: control.name,
-              description: `Control ID: ${control.controlId}`,
-              status: control.implementationStatus,
-              url: `/controls/${control.controlId}`
-            });
-          });
-        }
-      }
-    } catch (error) {
-      console.warn('Error searching controls:', error);
-    }
-
-    setSearchResults(results);
-    setShowSearchResults(results.length > 0);
-  }, [searchQuery, risksData, assetsData, controlsData]);
-
-  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const handleSearchResultClick = (url: string) => {
-    setLocation(url);
-    setSearchQuery("");
-    setShowSearchResults(false);
-  };
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -482,73 +355,7 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{getPageSubtitle()}</p>
             )}
           </div>
-          
-          {/* Global Search */}
-          <div className="relative mx-6 flex-1 max-w-md">
-            <div className="relative">
-              <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-              <Input
-                type="search"
-                placeholder="Search risks, assets, controls..."
-                className={`w-full pl-10 pr-4 py-2 ${darkMode ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:border-blue-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:border-blue-500'}`}
-                value={searchQuery}
-                onChange={handleSearchInputChange}
-              />
-            </div>
-            
-            {/* Search Results Dropdown */}
-            {showSearchResults && searchResults.length > 0 && (
-              <div className={`absolute top-full left-0 right-0 mt-2 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'} border rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto`}>
-                <div className={`p-3 border-b ${darkMode ? 'border-gray-600' : 'border-gray-200'}`}>
-                  <h3 className={`text-sm font-medium ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-                    Search Results ({searchResults.length})
-                  </h3>
-                </div>
-                <div className="py-2">
-                  {searchResults.map((result, index) => (
-                    <div
-                      key={`${result.type}-${result.id}`}
-                      onClick={() => handleSearchResultClick(result.url)}
-                      className={`px-3 py-2 cursor-pointer transition-colors ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-50'}`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center ${
-                          result.type === 'risk' ? 'bg-red-100 text-red-600' :
-                          result.type === 'asset' ? 'bg-blue-100 text-blue-600' :
-                          'bg-green-100 text-green-600'
-                        }`}>
-                          {result.type === 'risk' && <AlertTriangle className="h-4 w-4" />}
-                          {result.type === 'asset' && <Database className="h-4 w-4" />}
-                          {result.type === 'control' && <Shield className="h-4 w-4" />}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-gray-900'} truncate`}>
-                            {result.name}
-                          </p>
-                          <p className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} truncate`}>
-                            {result.description}
-                          </p>
-                          {result.severity && (
-                            <span className={`inline-block mt-1 px-2 py-0.5 text-xs rounded-full ${
-                              result.severity === 'critical' ? 'bg-red-100 text-red-800' :
-                              result.severity === 'high' ? 'bg-orange-100 text-orange-800' :
-                              result.severity === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                              'bg-green-100 text-green-800'
-                            }`}>
-                              {result.severity}
-                            </span>
-                          )}
-                        </div>
-                        <div className={`text-xs uppercase font-medium ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                          {result.type}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+
           
           <div className="flex items-center space-x-3">
             {pageActions}
