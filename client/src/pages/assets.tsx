@@ -92,7 +92,11 @@ export default function Assets() {
   }
 
   return (
-    <Layout>
+    <Layout
+      pageTitle="Asset Management"
+      pageDescription="Manage your organization's digital assets and their risk profiles"
+      pageActions={pageActions}
+    >
       <div>
         <AssetList assets={assets} onEdit={handleEdit} />
 
