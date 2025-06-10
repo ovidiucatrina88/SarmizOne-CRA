@@ -61,7 +61,7 @@ export class AssetService {
   }
 
   /**
-   * Delete an asset
+   * Delete an asset with cascade operations
    */
   async deleteAsset(id: number): Promise<void> {
     try {
@@ -70,7 +70,7 @@ export class AssetService {
         throw { status: 404, message: 'Asset not found' };
       }
       
-      await storage.deleteAsset(id);
+      await storage.deleteAssetWithCascade(id);
     } catch (error) {
       if (error.status === 404) throw error;
       throw { status: 500, message: 'Failed to delete asset', details: error };
