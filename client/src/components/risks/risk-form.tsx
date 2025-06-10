@@ -1658,6 +1658,11 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
                 form={form}
                 selectedAssets={selectedAssets}
                 setSelectedAssets={setSelectedAssets}
+                onParameterEdit={() => {
+                  // Trigger manual calculation when button is clicked
+                  console.log("Manual calculation triggered from Run Calculations button");
+                  handleRecalculate();
+                }}
               />
             </div>
           </div>
