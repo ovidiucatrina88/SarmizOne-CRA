@@ -246,25 +246,25 @@ export function CostModuleList() {
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="relative space-y-4">
                   <div>
-                    <p className="text-sm text-gray-400 mb-2">Cost Factor</p>
-                    <p className="text-white font-semibold text-lg">{formatCostFactor(module)}</p>
+                    <p className="text-sm text-muted-foreground mb-2 uppercase tracking-wide font-medium">Cost Factor</p>
+                    <p className="text-foreground font-bold text-lg bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">{formatCostFactor(module)}</p>
                   </div>
                   
                   {module.description && (
                     <div>
-                      <p className="text-sm text-gray-400 mb-1">Description</p>
-                      <p className="text-gray-300 text-sm">{module.description}</p>
+                      <p className="text-sm text-muted-foreground mb-1 uppercase tracking-wide font-medium">Description</p>
+                      <p className="text-foreground/80 text-sm leading-relaxed">{module.description}</p>
                     </div>
                   )}
                   
                   {(module.cisControl || module.cis_control) && (
-                    <div>
-                      <p className="text-sm text-gray-400 mb-2">CIS Controls</p>
-                      <div className="flex flex-wrap gap-1">
+                    <div className="pt-2 border-t border-border/50">
+                      <p className="text-sm text-muted-foreground mb-2 uppercase tracking-wide font-medium">CIS Controls</p>
+                      <div className="flex flex-wrap gap-2">
                         {(module.cisControl || module.cis_control)?.map((control: string) => (
-                          <Badge key={control} variant="outline" className="bg-gray-700 text-gray-300 border-gray-600">
+                          <Badge key={control} variant="secondary" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors">
                             {control}
                           </Badge>
                         ))}
