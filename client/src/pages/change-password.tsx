@@ -102,14 +102,18 @@ export default function ChangePasswordPage() {
   const passwordStrength = getPasswordStrength(form.watch("newPassword"));
 
   return (
-    <div className="container mx-auto p-6 max-w-2xl">
-      <Card>
-        <CardHeader>
-          <CardTitle>Change Password</CardTitle>
-          <CardDescription>
-            Update your account password. Make sure to use a strong password.
-          </CardDescription>
-        </CardHeader>
+    <Layout
+      pageTitle="Change Password"
+      pageDescription="Update your account password securely"
+    >
+      <div className="container mx-auto p-6 max-w-2xl">
+        <Card>
+          <CardHeader>
+            <CardTitle>Change Password</CardTitle>
+            <CardDescription>
+              Update your account password. Make sure to use a strong password.
+            </CardDescription>
+          </CardHeader>
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Current Password */}
@@ -263,8 +267,9 @@ export default function ChangePasswordPage() {
               {changePasswordMutation.isPending ? "Changing Password..." : "Change Password"}
             </Button>
           </form>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </Layout>
   );
 }
