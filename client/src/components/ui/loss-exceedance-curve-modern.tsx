@@ -523,28 +523,28 @@ export function LossExceedanceCurveModern({
     for (let i = 0; i <= numPoints; i++) {
       const lossExposure = i * (maxExposure * 1.2 / numPoints);
       
-      // Calculate probability based on position relative to exposure values
+      // Calculate probability based on position relative to exposure values - more realistic curve
       let probability;
       if (lossExposure <= 0) {
-        probability = 100; // 100% probability of exceeding $0
+        probability = 85; // Start lower to allow green buffer areas
       } 
       else if (lossExposure <= minExposure) {
-        // Between $0 and minimum: probability drops from 100% to 90%
-        probability = 100 - ((lossExposure / minExposure) * 10);
+        // Between $0 and minimum: probability drops from 85% to 70%
+        probability = 85 - ((lossExposure / minExposure) * 15);
       } 
       else if (lossExposure <= avgExposure) {
-        // Between minimum and average: probability drops from 90% to 50%
+        // Between minimum and average: probability drops from 70% to 40%
         const positionRatio = (lossExposure - minExposure) / (avgExposure - minExposure);
-        probability = 90 - (positionRatio * 40);
+        probability = 70 - (positionRatio * 30);
       } 
       else if (lossExposure <= maxExposure) {
-        // Between average and maximum: probability drops from 50% to 10%
+        // Between average and maximum: probability drops from 40% to 15%
         const positionRatio = (lossExposure - avgExposure) / (maxExposure - avgExposure);
-        probability = 50 - (positionRatio * 40);
+        probability = 40 - (positionRatio * 25);
       } 
       else {
         // Above maximum: probability approaches 0%
-        probability = Math.max(0, 10 - ((lossExposure - maxExposure) / (maxExposure * 0.2)) * 10);
+        probability = Math.max(0, 15 - ((lossExposure - maxExposure) / (maxExposure * 0.2)) * 15);
       }
       
       // Previous probability (optionally)
@@ -580,29 +580,29 @@ export function LossExceedanceCurveModern({
       if (lossExposure <= toleranceThresholds.fullAcceptance) {
         toleranceProbability = 100;
       } else if (lossExposure <= toleranceThresholds.highAcceptance) {
-        // Interpolate between 100% and 75%
+        // Interpolate between 100% and 85%
         const range = toleranceThresholds.highAcceptance - toleranceThresholds.fullAcceptance;
         const position = lossExposure - toleranceThresholds.fullAcceptance;
         const ratio = position / range;
-        toleranceProbability = 100 - (25 * ratio); // 100% to 75%
+        toleranceProbability = 100 - (15 * ratio); // 100% to 85%
       } else if (lossExposure <= toleranceThresholds.mediumAcceptance) {
-        // Interpolate between 75% and 50%
+        // Interpolate between 85% and 70%
         const range = toleranceThresholds.mediumAcceptance - toleranceThresholds.highAcceptance;
         const position = lossExposure - toleranceThresholds.highAcceptance;
         const ratio = position / range;
-        toleranceProbability = 75 - (25 * ratio); // 75% to 50%
+        toleranceProbability = 85 - (15 * ratio); // 85% to 70%
       } else if (lossExposure <= toleranceThresholds.lowAcceptance) {
-        // Interpolate between 50% and 25%
+        // Interpolate between 70% and 45%
         const range = toleranceThresholds.lowAcceptance - toleranceThresholds.mediumAcceptance;
         const position = lossExposure - toleranceThresholds.mediumAcceptance;
         const ratio = position / range;
-        toleranceProbability = 50 - (25 * ratio); // 50% to 25%
+        toleranceProbability = 70 - (25 * ratio); // 70% to 45%
       } else if (lossExposure <= toleranceThresholds.zeroAcceptance) {
-        // Interpolate between 25% and 0%
+        // Interpolate between 45% and 0%
         const range = toleranceThresholds.zeroAcceptance - toleranceThresholds.lowAcceptance;
         const position = lossExposure - toleranceThresholds.lowAcceptance;
         const ratio = position / range;
-        toleranceProbability = 25 - (25 * ratio); // 25% to 0%
+        toleranceProbability = 45 - (45 * ratio); // 45% to 0%
       } else {
         toleranceProbability = 0;
       }
@@ -616,6 +616,8 @@ export function LossExceedanceCurveModern({
       const acceptableRiskBuffer = toleranceProbability > probability 
         ? (toleranceProbability - probability) 
         : 0;
+      
+
         
       // Add data point
       data.push({
@@ -905,6 +907,16 @@ export function LossExceedanceCurveModern({
                     fill="url(#riskAreaGradient)"
                     fillOpacity={0.5}
                     stackId="risk"
+                  />
+                )}
+
+                {/* Base area for current probability (transparent, just for stacking green area) */}
+                {chartData.length > 1 && (
+                  <Area
+                    dataKey="probability"
+                    stroke="none"
+                    fill="transparent"
+                    stackId="acceptable"
                   />
                 )}
 
