@@ -276,11 +276,11 @@ const generateSummaryData = (
 // Looking at the console logs, we see values like $90M, $57M, $63M
 // so set our max threshold at around $500M
 const DEFAULT_THRESHOLDS = {
-  FULL_ACCEPTANCE: 2000000,       // 100% probability at $2M
-  HIGH_ACCEPTANCE: 8000000,       // 75% probability at $8M
-  MEDIUM_ACCEPTANCE: 15000000,    // 50% probability at $15M
-  LOW_ACCEPTANCE: 25000000,       // 25% probability at $25M
-  ZERO_ACCEPTANCE: 50000000       // 0% probability at $50M+
+  FULL_ACCEPTANCE: 10000000,      // 100% probability at $10M
+  HIGH_ACCEPTANCE: 50000000,      // 75% probability at $50M
+  MEDIUM_ACCEPTANCE: 75000000,    // 50% probability at $75M
+  LOW_ACCEPTANCE: 100000000,      // 25% probability at $100M
+  ZERO_ACCEPTANCE: 500000000      // 0% probability at $500M+
 };
 
 export function LossExceedanceCurve({ 
@@ -415,18 +415,15 @@ export function LossExceedanceCurve({
         }
         
         // Determine tolerance level based on thresholds
-        // Create a more realistic tolerance curve that will generate green areas
         let toleranceLevel = 0;
         if (lossExposure <= thresholds.FULL_ACCEPTANCE) {
           toleranceLevel = 100;
         } else if (lossExposure <= thresholds.HIGH_ACCEPTANCE) {
-          toleranceLevel = 80; // Increased from 75 to create more green area
+          toleranceLevel = 75;
         } else if (lossExposure <= thresholds.MEDIUM_ACCEPTANCE) {
-          toleranceLevel = 60; // Increased from 50 to create green areas
+          toleranceLevel = 50;
         } else if (lossExposure <= thresholds.LOW_ACCEPTANCE) {
-          toleranceLevel = 40; // Increased from 25 to create green areas
-        } else {
-          toleranceLevel = 10; // Added baseline tolerance even beyond LOW_ACCEPTANCE
+          toleranceLevel = 25;
         }
         
         // Add the data point to our curve
@@ -500,46 +497,46 @@ export function LossExceedanceCurve({
         thresholdLabel: "100% acceptable"
       });
       
-      // 80% threshold (HIGH_ACCEPTANCE)
+      // 75% threshold (HIGH_ACCEPTANCE)
       directCurveData.push({
         lossExposure: thresholds.HIGH_ACCEPTANCE,
         // Calculate appropriate probability based on position between min and max exposure
         probability: 100 - (((thresholds.HIGH_ACCEPTANCE - 0) / (maxExposure - 0)) * 100),
         previousProbability: null,
-        toleranceProbability: 80,
+        toleranceProbability: 75,
         unacceptableRisk: 0,
         formattedLoss: formatExposure(thresholds.HIGH_ACCEPTANCE),
         isThresholdPoint: true,
         thresholdType: "HIGH_ACCEPTANCE",
-        thresholdLabel: "80% acceptable"
+        thresholdLabel: "75% acceptable"
       });
       
-      // 60% threshold (MEDIUM_ACCEPTANCE)
+      // 50% threshold (MEDIUM_ACCEPTANCE)
       directCurveData.push({
         lossExposure: thresholds.MEDIUM_ACCEPTANCE,
         // Calculate appropriate probability based on position between min and max exposure
         probability: 100 - (((thresholds.MEDIUM_ACCEPTANCE - 0) / (maxExposure - 0)) * 100),
         previousProbability: null,
-        toleranceProbability: 60,
+        toleranceProbability: 50,
         unacceptableRisk: 0,
         formattedLoss: formatExposure(thresholds.MEDIUM_ACCEPTANCE),
         isThresholdPoint: true,
         thresholdType: "MEDIUM_ACCEPTANCE",
-        thresholdLabel: "60% acceptable"
+        thresholdLabel: "50% acceptable"
       });
       
-      // 40% threshold (LOW_ACCEPTANCE)
+      // 25% threshold (LOW_ACCEPTANCE)
       directCurveData.push({
         lossExposure: thresholds.LOW_ACCEPTANCE,
         // Calculate appropriate probability based on position between min and max exposure
         probability: 100 - (((thresholds.LOW_ACCEPTANCE - 0) / (maxExposure - 0)) * 100),
         previousProbability: null,
-        toleranceProbability: 40,
+        toleranceProbability: 25,
         unacceptableRisk: 0,
         formattedLoss: formatExposure(thresholds.LOW_ACCEPTANCE),
         isThresholdPoint: true,
         thresholdType: "LOW_ACCEPTANCE",
-        thresholdLabel: "40% acceptable" 
+        thresholdLabel: "25% acceptable" 
       });
       
       // 0% threshold (ZERO_ACCEPTANCE)
@@ -1188,27 +1185,6 @@ export function LossExceedanceCurve({
                   />
                 );
               })}
-
-              {/* Using a custom curve to highlight acceptable risk where tolerance exceeds probability */}
-              {showToleranceCurve && combinedData.map((entry, index) => {
-                // Only draw areas where tolerance exceeds probability (acceptable risk)
-                if (entry.toleranceProbability <= entry.probability || index === 0) {
-                  return null;
-                }
-                
-                return (
-                  <ReferenceArea
-                    key={`acceptable-area-${index}`}
-                    x1={entry.lossExposure}
-                    x2={combinedData[index - 1]?.lossExposure}
-                    y1={entry.probability}
-                    y2={entry.toleranceProbability}
-                    fill="#10B981"
-                    fillOpacity={0.4}
-                    stroke="none"
-                  />
-                );
-              })}
               
               {/* Current Loss Probability Curve - render last so it appears on top */}
               <Line 
@@ -1263,7 +1239,7 @@ export function LossExceedanceCurve({
         </div>
         
         {/* Annotations */}
-        <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="text-sm text-gray-600">
             <span className="inline-block w-3 h-3 bg-blue-500 mr-2"></span>
             Current Loss Probability
@@ -1283,10 +1259,6 @@ export function LossExceedanceCurve({
           <div className="text-sm text-gray-600">
             <span className="inline-block w-3 h-3 bg-red-300 mr-2"></span>
             Unacceptable Risk Area
-          </div>
-          <div className="text-sm text-gray-600">
-            <span className="inline-block w-3 h-3 bg-green-400 mr-2"></span>
-            Acceptable Risk Area
           </div>
         </div>
       </CardContent>
