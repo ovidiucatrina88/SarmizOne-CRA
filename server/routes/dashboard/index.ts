@@ -1,6 +1,7 @@
 import express from 'express';
 // import { isAuthenticated } from '../../auth';
 import { storage } from '../../services/storage';
+import { riskSummaryService } from '../../services/riskSummaryService';
 import { sendError, sendSuccess } from '../common/responses/apiResponse';
 
 const router = express.Router();

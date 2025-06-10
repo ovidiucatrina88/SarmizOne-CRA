@@ -13,6 +13,7 @@ import dashboardRouter from './dashboard';
 import logsRouter from './logs';
 import enterpriseArchitectureRouter from './enterprise-architecture';
 import authRouter from './auth';
+import adminRouter from './admin';
 import vulnerabilitiesRouter from './vulnerabilities';
 import { errorHandler } from './common/middleware/errorHandler';
 import { requestLogger } from './common/middleware/requestLogger';
@@ -47,6 +48,7 @@ export function registerRoutes(app: Express): Server {
   apiRouter.use('/cost-modules', costModulesRouter);
   apiRouter.use('/risk-costs', riskCostsRouter);
   apiRouter.use('/enterprise-architecture', enterpriseArchitectureRouter);
+  apiRouter.use('/admin', adminRouter);
   apiRouter.use('/', vulnerabilitiesRouter);
   apiRouter.use('/', authRouter);
   
