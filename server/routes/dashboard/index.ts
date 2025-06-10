@@ -1,6 +1,6 @@
 import express from 'express';
 // import { isAuthenticated } from '../../auth';
-import { storage } from '../../services/storage';
+import { riskService, assetService, controlService } from '../../services';
 import { riskSummaryService } from '../../services/riskSummaryService';
 import { sendError, sendSuccess } from '../common/responses/apiResponse';
 
@@ -10,7 +10,7 @@ const router = express.Router();
 router.get('/summary', async (req, res) => {
   try {
     // Get risks for summary calculations - remove filter parameter for compatibility
-    const risks = await storage.getAllRisks();
+    const risks = await riskService.getAllRisks();
     
     // Calculate risk metrics
     const totalRisks = risks.length;
@@ -32,7 +32,7 @@ router.get('/summary', async (req, res) => {
     });
     
     // Get controls for dashboard - remove filter parameter for compatibility
-    const controls = await storage.getAllControls();
+    const controls = await controlService.getAllControls();
     const implementedControls = controls.filter(c => 
       c.implementationStatus === 'fully_implemented').length;
     const inProgressControls = controls.filter(c => 
@@ -43,11 +43,11 @@ router.get('/summary', async (req, res) => {
       c.implementationStatus === 'not_implemented').length;
       
     // Get assets for dashboard - remove filter parameter for compatibility
-    const assets = await storage.getAllAssets();
+    const assets = await assetService.getAllAssets();
     
     // Get recent activity
     // Using getAllActivityLogs instead of getLogs for compatibility
-    const allLogs = await storage.getAllActivityLogs();
+    const allLogs = await riskService.getAllActivityLogs();
     const recentLogs = allLogs.slice(0, 10);
     
     // Return dashboard data

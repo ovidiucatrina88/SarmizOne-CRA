@@ -129,20 +129,20 @@ router.put('/:id', validateId, validate(assetSchema), async (req, res) => {
     const asset = req.body;
     
     // Check if asset exists
-    const existingAsset = await storage.getAsset(id);
+    const existingAsset = await assetService.getAsset(id);
     if (!existingAsset) {
       return sendError(res, { message: 'Asset not found' }, 404);
     }
     
     // Check if assetId is changed and if it conflicts with another asset
     if (asset.assetId !== existingAsset.assetId) {
-      const conflictingAsset = await storage.getAssetByAssetId(asset.assetId);
+      const conflictingAsset = await assetService.getAssetByAssetId(asset.assetId);
       if (conflictingAsset) {
         return sendError(res, { message: `Asset ID ${asset.assetId} already exists` }, 400);
       }
     }
     
-    const updatedAsset = await storage.updateAsset(id, asset);
+    const updatedAsset = await assetService.updateAsset(id, asset);
     return sendSuccess(res, updatedAsset);
   } catch (error) {
     return sendError(res, error);
@@ -156,7 +156,7 @@ router.delete('/:id', validateId, async (req, res) => {
     console.log(`Attempting to delete asset with ID: ${id}`);
     
     // Get the asset to find its assetId
-    const asset = await storage.getAsset(id);
+    const asset = await assetService.getAsset(id);
     if (!asset) {
       return sendError(res, { message: 'Asset not found' }, 404);
     }
@@ -187,12 +187,12 @@ router.get('/:id/risks', validateId, async (req, res) => {
     const id = parseInt(req.params.id);
     
     // Verify asset exists
-    const asset = await storage.getAsset(id);
+    const asset = await assetService.getAsset(id);
     if (!asset) {
       return sendError(res, { message: 'Asset not found' }, 404);
     }
     
-    const risks = await storage.getAllRisks();
+    const risks = await assetService.getRisksForAsset(asset.assetId);
     const assetRisks = risks.filter(risk => 
       risk.associatedAssets && risk.associatedAssets.includes(id.toString())
     );
