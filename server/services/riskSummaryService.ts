@@ -43,7 +43,9 @@ export class RiskSummaryService {
       avg,
       p10: getPercentile(exposures, 10),
       median: getPercentile(exposures, 50),
-      p90: getPercentile(exposures, 90)
+      p90: getPercentile(exposures, 90),
+      p95: getPercentile(exposures, 95),
+      p99: getPercentile(exposures, 99)
     };
   }
 
@@ -63,6 +65,32 @@ export class RiskSummaryService {
   }
 
   /**
+   * Generate exposure curve data for loss exceedance visualization
+   */
+  private generateExposureCurveData(risks: any[]): Array<{probability: number, impact: number}> {
+    if (risks.length === 0) return [];
+    
+    // Extract residual risk values and sort them
+    const residualRisks = risks
+      .map(r => parseFloat(r.residualRisk) || 0)
+      .filter(v => v > 0)
+      .sort((a, b) => b - a); // Sort descending for exceedance curve
+    
+    if (residualRisks.length === 0) return [];
+    
+    // Generate curve points (probability of exceeding vs impact level)
+    const curveData: Array<{probability: number, impact: number}> = [];
+    
+    for (let i = 0; i < residualRisks.length; i++) {
+      const probability = (i + 1) / residualRisks.length; // Probability of exceeding this value
+      const impact = residualRisks[i];
+      curveData.push({ probability, impact });
+    }
+    
+    return curveData;
+  }
+
+  /**
    * Update risk summaries for a specific legal entity or globally
    */
   async updateRiskSummaries(legalEntityId?: string): Promise<void> {
@@ -70,13 +98,49 @@ export class RiskSummaryService {
       const riskData = await this.getRisksForEntity(legalEntityId);
       const stats = this.calculateExposureStatistics(riskData);
       
+      // Calculate risk counts by severity
+      const totalRisks = riskData.length;
+      const criticalRisks = riskData.filter(r => r.severity === 'critical').length;
+      const highRisks = riskData.filter(r => r.severity === 'high').length;
+      const mediumRisks = riskData.filter(r => r.severity === 'medium').length;
+      const lowRisks = riskData.filter(r => r.severity === 'low').length;
+      
+      // Calculate total risk values
+      const totalInherentRisk = riskData.reduce((sum, r) => sum + (parseFloat(r.inherentRisk) || 0), 0);
+      const totalResidualRisk = riskData.reduce((sum, r) => sum + (parseFloat(r.residualRisk) || 0), 0);
+      
+      // Generate exposure curve data
+      const exposureCurveData = this.generateExposureCurveData(riskData);
+      
       const now = new Date();
       const summaryData: InsertRiskSummary = {
         year: now.getFullYear(),
         month: now.getMonth() + 1,
         legalEntityId: legalEntityId || null,
+        
+        // Risk count metrics
+        totalRisks,
+        criticalRisks,
+        highRisks,
+        mediumRisks,
+        lowRisks,
+        
+        // Risk value metrics
+        totalInherentRisk,
+        totalResidualRisk,
+        
+        // Exposure statistics for loss exceedance curve
         minimumExposure: stats.min,
         maximumExposure: stats.max,
+        meanExposure: stats.avg,
+        medianExposure: stats.median,
+        percentile95Exposure: stats.p95,
+        percentile99Exposure: stats.p99,
+        
+        // Exposure curve data for visualization
+        exposureCurveData: exposureCurveData as any,
+        
+        // Legacy compatibility fields
         averageExposure: stats.avg,
         tenthPercentileExposure: stats.p10,
         mostLikelyExposure: stats.median,
@@ -85,7 +149,7 @@ export class RiskSummaryService {
 
       await db.insert(riskSummaries).values(summaryData);
       
-      console.log(`Risk summary updated: entity=${legalEntityId || 'global'}, risks=${riskData.length}, max=${stats.max}`);
+      console.log(`Risk summary updated: entity=${legalEntityId || 'global'}, risks=${totalRisks}, critical=${criticalRisks}, high=${highRisks}, totalResidual=${totalResidualRisk}`);
     } catch (error) {
       console.error('Error updating risk summaries:', error);
       throw error;
