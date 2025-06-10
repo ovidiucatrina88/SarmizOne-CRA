@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,6 +26,7 @@ const changePasswordSchema = z.object({
 type ChangePasswordForm = z.infer<typeof changePasswordSchema>;
 
 export default function ChangePasswordPage() {
+  const [, setLocation] = useLocation();
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -62,6 +64,10 @@ export default function ChangePasswordPage() {
         description: "Password changed successfully",
       });
       form.reset();
+      // Redirect to dashboard after successful password change
+      setTimeout(() => {
+        setLocation('/');
+      }, 1500);
     },
     onError: (error: any) => {
       const errorMessage = error.error || "Failed to change password";

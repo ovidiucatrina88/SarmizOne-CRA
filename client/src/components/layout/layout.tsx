@@ -18,9 +18,12 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronUp,
-  DollarSign
+  DollarSign,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 const navigation = [
   { 
@@ -126,7 +129,7 @@ const applyThemeToDocument = (darkMode: boolean) => {
 };
 
 export default function Layout({ children, pageTitle, pageDescription, pageIcon, pageActions }: LayoutProps) {
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     // Initialize from localStorage or default to true
@@ -137,6 +140,32 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
     return true;
   });
   const [expandedSections, setExpandedSections] = useState<string[]>(['Assets', 'Risks', 'Controls', 'Cost Modules', 'Admin']);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (!response.ok) {
+        throw new Error('Logout failed');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.clear();
+      window.location.href = '/login';
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Logout Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
 
   // Save dark mode preference to localStorage and apply theme whenever it changes
   useEffect(() => {
@@ -152,7 +181,7 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
   }, []);
 
   const toggleDarkMode = () => {
-    setDarkMode(prev => !prev);
+    setDarkMode((prev: boolean) => !prev);
   };
 
   const toggleSection = (sectionName: string) => {
@@ -342,6 +371,25 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
                 <>
                   <Moon className="mr-2 h-5 w-5" />
                   Dark Mode
+                </>
+              )}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => logoutMutation.mutate()}
+              disabled={logoutMutation.isPending}
+              className={`${darkMode ? 'text-gray-300 hover:text-white hover:bg-gray-700' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'}`}
+            >
+              {logoutMutation.isPending ? (
+                <>
+                  <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2" />
+                  Logging out...
+                </>
+              ) : (
+                <>
+                  <LogOut className="mr-2 h-5 w-5" />
+                  Logout
                 </>
               )}
             </Button>
