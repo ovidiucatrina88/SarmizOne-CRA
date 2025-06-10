@@ -25,7 +25,7 @@ interface DataPoint {
   previousProbability?: number | null;
   toleranceProbability?: number | null;
   unacceptableRisk?: number;
-  acceptableRiskBuffer?: number;
+  acceptableRiskBuffer?: number | null;
   formattedLoss: string;
   isThresholdPoint?: boolean;
   exposureData?: {
@@ -613,9 +613,10 @@ export function LossExceedanceCurveModern({
         : 0;
       
       // Calculate acceptable risk buffer (tolerance exceeding current risk)
+      // Use undefined instead of 0 to create proper gaps in the area chart
       const acceptableRiskBuffer = toleranceProbability > probability 
         ? (toleranceProbability - probability) 
-        : 0;
+        : undefined;
       
 
         
@@ -910,24 +911,25 @@ export function LossExceedanceCurveModern({
                   />
                 )}
 
-                {/* Base area for current probability (transparent, just for stacking green area) */}
+                {/* Green filled area showing acceptable risk buffer */}
                 {chartData.length > 1 && (
                   <Area
                     dataKey="probability"
                     stroke="none"
                     fill="transparent"
-                    stackId="acceptable"
+                    stackId="green"
                   />
                 )}
-
-                {/* Green shaded area for acceptable risk buffer - stacked on top of current probability */}
+                
+                {/* Green buffer area stacked above current probability */}
                 {chartData.length > 1 && (
                   <Area
                     dataKey="acceptableRiskBuffer"
                     stroke="none"
                     fill="url(#acceptableAreaGradient)"
-                    fillOpacity={0.5}
-                    stackId="acceptable"
+                    fillOpacity={0.4}
+                    stackId="green"
+                    connectNulls={true}
                   />
                 )}
                 
