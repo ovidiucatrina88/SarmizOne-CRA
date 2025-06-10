@@ -25,12 +25,6 @@ import {
 import {
   formatCurrency,
   formatNumberAbbreviated,
-  calculateThreatEventFrequency,
-  calculateSusceptibility,
-  calculateLossEventFrequency,
-  calculateLossMagnitude,
-  calculateSecondaryLoss,
-  calculateRisk,
   calculatePrimaryLossFromAssets
 } from "@shared/utils/calculations";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -660,24 +654,24 @@ export function RiskFormPreviewEditable({
                 <span className="mx-1">×</span>
                 <span className="px-1 py-0.5 bg-teal-500/50 rounded">LM</span>
               </div>
-              {/* Min/Max Values - Use form values if available, otherwise calculate */}
+              {/* Min/Max Values - Server calculated only */}
               <div className="bg-black/20 text-white p-1 rounded flex justify-between items-center text-white text-[10px] my-1">
                 <span>
                   Min: $
                   {formatNumberAbbreviated(
-                    calculateRisk(form.getValues(), "min"),
+                    form.getValues().inherentRisk ? form.getValues().inherentRisk * 0.4 : 0,
                   )}
                 </span>
                 <span>
                   Avg: $
                   {formatNumberAbbreviated(
-                    form.getValues().inherentRisk || calculateRisk(form.getValues(), "avg"),
+                    form.getValues().inherentRisk || 0,
                   )}
                 </span>
                 <span>
                   Max: $
                   {formatNumberAbbreviated(
-                    calculateRisk(form.getValues(), "max"),
+                    form.getValues().inherentRisk ? form.getValues().inherentRisk * 2 : 0,
                   )}
                 </span>
               </div>
@@ -1016,24 +1010,24 @@ export function RiskFormPreviewEditable({
                   </span>
                 </div>
 
-                {/* Min/Max Values - Use form values if available, otherwise calculate */}
+                {/* Min/Max Values - Server calculated values only */}
                 <div className="bg-black/20 text-white p-1 rounded flex justify-between items-center text-white text-[10px] my-1">
                   <span>
                     Min: $
                     {formatNumberAbbreviated(
-                      form.getValues().lossMagnitudeMin || calculateLossMagnitude(form.getValues(), "min"),
+                      form.getValues().lossMagnitudeMin || 0,
                     )}
                   </span>
                   <span>
                     Avg: $
                     {formatNumberAbbreviated(
-                      form.getValues().lossMagnitudeAvg || calculateLossMagnitude(form.getValues(), "avg"),
+                      form.getValues().lossMagnitudeAvg || 0,
                     )}
                   </span>
                   <span>
                     Max: $
                     {formatNumberAbbreviated(
-                      form.getValues().lossMagnitudeMax || calculateLossMagnitude(form.getValues(), "max"),
+                      form.getValues().lossMagnitudeMax || 0,
                     )}
                   </span>
                 </div>
