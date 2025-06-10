@@ -400,7 +400,7 @@ export class DatabaseStorage {
    */
   
   async getAllActivityLogs(): Promise<ActivityLog[]> {
-    return db.select().from(activityLogs).orderBy(desc(activityLogs.timestamp));
+    return db.select().from(activityLogs).orderBy(desc(activityLogs.createdAt));
   }
 
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
