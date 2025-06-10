@@ -856,6 +856,8 @@ export function LossExceedanceCurveModern({
                 
                 <XAxis 
                   dataKey="lossExposure" 
+                  type="number"
+                  domain={['dataMin', 'dataMax']}
                   tick={{ fill: 'rgba(255,255,255,0.7)' }}
                   tickLine={{ stroke: 'rgba(255,255,255,0.2)' }}
                   axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
