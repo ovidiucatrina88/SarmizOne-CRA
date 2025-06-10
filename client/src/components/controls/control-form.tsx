@@ -231,11 +231,8 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
           : `A new control ${isTemplate ? "template" : "instance"} has been added to your library.`,
       });
       
-      // For updates, keep form open to show the updated values
-      // For new creations, close the form
-      if (!control) {
-        onClose();
-      }
+      // Auto-close the form after successful submission (both create and update)
+      onClose();
     },
     onError: (error) => {
       // Show error message with template/instance language
