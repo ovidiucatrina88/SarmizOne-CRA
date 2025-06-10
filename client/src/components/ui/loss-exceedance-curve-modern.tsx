@@ -25,6 +25,7 @@ interface DataPoint {
   previousProbability?: number | null;
   toleranceProbability?: number | null;
   unacceptableRisk?: number;
+  acceptableRiskBuffer?: number;
   formattedLoss: string;
   isThresholdPoint?: boolean;
   exposureData?: {
@@ -859,6 +860,12 @@ export function LossExceedanceCurveModern({
                     <stop offset="5%" stopColor="#a83244" stopOpacity={0.8} />
                     <stop offset="95%" stopColor="#a83244" stopOpacity={0.2} />
                   </linearGradient>
+                  
+                  {/* Gradient for acceptable risk buffer area */}
+                  <linearGradient id="acceptableAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.2} />
+                  </linearGradient>
                 </defs>
                 
                 <CartesianGrid stroke="rgba(255,255,255,0.1)" />
@@ -898,6 +905,17 @@ export function LossExceedanceCurveModern({
                     fill="url(#riskAreaGradient)"
                     fillOpacity={0.5}
                     stackId="risk"
+                  />
+                )}
+
+                {/* Green shaded area for acceptable risk buffer - stacked on top of current probability */}
+                {chartData.length > 1 && (
+                  <Area
+                    dataKey="acceptableRiskBuffer"
+                    stroke="none"
+                    fill="url(#acceptableAreaGradient)"
+                    fillOpacity={0.5}
+                    stackId="acceptable"
                   />
                 )}
                 
@@ -1157,6 +1175,10 @@ export function LossExceedanceCurveModern({
           <div className="flex items-center">
             <div className="w-3 h-3 bg-red-700 rounded-full mr-2"></div>
             <span className="text-gray-300">Unacceptable Risk Area</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-3 h-3 bg-green-600 rounded-full mr-2"></div>
+            <span className="text-gray-300">Risk Tolerance Buffer</span>
           </div>
         </div>
         
