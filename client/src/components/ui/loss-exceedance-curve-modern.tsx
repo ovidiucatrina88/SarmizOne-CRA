@@ -1147,6 +1147,10 @@ export function LossExceedanceCurveModern({
             </div>
           )}
           <div className="flex items-center">
+            <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+            <span className="text-gray-300">Acceptable Risk Area</span>
+          </div>
+          <div className="flex items-center">
             <div className="w-3 h-3 bg-red-700 rounded-full mr-2"></div>
             <span className="text-gray-300">Unacceptable Risk Area</span>
           </div>
