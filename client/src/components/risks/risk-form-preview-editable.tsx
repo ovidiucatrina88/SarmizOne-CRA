@@ -715,28 +715,19 @@ export function RiskFormPreviewEditable({
                   </span>
                 </div>
 
-                {/* Min/Max Values */}
+                {/* Min/Max Values - Server calculated only */}
                 <div className="bg-black/20 text-white p-1 rounded flex justify-between items-center text-white text-[10px] my-1">
                   <span>
                     Min:{" "}
-                    {calculateLossEventFrequency(
-                      form.getValues(),
-                      "min",
-                    ).toFixed(2)}
+                    {(form.getValues().lossEventFrequencyMin || 0).toFixed(2)}
                   </span>
                   <span>
                     Avg:{" "}
-                    {calculateLossEventFrequency(
-                      form.getValues(),
-                      "avg",
-                    ).toFixed(2)}
+                    {(form.getValues().lossEventFrequencyAvg || 0).toFixed(2)}
                   </span>
                   <span>
                     Max:{" "}
-                    {calculateLossEventFrequency(
-                      form.getValues(),
-                      "max",
-                    ).toFixed(2)}
+                    {(form.getValues().lossEventFrequencyMax || 0).toFixed(2)}
                   </span>
                 </div>
               </div>
@@ -778,28 +769,19 @@ export function RiskFormPreviewEditable({
                       </span>
                     </div>
 
-                    {/* Min/Avg/Max Values */}
+                    {/* Min/Avg/Max Values - Server calculated only */}
                     <div className="bg-black/20 text-white p-1 rounded flex justify-between items-center text-white text-[10px] my-1">
                       <span>
                         Min:{" "}
-                        {calculateThreatEventFrequency(
-                          form.getValues(),
-                          "min",
-                        ).toFixed(2)}
+                        {(form.getValues().threatEventFrequencyMin || 0).toFixed(2)}
                       </span>
                       <span>
                         Avg:{" "}
-                        {calculateThreatEventFrequency(
-                          form.getValues(),
-                          "avg",
-                        ).toFixed(2)}
+                        {(form.getValues().threatEventFrequencyAvg || 0).toFixed(2)}
                       </span>
                       <span>
                         Max:{" "}
-                        {calculateThreatEventFrequency(
-                          form.getValues(),
-                          "max",
-                        ).toFixed(2)}
+                        {(form.getValues().threatEventFrequencyMax || 0).toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -893,28 +875,19 @@ export function RiskFormPreviewEditable({
                       </span>
                     </div>
 
-                    {/* Min/Max Values */}
+                    {/* Min/Max Values - Server calculated only */}
                     <div className="bg-black/20 text-white p-1 rounded flex justify-between items-center text-white text-[10px] my-1">
                       <span>
                         Min:{" "}
-                        {calculateSusceptibility(
-                          form.getValues(),
-                          "min",
-                        ).toFixed(2)}
+                        {(form.getValues().susceptibilityMin || 0).toFixed(2)}
                       </span>
                       <span>
                         Avg:{" "}
-                        {calculateSusceptibility(
-                          form.getValues(),
-                          "avg",
-                        ).toFixed(2)}
+                        {(form.getValues().susceptibilityAvg || 0).toFixed(2)}
                       </span>
                       <span>
                         Max:{" "}
-                        {calculateSusceptibility(
-                          form.getValues(),
-                          "max",
-                        ).toFixed(2)}
+                        {(form.getValues().susceptibilityMax || 0).toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -1147,24 +1120,24 @@ export function RiskFormPreviewEditable({
                       </span>
                     </div>
 
-                    {/* Min/Max Values */}
+                    {/* Min/Max Values - Server calculated only */}
                     <div className="bg-black/20 text-white p-1 rounded flex justify-between items-center text-white text-[10px] my-1">
                       <span>
                         Min: $
                         {formatNumberAbbreviated(
-                          calculateSecondaryLoss(form.getValues(), "min"),
+                          form.getValues().secondaryLossMagnitudeMin || 0,
                         )}
                       </span>
                       <span>
                         Avg: $
                         {formatNumberAbbreviated(
-                          calculateSecondaryLoss(form.getValues(), "avg"),
+                          form.getValues().secondaryLossMagnitudeAvg || 0,
                         )}
                       </span>
                       <span>
                         Max: $
                         {formatNumberAbbreviated(
-                          calculateSecondaryLoss(form.getValues(), "max"),
+                          form.getValues().secondaryLossMagnitudeMax || 0,
                         )}
                       </span>
                     </div>
