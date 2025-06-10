@@ -2,6 +2,9 @@ import { Router } from 'express';
 import { authService } from '../services/authService';
 import { validatePasswordStrength } from '@shared/utils/passwordUtils';
 import { z } from 'zod';
+import { db } from '../db';
+import { authConfig } from '@shared/schema';
+import { eq } from 'drizzle-orm';
 
 const router = Router();
 
