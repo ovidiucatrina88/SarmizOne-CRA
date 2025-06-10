@@ -1464,16 +1464,16 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
                             ),
                             lossEventFrequencyConfidence: "medium",
 
-                            // Calculate Loss Magnitude (LM = PL + (SLEF * SLM)) using shared utility
-                            lossMagnitudeMin: calculateLossMagnitude(
+                            // Use server-calculated Loss Magnitude values if available, otherwise calculate
+                            lossMagnitudeMin: risk?.lossMagnitudeMin || calculateLossMagnitude(
                               createRiskObjectFromFormValues(formValues),
                               "min",
                             ),
-                            lossMagnitudeAvg: calculateLossMagnitude(
+                            lossMagnitudeAvg: risk?.lossMagnitudeAvg || calculateLossMagnitude(
                               createRiskObjectFromFormValues(formValues),
                               "avg",
                             ),
-                            lossMagnitudeMax: calculateLossMagnitude(
+                            lossMagnitudeMax: risk?.lossMagnitudeMax || calculateLossMagnitude(
                               createRiskObjectFromFormValues(formValues),
                               "max",
                             ),

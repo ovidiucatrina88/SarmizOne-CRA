@@ -660,7 +660,7 @@ export function RiskFormPreviewEditable({
                 <span className="mx-1">×</span>
                 <span className="px-1 py-0.5 bg-teal-500/50 rounded">LM</span>
               </div>
-              {/* Min/Max Values */}
+              {/* Min/Max Values - Use form values if available, otherwise calculate */}
               <div className="bg-black/20 text-white p-1 rounded flex justify-between items-center text-white text-[10px] my-1">
                 <span>
                   Min: $
@@ -671,7 +671,7 @@ export function RiskFormPreviewEditable({
                 <span>
                   Avg: $
                   {formatNumberAbbreviated(
-                    calculateRisk(form.getValues(), "avg"),
+                    form.getValues().inherentRisk || calculateRisk(form.getValues(), "avg"),
                   )}
                 </span>
                 <span>
@@ -1016,24 +1016,24 @@ export function RiskFormPreviewEditable({
                   </span>
                 </div>
 
-                {/* Min/Max Values */}
+                {/* Min/Max Values - Use form values if available, otherwise calculate */}
                 <div className="bg-black/20 text-white p-1 rounded flex justify-between items-center text-white text-[10px] my-1">
                   <span>
                     Min: $
                     {formatNumberAbbreviated(
-                      calculateLossMagnitude(form.getValues(), "min"),
+                      form.getValues().lossMagnitudeMin || calculateLossMagnitude(form.getValues(), "min"),
                     )}
                   </span>
                   <span>
                     Avg: $
                     {formatNumberAbbreviated(
-                      calculateLossMagnitude(form.getValues(), "avg"),
+                      form.getValues().lossMagnitudeAvg || calculateLossMagnitude(form.getValues(), "avg"),
                     )}
                   </span>
                   <span>
                     Max: $
                     {formatNumberAbbreviated(
-                      calculateLossMagnitude(form.getValues(), "max"),
+                      form.getValues().lossMagnitudeMax || calculateLossMagnitude(form.getValues(), "max"),
                     )}
                   </span>
                 </div>
