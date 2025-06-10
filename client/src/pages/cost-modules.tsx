@@ -2,25 +2,10 @@ import { CostModuleList } from "@/components/cost-modules/cost-module-list";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import { Link } from "wouter";
-import Layout from "@/components/layout/layout";
 
 export default function CostModulesPage() {
-  const pageActions = (
-    <Button asChild variant="outline">
-      <Link href="/dashboard">
-        <ChevronLeft className="mr-2 h-4 w-4" />
-        Back to Dashboard
-      </Link>
-    </Button>
-  );
-
   return (
-    <Layout
-      pageTitle="Cost Modules"
-      pageIcon="CST"
-      pageDescription="Manage cost factors related to CIS controls for ROI calculations"
-      pageActions={pageActions}
-    >
+    <div className="space-y-6">
       <CostModuleList />
       
       <div className="bg-muted p-6 rounded-lg">
@@ -57,6 +42,6 @@ export default function CostModulesPage() {
           </div>
         </div>
       </div>
-    </Layout>
+    </div>
   );
 }
