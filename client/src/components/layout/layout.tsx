@@ -38,7 +38,6 @@ const navigation = [
     icon: Database,
     subItems: [
       { name: "Asset Inventory", href: "/assets" },
-      { name: "Asset Hierarchy", href: "/assets/hierarchy" },
       { name: "Enterprise Architecture", href: "/assets/enterprise-architecture" },
       { name: "Vulnerabilities", href: "/assets/vulnerabilities" },
       { name: "Import Vulnerabilities", href: "/assets/vulnerabilities/import" }
