@@ -604,71 +604,102 @@ export default function ControlLibrary() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {controlLibrary.map((control) => (
-                <TableRow 
-                  key={control.id}
-                  className={selectedControls.includes(control.id) ? "bg-muted/50" : ""}
-                >
-                  <TableCell>
-                    <Checkbox 
-                      checked={selectedControls.includes(control.id)} 
-                      onCheckedChange={() => toggleControlSelection(control.id)}
-                      aria-label={`Select ${control.name}`}
-                    />
-                  </TableCell>
-                  <TableCell className="font-medium">{control.controlId}</TableCell>
-                  <TableCell className="max-w-md">
-                    <div className="font-medium">{control.name}</div>
-                    {control.description && (
-                      <div className="text-sm text-gray-500 truncate">{control.description}</div>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={
-                      control.controlType === 'preventive' ? 'default' : 
-                      control.controlType === 'detective' ? 'outline' : 
-                      'secondary'
-                    }>
-                      {control.controlType}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {control.controlCategory}
-                  </TableCell>
-                  <TableCell>
-                    {control.controlEffectiveness ? `${control.controlEffectiveness}/10` : 'N/A'}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={
-                      control.implementationStatus === 'fully_implemented' ? 'default' : 
-                      control.implementationStatus === 'in_progress' ? 'outline' : 
-                      'destructive'
-                    }>
-                      {control.implementationStatus?.replace(/_/g, ' ')}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleCreateInstanceFromTemplate(control)}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add to Risk
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              
-              {controlLibrary.length === 0 && (
+              {paginatedControls.length > 0 ? (
+                paginatedControls.map((control) => (
+                  <TableRow 
+                    key={control.id}
+                    className={selectedControls.includes(control.id) ? "bg-muted/50" : ""}
+                  >
+                    <TableCell>
+                      <Checkbox 
+                        checked={selectedControls.includes(control.id)} 
+                        onCheckedChange={() => toggleControlSelection(control.id)}
+                        aria-label={`Select ${control.name}`}
+                      />
+                    </TableCell>
+                    <TableCell className="font-medium">{control.controlId}</TableCell>
+                    <TableCell className="max-w-md">
+                      <div className="font-medium">{control.name}</div>
+                      {control.description && (
+                        <div className="text-sm text-gray-500 truncate">{control.description}</div>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={
+                        control.controlType === 'preventive' ? 'default' : 
+                        control.controlType === 'detective' ? 'outline' : 
+                        'secondary'
+                      }>
+                        {control.controlType}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {control.controlCategory}
+                    </TableCell>
+                    <TableCell>
+                      {control.controlEffectiveness ? `${control.controlEffectiveness}/10` : 'N/A'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={
+                        control.implementationStatus === 'fully_implemented' ? 'default' : 
+                        control.implementationStatus === 'in_progress' ? 'outline' : 
+                        'destructive'
+                      }>
+                        {control.implementationStatus?.replace(/_/g, ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleCreateInstanceFromTemplate(control)}
+                      >
+                        <Plus className="h-4 w-4 mr-1" />
+                        Add to Risk
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center">
-                    No control templates found
+                    {searchQuery || filterType !== "all" || filterCategory !== "all" || filterStatus !== "all" 
+                      ? "No controls match your current filters" 
+                      : "No control templates found"}
                   </TableCell>
                 </TableRow>
               )}
             </TableBody>
           </Table>
+          
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-end space-x-2 py-4 px-6 bg-gray-800 border-t border-gray-600 rounded-b-lg">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                disabled={currentPage === 1}
+                className="border-gray-500 text-gray-300 hover:bg-gray-600"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span className="sr-only">Previous Page</span>
+              </Button>
+              <div className="text-sm text-gray-400">
+                Page {currentPage} of {totalPages}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                disabled={currentPage === totalPages}
+                className="border-gray-500 text-gray-300 hover:bg-gray-600"
+              >
+                <ChevronRight className="h-4 w-4" />
+                <span className="sr-only">Next Page</span>
+              </Button>
+            </div>
+          )}
         </div>
         
         {/* Risk Selection Dialog */}
