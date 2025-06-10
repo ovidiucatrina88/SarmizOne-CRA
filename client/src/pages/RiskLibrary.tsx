@@ -93,10 +93,18 @@ export default function RiskLibrary() {
     setIsCreateModalOpen(true);
   };
 
-  const handleDelete = async (template: RiskLibraryItem) => {
-    if (!confirm(`Are you sure you want to delete the risk template "${template.name}"? This action cannot be undone.`)) {
-      return;
-    }
+  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState<{
+    isOpen: boolean;
+    template: RiskLibraryItem | null;
+  }>({ isOpen: false, template: null });
+
+  const handleDelete = (template: RiskLibraryItem) => {
+    setDeleteConfirmDialog({ isOpen: true, template });
+  };
+
+  const confirmDelete = async () => {
+    const template = deleteConfirmDialog.template;
+    if (!template) return;
 
     try {
       const response = await fetch(`/api/risk-library/${template.id}`, {
@@ -121,6 +129,8 @@ export default function RiskLibrary() {
         description: error.message || "Failed to delete risk template",
         variant: "destructive"
       });
+    } finally {
+      setDeleteConfirmDialog({ isOpen: false, template: null });
     }
   };
 
@@ -567,6 +577,35 @@ export default function RiskLibrary() {
               </Button>
             </DialogFooter>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmDialog.isOpen} onOpenChange={(open) => 
+        setDeleteConfirmDialog({ isOpen: open, template: open ? deleteConfirmDialog.template : null })
+      }>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Delete Risk Template</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the risk template "{deleteConfirmDialog.template?.name}"? 
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteConfirmDialog({ isOpen: false, template: null })}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmDelete}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
       </div>
