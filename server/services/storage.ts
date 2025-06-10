@@ -777,6 +777,12 @@ export class DatabaseStorage implements IStorage {
     return true;
   }
 
+  async deleteAssetWithCascade(id: number): Promise<boolean> {
+    // Use the repository storage implementation for cascade deletion
+    const repositoryStorage = await import('../services/repositoryStorage').then(m => m.repositoryStorage);
+    return await repositoryStorage.deleteAssetWithCascade(id);
+  }
+
   async getAllRisks(): Promise<Risk[]> {
     return await db.select().from(risks);
   }

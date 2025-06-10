@@ -161,28 +161,10 @@ router.delete('/:id', validateId, async (req, res) => {
       return sendError(res, { message: 'Asset not found' }, 404);
     }
     
-    console.log(`Found asset with assetId: ${asset.assetId}, checking for associated risks`);
+    console.log(`Found asset with assetId: ${asset.assetId}, proceeding with cascade deletion`);
     
-    try {
-      // Check if there are any risks associated with the asset
-      // Use a try/catch to handle any potential function name mismatches
-      const associatedRisks = await storage.getRisksForAsset(asset.assetId);
-      
-      if (Array.isArray(associatedRisks) && associatedRisks.length > 0) {
-        return sendError(res, { 
-          message: 'Cannot delete asset with associated risks',
-          associatedRisks
-        }, 400);
-      }
-      
-      console.log('No associated risks found, proceeding with deletion');
-    } catch (riskError) {
-      console.error('Error checking for associated risks:', riskError);
-      // Continue with deletion even if we can't check for risks - this ensures we can still delete assets
-    }
-    
-    // Proceed with asset deletion
-    const deleted = await storage.deleteAsset(id);
+    // Use cascade deletion to handle all related data
+    const deleted = await storage.deleteAssetWithCascade(id);
     
     if (!deleted) {
       return sendError(res, { message: 'Failed to delete asset' }, 500);
