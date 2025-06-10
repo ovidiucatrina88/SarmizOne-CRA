@@ -1187,7 +1187,17 @@ export function LossExceedanceCurve({
               })}
 
               {/* Using a custom curve to highlight acceptable risk where tolerance exceeds probability */}
-              {combinedData.map((entry, index) => {
+              {showToleranceCurve && combinedData.map((entry, index) => {
+                // Debug logging for green area calculation
+                if (index < 5) {
+                  console.log(`Green area check ${index}:`, {
+                    lossExposure: entry.lossExposure,
+                    probability: entry.probability,
+                    toleranceProbability: entry.toleranceProbability,
+                    willShow: entry.toleranceProbability > entry.probability && index > 0
+                  });
+                }
+                
                 // Only draw areas where tolerance exceeds probability (acceptable risk)
                 if (entry.toleranceProbability <= entry.probability || index === 0) {
                   return null;
@@ -1201,7 +1211,7 @@ export function LossExceedanceCurve({
                     y1={entry.probability}
                     y2={entry.toleranceProbability}
                     fill="#10B981"
-                    fillOpacity={0.3}
+                    fillOpacity={0.5}
                     stroke="none"
                   />
                 );
