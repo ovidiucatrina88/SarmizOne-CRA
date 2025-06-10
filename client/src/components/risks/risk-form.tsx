@@ -1661,7 +1661,9 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
                 onParameterEdit={() => {
                   // Trigger manual calculation when button is clicked
                   console.log("Manual calculation triggered from Run Calculations button");
-                  handleRecalculate();
+                  calculateRisk().catch((err) => {
+                    console.error("Error in manual risk recalculation:", err);
+                  });
                 }}
               />
             </div>
