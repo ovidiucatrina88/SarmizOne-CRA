@@ -89,6 +89,16 @@ export class FallbackStorage implements IStorage {
       updatedAt: new Date()
     } as Risk;
     this.risks.push(newRisk);
+    
+    // Trigger risk summary update after creation
+    try {
+      const { riskSummaryService } = await import('./services/riskSummaryService');
+      await riskSummaryService.updateRiskSummaries();
+      console.log('Risk summaries updated after risk creation (fallback storage)');
+    } catch (error) {
+      console.error('Error updating risk summaries after creation (fallback storage):', error);
+    }
+    
     return newRisk;
   }
 
@@ -101,13 +111,36 @@ export class FallbackStorage implements IStorage {
       ...risk,
       updatedAt: new Date()
     };
+    
+    // Trigger risk summary update after modification
+    try {
+      const { riskSummaryService } = await import('./services/riskSummaryService');
+      await riskSummaryService.updateRiskSummaries();
+      console.log('Risk summaries updated after risk modification (fallback storage)');
+    } catch (error) {
+      console.error('Error updating risk summaries after modification (fallback storage):', error);
+    }
+    
     return this.risks[index];
   }
 
   async deleteRisk(id: number): Promise<boolean> {
     const initialLength = this.risks.length;
     this.risks = this.risks.filter(risk => risk.id !== id);
-    return this.risks.length !== initialLength;
+    const wasDeleted = this.risks.length !== initialLength;
+    
+    // Trigger risk summary update after deletion
+    if (wasDeleted) {
+      try {
+        const { riskSummaryService } = await import('./services/riskSummaryService');
+        await riskSummaryService.updateRiskSummaries();
+        console.log('Risk summaries updated after risk deletion (fallback storage)');
+      } catch (error) {
+        console.error('Error updating risk summaries after deletion (fallback storage):', error);
+      }
+    }
+    
+    return wasDeleted;
   }
 
   // Controls

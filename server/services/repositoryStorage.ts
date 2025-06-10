@@ -234,6 +234,16 @@ export class DatabaseStorage {
 
   async createRisk(risk: InsertRisk): Promise<Risk> {
     const [createdRisk] = await db.insert(risks).values(risk).returning();
+    
+    // Trigger risk summary update after creation
+    try {
+      const { riskSummaryService } = await import('./riskSummaryService');
+      await riskSummaryService.updateRiskSummaries();
+      console.log('Risk summaries updated after risk creation (database layer)');
+    } catch (error) {
+      console.error('Error updating risk summaries after creation (database layer):', error);
+    }
+    
     return createdRisk;
   }
 
@@ -243,11 +253,33 @@ export class DatabaseStorage {
       .set(data)
       .where(eq(risks.id, id))
       .returning();
+    
+    // Trigger risk summary update after modification
+    if (updatedRisk) {
+      try {
+        const { riskSummaryService } = await import('./riskSummaryService');
+        await riskSummaryService.updateRiskSummaries();
+        console.log('Risk summaries updated after risk modification (database layer)');
+      } catch (error) {
+        console.error('Error updating risk summaries after modification (database layer):', error);
+      }
+    }
+    
     return updatedRisk;
   }
 
   async deleteRisk(id: number): Promise<boolean> {
     await db.delete(risks).where(eq(risks.id, id));
+    
+    // Trigger risk summary update after deletion
+    try {
+      const { riskSummaryService } = await import('./riskSummaryService');
+      await riskSummaryService.updateRiskSummaries();
+      console.log('Risk summaries updated after risk deletion (database layer)');
+    } catch (error) {
+      console.error('Error updating risk summaries after deletion (database layer):', error);
+    }
+    
     return true;
   }
 
