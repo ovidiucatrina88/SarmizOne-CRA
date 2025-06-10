@@ -415,15 +415,18 @@ export function LossExceedanceCurve({
         }
         
         // Determine tolerance level based on thresholds
+        // Create a more realistic tolerance curve that will generate green areas
         let toleranceLevel = 0;
         if (lossExposure <= thresholds.FULL_ACCEPTANCE) {
           toleranceLevel = 100;
         } else if (lossExposure <= thresholds.HIGH_ACCEPTANCE) {
-          toleranceLevel = 75;
+          toleranceLevel = 80; // Increased from 75 to create more green area
         } else if (lossExposure <= thresholds.MEDIUM_ACCEPTANCE) {
-          toleranceLevel = 50;
+          toleranceLevel = 60; // Increased from 50 to create green areas
         } else if (lossExposure <= thresholds.LOW_ACCEPTANCE) {
-          toleranceLevel = 25;
+          toleranceLevel = 40; // Increased from 25 to create green areas
+        } else {
+          toleranceLevel = 10; // Added baseline tolerance even beyond LOW_ACCEPTANCE
         }
         
         // Add the data point to our curve
@@ -497,46 +500,46 @@ export function LossExceedanceCurve({
         thresholdLabel: "100% acceptable"
       });
       
-      // 75% threshold (HIGH_ACCEPTANCE)
+      // 80% threshold (HIGH_ACCEPTANCE)
       directCurveData.push({
         lossExposure: thresholds.HIGH_ACCEPTANCE,
         // Calculate appropriate probability based on position between min and max exposure
         probability: 100 - (((thresholds.HIGH_ACCEPTANCE - 0) / (maxExposure - 0)) * 100),
         previousProbability: null,
-        toleranceProbability: 75,
+        toleranceProbability: 80,
         unacceptableRisk: 0,
         formattedLoss: formatExposure(thresholds.HIGH_ACCEPTANCE),
         isThresholdPoint: true,
         thresholdType: "HIGH_ACCEPTANCE",
-        thresholdLabel: "75% acceptable"
+        thresholdLabel: "80% acceptable"
       });
       
-      // 50% threshold (MEDIUM_ACCEPTANCE)
+      // 60% threshold (MEDIUM_ACCEPTANCE)
       directCurveData.push({
         lossExposure: thresholds.MEDIUM_ACCEPTANCE,
         // Calculate appropriate probability based on position between min and max exposure
         probability: 100 - (((thresholds.MEDIUM_ACCEPTANCE - 0) / (maxExposure - 0)) * 100),
         previousProbability: null,
-        toleranceProbability: 50,
+        toleranceProbability: 60,
         unacceptableRisk: 0,
         formattedLoss: formatExposure(thresholds.MEDIUM_ACCEPTANCE),
         isThresholdPoint: true,
         thresholdType: "MEDIUM_ACCEPTANCE",
-        thresholdLabel: "50% acceptable"
+        thresholdLabel: "60% acceptable"
       });
       
-      // 25% threshold (LOW_ACCEPTANCE)
+      // 40% threshold (LOW_ACCEPTANCE)
       directCurveData.push({
         lossExposure: thresholds.LOW_ACCEPTANCE,
         // Calculate appropriate probability based on position between min and max exposure
         probability: 100 - (((thresholds.LOW_ACCEPTANCE - 0) / (maxExposure - 0)) * 100),
         previousProbability: null,
-        toleranceProbability: 25,
+        toleranceProbability: 40,
         unacceptableRisk: 0,
         formattedLoss: formatExposure(thresholds.LOW_ACCEPTANCE),
         isThresholdPoint: true,
         thresholdType: "LOW_ACCEPTANCE",
-        thresholdLabel: "25% acceptable" 
+        thresholdLabel: "40% acceptable" 
       });
       
       // 0% threshold (ZERO_ACCEPTANCE)
