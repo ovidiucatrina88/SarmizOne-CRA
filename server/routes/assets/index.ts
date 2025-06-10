@@ -1,6 +1,6 @@
 import express from 'express';
 // import { canWriteAssets } from '../../auth';
-import { storage } from '../../services/storage';
+import { assetService } from '../../services';
 import { sendError, sendSuccess } from '../common/responses/apiResponse';
 import { validate, validateId } from '../common/middleware/validate';
 import { z } from 'zod';
@@ -51,7 +51,7 @@ const assetSchema = z.object({
 router.get('/', async (req, res) => {
   try {
     const filters = req.query;
-    const assets = await storage.getAllAssets();
+    const assets = await assetService.getAllAssets();
     return sendSuccess(res, assets);
   } catch (error) {
     return sendError(res, error);
@@ -62,7 +62,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', validateId, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const asset = await storage.getAsset(id);
+    const asset = await assetService.getAsset(id);
     
     if (!asset) {
       return sendError(res, { message: 'Asset not found' }, 404);
@@ -109,12 +109,12 @@ router.post('/', async (req, res) => {
     };
     
     // Check if asset ID already exists
-    const existingAsset = await storage.getAssetByAssetId(asset.assetId);
+    const existingAsset = await assetService.getAssetByAssetId(asset.assetId);
     if (existingAsset) {
       return sendError(res, { message: `Asset ID ${asset.assetId} already exists` }, 400);
     }
     
-    const newAsset = await storage.createAsset(asset);
+    const newAsset = await assetService.createAsset(asset);
     return sendSuccess(res, newAsset, 201);
   } catch (error) {
     console.error('Error creating asset:', error);
@@ -164,7 +164,7 @@ router.delete('/:id', validateId, async (req, res) => {
     console.log(`Found asset with assetId: ${asset.assetId}, proceeding with cascade deletion`);
     
     // Use cascade deletion to handle all related data
-    const deleted = await storage.deleteAssetWithCascade(id);
+    const deleted = await assetService.deleteAssetWithCascade(id);
     
     if (!deleted) {
       return sendError(res, { message: 'Failed to delete asset' }, 500);

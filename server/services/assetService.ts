@@ -76,6 +76,27 @@ export class AssetService {
     
     return success;
   }
+
+  /**
+   * Delete an asset with cascade operations
+   */
+  async deleteAssetWithCascade(id: number): Promise<boolean> {
+    // Get the asset to verify it exists
+    const asset = await this.repository.getAsset(id);
+    if (!asset) {
+      return false;
+    }
+    
+    // Use cascade deletion from repository
+    const success = await this.repository.deleteAssetWithCascade(id);
+    
+    if (success) {
+      // Log the cascade deletion activity
+      await this.logAssetActivity(id, 'cascade_delete', `Asset ${asset.assetId} deleted with cascade operations`);
+    }
+    
+    return success;
+  }
   
   /**
    * Get risks associated with an asset
