@@ -1185,6 +1185,27 @@ export function LossExceedanceCurve({
                   />
                 );
               })}
+
+              {/* Using a custom curve to highlight acceptable risk where tolerance exceeds probability */}
+              {combinedData.map((entry, index) => {
+                // Only draw areas where tolerance exceeds probability (acceptable risk)
+                if (entry.toleranceProbability <= entry.probability || index === 0) {
+                  return null;
+                }
+                
+                return (
+                  <ReferenceArea
+                    key={`acceptable-area-${index}`}
+                    x1={entry.lossExposure}
+                    x2={combinedData[index - 1]?.lossExposure}
+                    y1={entry.probability}
+                    y2={entry.toleranceProbability}
+                    fill="#10B981"
+                    fillOpacity={0.3}
+                    stroke="none"
+                  />
+                );
+              })}
               
               {/* Current Loss Probability Curve - render last so it appears on top */}
               <Line 
@@ -1239,7 +1260,7 @@ export function LossExceedanceCurve({
         </div>
         
         {/* Annotations */}
-        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="mt-4 grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="text-sm text-gray-600">
             <span className="inline-block w-3 h-3 bg-blue-500 mr-2"></span>
             Current Loss Probability
@@ -1259,6 +1280,10 @@ export function LossExceedanceCurve({
           <div className="text-sm text-gray-600">
             <span className="inline-block w-3 h-3 bg-red-300 mr-2"></span>
             Unacceptable Risk Area
+          </div>
+          <div className="text-sm text-gray-600">
+            <span className="inline-block w-3 h-3 bg-green-400 mr-2"></span>
+            Acceptable Risk Area
           </div>
         </div>
       </CardContent>
