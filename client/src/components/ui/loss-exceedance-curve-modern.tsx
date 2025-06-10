@@ -25,6 +25,7 @@ interface DataPoint {
   previousProbability?: number | null;
   toleranceProbability?: number | null;
   unacceptableRisk?: number;
+  acceptableRisk?: number;
   formattedLoss: string;
   isThresholdPoint?: boolean;
   exposureData?: {
@@ -583,6 +584,11 @@ export function LossExceedanceCurveModern({
       const unacceptableRisk = probability > toleranceProbability 
         ? (probability - toleranceProbability) 
         : 0;
+      
+      // Calculate acceptable risk (tolerance exceeding risk)
+      const acceptableRisk = toleranceProbability > probability 
+        ? (toleranceProbability - probability) 
+        : 0;
         
       // Add data point
       data.push({
@@ -591,6 +597,7 @@ export function LossExceedanceCurveModern({
         previousProbability,
         toleranceProbability,
         unacceptableRisk,
+        acceptableRisk,
         formattedLoss: formatExposure(lossExposure),
         isThresholdPoint: false,
         exposureData: {
@@ -664,6 +671,7 @@ export function LossExceedanceCurveModern({
           previousProbability: null,
           toleranceProbability,
           unacceptableRisk: probability > toleranceProbability ? (probability - toleranceProbability) : 0,
+          acceptableRisk: toleranceProbability > probability ? (toleranceProbability - probability) : 0,
           formattedLoss: formatExposure(point),
           isThresholdPoint: true,
           exposureData: {
@@ -826,6 +834,12 @@ export function LossExceedanceCurveModern({
                     <stop offset="5%" stopColor="#a83244" stopOpacity={0.8} />
                     <stop offset="95%" stopColor="#a83244" stopOpacity={0.2} />
                   </linearGradient>
+                  
+                  {/* Gradient for acceptable risk area */}
+                  <linearGradient id="acceptableAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#10b981" stopOpacity={0.6} />
+                    <stop offset="95%" stopColor="#10b981" stopOpacity={0.2} />
+                  </linearGradient>
                 </defs>
                 
                 <CartesianGrid stroke="rgba(255,255,255,0.1)" />
@@ -847,24 +861,35 @@ export function LossExceedanceCurveModern({
                 
                 <Tooltip content={<CustomTooltip />} />
                 
-                {/* Base area for tolerance (transparent, just for stacking) */}
+                {/* Base area for probability (transparent, just for stacking) */}
                 {chartData.length > 1 && (
                   <Area
-                    dataKey="toleranceProbability"
+                    dataKey="probability"
                     stroke="none"
                     fill="transparent"
                     stackId="risk"
                   />
                 )}
                 
-                {/* Red shaded area for unacceptable risk - stacked on top of tolerance */}
+                {/* Green shaded area for acceptable risk - where tolerance exceeds probability */}
+                {chartData.length > 1 && (
+                  <Area
+                    dataKey="acceptableRisk"
+                    stroke="none"
+                    fill="url(#acceptableAreaGradient)"
+                    fillOpacity={0.6}
+                    stackId="risk"
+                  />
+                )}
+                
+                {/* Red shaded area for unacceptable risk - where probability exceeds tolerance */}
                 {chartData.length > 1 && (
                   <Area
                     dataKey="unacceptableRisk"
                     stroke="none"
                     fill="url(#riskAreaGradient)"
                     fillOpacity={0.5}
-                    stackId="risk"
+                    stackId="unacceptable"
                   />
                 )}
                 
