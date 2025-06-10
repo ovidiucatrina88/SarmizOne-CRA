@@ -24,6 +24,8 @@ interface DataPoint {
   probability: number;
   previousProbability?: number | null;
   toleranceProbability?: number | null;
+  unacceptableRisk?: number;
+  acceptableRiskBuffer?: number | null;
   formattedLoss: string;
   isThresholdPoint?: boolean;
   exposureData?: {
@@ -605,12 +607,27 @@ export function LossExceedanceCurveModern({
         toleranceProbability = 0;
       }
       
+      // Calculate unacceptable risk (risk exceeding tolerance)
+      const unacceptableRisk = probability > toleranceProbability 
+        ? (probability - toleranceProbability) 
+        : 0;
+      
+      // Calculate acceptable risk buffer (tolerance exceeding current risk)
+      // Use undefined instead of 0 to create proper gaps in the area chart
+      const acceptableRiskBuffer = toleranceProbability > probability 
+        ? (toleranceProbability - probability) 
+        : undefined;
+      
+
+        
       // Add data point
       data.push({
         lossExposure,
         probability,
         previousProbability,
         toleranceProbability,
+        unacceptableRisk,
+        acceptableRiskBuffer,
         formattedLoss: formatExposureValue(lossExposure),
         isThresholdPoint: false,
         exposureData: {
@@ -683,6 +700,7 @@ export function LossExceedanceCurveModern({
           probability,
           previousProbability: null,
           toleranceProbability,
+          unacceptableRisk: probability > toleranceProbability ? (probability - toleranceProbability) : 0,
           formattedLoss: formatExposure(point),
           isThresholdPoint: true,
           exposureData: {
@@ -860,7 +878,6 @@ export function LossExceedanceCurveModern({
                   tick={{ fill: 'rgba(255,255,255,0.7)' }}
                   tickLine={{ stroke: 'rgba(255,255,255,0.2)' }}
                   axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
-                  reversed={true}
                 />
                 
                 <YAxis 
@@ -873,23 +890,46 @@ export function LossExceedanceCurveModern({
                 
                 <Tooltip content={<CustomTooltip />} />
                 
-                {/* Green area where tolerance exceeds current risk */}
+                {/* Base area for tolerance (transparent, just for stacking) */}
                 {chartData.length > 1 && (
                   <Area
                     dataKey="toleranceProbability"
                     stroke="none"
-                    fill="url(#acceptableAreaGradient)"
-                    fillOpacity={0.3}
+                    fill="transparent"
+                    stackId="risk"
                   />
                 )}
                 
-                {/* Red area where current risk exceeds tolerance */}
+                {/* Red shaded area for unacceptable risk - stacked on top of tolerance */}
+                {chartData.length > 1 && (
+                  <Area
+                    dataKey="unacceptableRisk"
+                    stroke="none"
+                    fill="url(#riskAreaGradient)"
+                    fillOpacity={0.5}
+                    stackId="risk"
+                  />
+                )}
+
+                {/* Green filled area showing acceptable risk buffer */}
                 {chartData.length > 1 && (
                   <Area
                     dataKey="probability"
                     stroke="none"
-                    fill="url(#riskAreaGradient)"
+                    fill="transparent"
+                    stackId="green"
+                  />
+                )}
+                
+                {/* Green buffer area stacked above current probability */}
+                {chartData.length > 1 && (
+                  <Area
+                    dataKey="acceptableRiskBuffer"
+                    stroke="none"
+                    fill="url(#acceptableAreaGradient)"
                     fillOpacity={0.4}
+                    stackId="green"
+                    connectNulls={true}
                   />
                 )}
                 
