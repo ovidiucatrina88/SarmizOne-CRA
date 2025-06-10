@@ -1,6 +1,7 @@
 import { storage } from '../../services/storage';
 import { Risk } from '@shared/schema';
 import { calculateRiskValues } from '@shared/utils/calculations';
+import { riskSummaryService } from '../../services/riskSummaryService';
 import { CreateRiskDto, UpdateRiskDto, RiskFilterDto } from './dto';
 
 /**
@@ -126,12 +127,19 @@ export class RiskService {
           inherentRisk: calculationResults.inherentRisk.toString(),
           residualRisk: calculationResults.residualRisk.toString()
         });
-        
-        // Fetch the updated risk
-        return await storage.getRisk(risk.id);
       }
       
-      return risk;
+      // Automatically update risk summaries after creation
+      try {
+        await riskSummaryService.updateRiskSummaries();
+        console.log('Risk summaries updated after risk creation');
+      } catch (summaryError) {
+        console.error('Error updating risk summaries after creation:', summaryError);
+        // Continue without failing - the risk creation itself succeeded
+      }
+      
+      // Fetch the updated risk
+      return await storage.getRisk(risk.id) || risk;
     } catch (error) {
       throw error;
     }
@@ -152,10 +160,19 @@ export class RiskService {
             inherentRisk: calculationResults.inherentRisk.toString(),
             residualRisk: calculationResults.residualRisk.toString()
           });
-          
-          // Fetch the updated risk again
-          return await storage.getRisk(id);
         }
+        
+        // Automatically update risk summaries after modification
+        try {
+          await riskSummaryService.updateRiskSummaries();
+          console.log('Risk summaries updated after risk modification');
+        } catch (summaryError) {
+          console.error('Error updating risk summaries after modification:', summaryError);
+          // Continue without failing - the risk update itself succeeded
+        }
+        
+        // Fetch the updated risk again
+        return await storage.getRisk(id);
       }
       
       return updatedRisk;
@@ -169,7 +186,20 @@ export class RiskService {
    */
   async deleteRisk(id: number) {
     try {
-      return await storage.deleteRisk(id);
+      const result = await storage.deleteRisk(id);
+      
+      // Automatically update risk summaries after deletion
+      if (result) {
+        try {
+          await riskSummaryService.updateRiskSummaries();
+          console.log('Risk summaries updated after risk deletion');
+        } catch (summaryError) {
+          console.error('Error updating risk summaries after deletion:', summaryError);
+          // Continue without failing - the risk deletion itself succeeded
+        }
+      }
+      
+      return result;
     } catch (error) {
       throw error;
     }
