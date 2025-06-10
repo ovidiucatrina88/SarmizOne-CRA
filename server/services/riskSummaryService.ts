@@ -8,7 +8,7 @@ export class RiskSummaryService {
    */
   private calculateExposureStatistics(risks: any[]) {
     const exposures = risks
-      .map(risk => parseFloat(risk.residual_risk || risk.inherent_risk || '0'))
+      .map(risk => parseFloat(risk.residualRisk || risk.inherentRisk || '0'))
       .filter(exposure => exposure > 0)
       .sort((a, b) => a - b);
 
@@ -72,7 +72,7 @@ export class RiskSummaryService {
     
     // Extract residual risk values and sort them
     const residualRisks = risks
-      .map(r => parseFloat(r.residual_risk) || 0)
+      .map(r => parseFloat(r.residualRisk) || 0)
       .filter(v => v > 0)
       .sort((a, b) => b - a); // Sort descending for exceedance curve
     
@@ -96,7 +96,10 @@ export class RiskSummaryService {
   async updateRiskSummaries(legalEntityId?: string): Promise<void> {
     try {
       const riskData = await this.getRisksForEntity(legalEntityId);
+      console.log(`DEBUG: getRisksForEntity returned ${riskData.length} risks:`, riskData.map(r => ({ id: r.id, riskId: r.riskId, severity: r.severity, inherentRisk: r.inherentRisk, residualRisk: r.residualRisk })));
+      
       const stats = this.calculateExposureStatistics(riskData);
+      console.log(`DEBUG: calculateExposureStatistics returned:`, stats);
       
       // Calculate risk counts by severity
       const totalRisks = riskData.length;
@@ -105,9 +108,11 @@ export class RiskSummaryService {
       const mediumRisks = riskData.filter(r => r.severity === 'medium').length;
       const lowRisks = riskData.filter(r => r.severity === 'low').length;
       
+      console.log(`DEBUG: Risk counts - total: ${totalRisks}, critical: ${criticalRisks}, high: ${highRisks}, medium: ${mediumRisks}, low: ${lowRisks}`);
+      
       // Calculate total risk values
-      const totalInherentRisk = riskData.reduce((sum, r) => sum + (parseFloat(r.inherent_risk) || 0), 0);
-      const totalResidualRisk = riskData.reduce((sum, r) => sum + (parseFloat(r.residual_risk) || 0), 0);
+      const totalInherentRisk = riskData.reduce((sum, r) => sum + (parseFloat(r.inherentRisk) || 0), 0);
+      const totalResidualRisk = riskData.reduce((sum, r) => sum + (parseFloat(r.residualRisk) || 0), 0);
       
       // Generate exposure curve data
       const exposureCurveData = this.generateExposureCurveData(riskData);
@@ -138,7 +143,7 @@ export class RiskSummaryService {
         percentile99Exposure: stats.p99,
         
         // Exposure curve data for visualization
-        exposureCurveData: exposureCurveData as any,
+        exposureCurveData: JSON.stringify(exposureCurveData),
         
         // Legacy compatibility fields
         averageExposure: stats.avg,
