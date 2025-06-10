@@ -106,33 +106,44 @@ export function RiskList({
     setDeleteConfirmOpen(true);
   };
 
-  // Delete mutation - works with both numeric ID and string risk ID
+  // Delete mutation - works with both regular risks and risk library templates
   const deleteMutation = useMutation({
     mutationFn: async (risk: {id: number, riskId: string}) => {
-      // Try deleting by numeric ID first
-      try {
-        const response = await apiRequest("DELETE", `/api/risks/${risk.id}`);
-        console.log("Risk deletion response:", response);
+      if (isTemplateView) {
+        // For risk library templates, use the risk-library endpoint
+        const response = await apiRequest("DELETE", `/api/risk-library/${risk.id}`);
+        console.log("Risk library template deletion response:", response);
         return response;
-      } catch (error) {
-        console.error("Error deleting by ID:", error);
-        // If that fails, try deleting by string riskId
-        return apiRequest("DELETE", `/api/risks/${risk.riskId}`);
+      } else {
+        // For regular risks, try deleting by numeric ID first
+        try {
+          const response = await apiRequest("DELETE", `/api/risks/${risk.id}`);
+          console.log("Risk deletion response:", response);
+          return response;
+        } catch (error) {
+          console.error("Error deleting by ID:", error);
+          // If that fails, try deleting by string riskId
+          return apiRequest("DELETE", `/api/risks/${risk.riskId}`);
+        }
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/risks"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/risk-summary/latest"] });
-      
-      // Force refresh the risk list
-      setTimeout(() => {
+      if (isTemplateView) {
+        queryClient.invalidateQueries({ queryKey: ["/api/risk-library"] });
+      } else {
         queryClient.invalidateQueries({ queryKey: ["/api/risks"] });
-      }, 500);
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/risk-summary/latest"] });
+        
+        // Force refresh the risk list
+        setTimeout(() => {
+          queryClient.invalidateQueries({ queryKey: ["/api/risks"] });
+        }, 500);
+      }
       
       toast({
-        title: "Risk deleted",
-        description: "The risk has been deleted successfully.",
+        title: isTemplateView ? "Risk template deleted" : "Risk deleted",
+        description: isTemplateView ? "The risk template has been deleted successfully." : "The risk has been deleted successfully.",
       });
     },
     onError: (error) => {
