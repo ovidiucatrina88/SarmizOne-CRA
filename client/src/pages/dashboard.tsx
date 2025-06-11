@@ -382,13 +382,14 @@ export default function Dashboard() {
             ) : (
               <LossExceedanceCurveModern 
                 risks={risksData?.data || []} 
-                currentExposure={riskSummaryData?.current ? {
-                  minimumExposure: riskSummaryData.current.minimumExposure,
-                  averageExposure: riskSummaryData.current.averageExposure,
-                  maximumExposure: riskSummaryData.current.maximumExposure,
-                  tenthPercentile: riskSummaryData.current.tenthPercentileExposure,
-                  mostLikely: riskSummaryData.current.mostLikelyExposure,
-                  ninetiethPercentile: riskSummaryData.current.ninetiethPercentileExposure
+                currentExposure={apiData?.riskSummary ? {
+                  minimumExposure: apiData.riskSummary.minimumExposure,
+                  averageExposure: apiData.riskSummary.meanExposure,
+                  maximumExposure: apiData.riskSummary.maximumExposure,
+                  tenthPercentile: apiData.riskSummary.minimumExposure,
+                  mostLikely: apiData.riskSummary.meanExposure,
+                  ninetiethPercentile: apiData.riskSummary.maximumExposure,
+                  exposureCurveData: apiData.riskSummary.exposureCurveData
                 } : undefined}
                 previousExposure={showHistoricalComparison && riskSummaryData?.previous ? {
                   minimumExposure: riskSummaryData.previous.minimumExposure,
@@ -396,7 +397,8 @@ export default function Dashboard() {
                   maximumExposure: riskSummaryData.previous.maximumExposure,
                   tenthPercentile: riskSummaryData.previous.tenthPercentileExposure,
                   mostLikely: riskSummaryData.previous.mostLikelyExposure,
-                  ninetiethPercentile: riskSummaryData.previous.ninetiethPercentileExposure
+                  ninetiethPercentile: riskSummaryData.previous.ninetiethPercentileExposure,
+                  exposureCurveData: riskSummaryData.previous.exposureCurveData
                 } : undefined}
                 filterType={filterType}
                 selectedEntityId={selectedLegalEntity}

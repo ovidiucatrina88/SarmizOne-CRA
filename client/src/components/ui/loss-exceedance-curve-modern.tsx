@@ -46,6 +46,8 @@ interface LossExceedanceCurveModernProps {
     tenthPercentile?: number;
     mostLikely?: number;
     ninetiethPercentile?: number;
+    // Exposure curve data from risk_summaries
+    exposureCurveData?: Array<{ impact: number; probability: number }>;
   };
   previousExposure?: {
     // Primary fields (preferred)
@@ -56,6 +58,8 @@ interface LossExceedanceCurveModernProps {
     tenthPercentile?: number;
     mostLikely?: number;
     ninetiethPercentile?: number;
+    // Exposure curve data from risk_summaries
+    exposureCurveData?: Array<{ impact: number; probability: number }>;
   };
   // Filtering properties
   filterType?: 'all' | 'entity' | 'asset' | 'l1' | 'l2' | 'l3' | 'l4';
@@ -455,48 +459,60 @@ export function LossExceedanceCurveModern({
 
   // Generate chart data points using actual data from the database
   const chartData = useMemo(() => {
-    // Use the filtered risks instead of all risks for calculations
-    const risksToUse = filteredRisks;
-    console.log(`Using ${risksToUse.length} risks for chart calculations (filter: ${filterType})`);
-    
-    // Calculate dynamic exposure values based on filtered risks
+    // Determine data source based on filter type
     let calculatedMinExposure = 0;
     let calculatedMaxExposure = 0;
     let calculatedAvgExposure = 0;
+    let actualExposureCurveData: Array<{ impact: number; probability: number }> = [];
     
-    if (risksToUse && risksToUse.length > 0) {
-      // Calculate min/avg/max from the filtered risks
-      calculatedMinExposure = risksToUse.reduce((sum, risk) => {
-        const riskValue = parseFloat(risk.residualRisk || risk.inherentRisk || '0');
-        return sum + riskValue * 0.4; // Approximating minimum as 40% of risk value
-      }, 0);
+    if (filterType === 'all') {
+      // For ALL filter: Use aggregated values from risk_summaries table
+      console.log(`Using aggregated risk_summaries data for ALL filter`);
       
-      calculatedAvgExposure = risksToUse.reduce((sum, risk) => {
-        const riskValue = parseFloat(risk.residualRisk || risk.inherentRisk || '0');
-        return sum + riskValue;
-      }, 0);
-      
-      calculatedMaxExposure = risksToUse.reduce((sum, risk) => {
-        const riskValue = parseFloat(risk.residualRisk || risk.inherentRisk || '0');
-        return sum + riskValue * 2.0; // Approximating maximum as 200% of risk value
-      }, 0);
-    } else {
-      // Use the actual exposure data from the database instead of fallback values
-      // This ensures we're always using authentic data from the database
       calculatedMinExposure = exposureData?.minimum || 0;
       calculatedMaxExposure = exposureData?.maximum || 0;
       calculatedAvgExposure = exposureData?.average || 0;
+      
+      // Use exposure curve data from risk_summaries if available
+      if (currentExposure && Array.isArray(currentExposure.exposureCurveData)) {
+        actualExposureCurveData = currentExposure.exposureCurveData;
+      }
+      
+      console.log(`Risk summaries values: min=${calculatedMinExposure}, avg=${calculatedAvgExposure}, max=${calculatedMaxExposure}`);
+    } else {
+      // For filtered views: Calculate from individual filtered risks
+      const risksToUse = filteredRisks;
+      console.log(`Using ${risksToUse.length} filtered risks for ${filterType} calculations`);
+      
+      if (risksToUse && risksToUse.length > 0) {
+        // Calculate exposure from filtered risks
+        const riskValues = risksToUse.map(risk => parseFloat(risk.residualRisk || risk.inherentRisk || '0'));
+        const totalExposure = riskValues.reduce((sum, val) => sum + val, 0);
+        
+        // Calculate realistic min/avg/max based on risk distribution
+        calculatedMinExposure = Math.min(...riskValues.filter(v => v > 0));
+        calculatedMaxExposure = Math.max(...riskValues);
+        calculatedAvgExposure = totalExposure;
+        
+        // Create exposure curve data from individual risks
+        const sortedRisks = riskValues.filter(v => v > 0).sort((a, b) => b - a);
+        actualExposureCurveData = sortedRisks.map((impact, index) => ({
+          impact,
+          probability: (index + 1) / sortedRisks.length
+        }));
+        
+        console.log(`Filtered exposure values: min=${calculatedMinExposure}, avg=${calculatedAvgExposure}, max=${calculatedMaxExposure}`);
+      } else {
+        console.log(`No risks found for filter ${filterType}, returning empty chart`);
+        return [];
+      }
     }
     
-    console.log(`Calculated exposure values: min=${calculatedMinExposure}, avg=${calculatedAvgExposure}, max=${calculatedMaxExposure}`);
-    
-    // Add minimum values to ensure the chart doesn't collapse to zero
-    if (calculatedMinExposure < 100) calculatedMinExposure = 100;
-    if (calculatedAvgExposure < 1000) calculatedAvgExposure = 1000;
-    if (calculatedMaxExposure < 10000) calculatedMaxExposure = 10000;
-    
-    // Early return if maximum exposure is invalid or zero
-    if (calculatedMaxExposure <= 0) return [];
+    // Ensure we have valid exposure values
+    if (calculatedMaxExposure <= 0) {
+      console.log(`Invalid maximum exposure: ${calculatedMaxExposure}, returning empty chart`);
+      return [];
+    }
     
     const data: DataPoint[] = [];
     const numPoints = 40;
@@ -519,23 +535,54 @@ export function LossExceedanceCurveModern({
       toleranceThresholds.zeroAcceptance // 0% acceptance
     ].filter(p => p <= maxExposure * 1.2);
     
-    // Extract actual risk exposure values from database
-    const riskExposures = filteredRisks.map(risk => {
-      const residualRisk = ensureFiniteNumber(risk.residualRisk || risk.inherentRisk || 0);
-      return residualRisk;
-    }).filter(exposure => exposure > 0).sort((a, b) => b - a); // Sort descending for exceedance calculation
-    
-    const totalRisks = riskExposures.length;
-    if (totalRisks === 0) return [];
-    
     // Create evenly distributed points between 0 and maxExposure*1.2
     for (let i = 0; i <= numPoints; i++) {
-      const lossExposure = i * (maxExposure * 1.2 / numPoints);
+      const lossExposure = i * (calculatedMaxExposure * 1.2 / numPoints);
       
-      // Calculate actual probability based on database risk values
-      // Probability = percentage of risks that have exposure >= lossExposure
-      const risksExceedingLoss = riskExposures.filter(exposure => exposure >= lossExposure);
-      const probability = (risksExceedingLoss.length / totalRisks) * 100;
+      // Calculate probability based on filter type
+      let probability;
+      
+      if (filterType === 'all' && actualExposureCurveData.length > 0) {
+        // For ALL filter: Use exposure curve data from risk_summaries table
+        const sortedCurveData = actualExposureCurveData.sort((a, b) => b.impact - a.impact);
+        
+        // Linear interpolation between curve data points
+        if (lossExposure >= sortedCurveData[0].impact) {
+          probability = sortedCurveData[0].probability * 100;
+        } else if (lossExposure <= sortedCurveData[sortedCurveData.length - 1].impact) {
+          probability = sortedCurveData[sortedCurveData.length - 1].probability * 100;
+        } else {
+          // Interpolate between curve points
+          let lowerPoint = sortedCurveData[sortedCurveData.length - 1];
+          let upperPoint = sortedCurveData[0];
+          
+          for (let j = 0; j < sortedCurveData.length - 1; j++) {
+            if (lossExposure <= sortedCurveData[j].impact && lossExposure >= sortedCurveData[j + 1].impact) {
+              upperPoint = sortedCurveData[j];
+              lowerPoint = sortedCurveData[j + 1];
+              break;
+            }
+          }
+          
+          const range = upperPoint.impact - lowerPoint.impact;
+          const position = lossExposure - lowerPoint.impact;
+          const ratio = range > 0 ? position / range : 0;
+          probability = (lowerPoint.probability + ratio * (upperPoint.probability - lowerPoint.probability)) * 100;
+        }
+      } else {
+        // For filtered views: Calculate from individual filtered risks
+        const riskExposures = filteredRisks.map(risk => {
+          const residualRisk = ensureFiniteNumber(risk.residualRisk || risk.inherentRisk || 0);
+          return residualRisk;
+        }).filter(exposure => exposure > 0).sort((a, b) => b - a);
+        
+        if (riskExposures.length === 0) {
+          probability = 0;
+        } else {
+          const risksExceedingLoss = riskExposures.filter(exposure => exposure >= lossExposure);
+          probability = (risksExceedingLoss.length / riskExposures.length) * 100;
+        }
+      }
       
       // Previous probability based on actual historical data
       let previousProbability = null;
