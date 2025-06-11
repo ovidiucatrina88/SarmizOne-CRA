@@ -333,6 +333,22 @@ export class AuthService {
 
     return this.createUser({ ...userData, role: 'admin' });
   }
+
+  // Update user role
+  async updateUserRole(id: number, role: 'user' | 'admin'): Promise<boolean> {
+    try {
+      await db.update(users)
+        .set({ 
+          role,
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      return false;
+    }
+  }
 }
 
 export const authService = AuthService.getInstance();
