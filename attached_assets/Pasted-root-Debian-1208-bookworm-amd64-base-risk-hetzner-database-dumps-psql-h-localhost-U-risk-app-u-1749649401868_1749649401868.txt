@@ -1,0 +1,61 @@
+root@Debian-1208-bookworm-amd64-base ~/risk-hetzner/database_dumps # psql -h localhost -U risk_app_user -d fair_risk_db -v ON_ERROR_STOP=1 -f data_dump_clean_insert.sql
+Password for user risk_app_user:
+TRUNCATE TABLE
+TRUNCATE TABLE
+TRUNCATE TABLE
+TRUNCATE TABLE
+TRUNCATE TABLE
+TRUNCATE TABLE
+psql:data_dump_clean_insert.sql:13: NOTICE:  truncate cascades to table "response_cost_modules"
+TRUNCATE TABLE
+psql:data_dump_clean_insert.sql:14: NOTICE:  truncate cascades to table "risk_controls"
+TRUNCATE TABLE
+psql:data_dump_clean_insert.sql:15: NOTICE:  truncate cascades to table "risk_controls"
+psql:data_dump_clean_insert.sql:15: NOTICE:  truncate cascades to table "risk_costs"
+psql:data_dump_clean_insert.sql:15: NOTICE:  truncate cascades to table "risk_responses"
+psql:data_dump_clean_insert.sql:15: NOTICE:  truncate cascades to table "response_cost_modules"
+TRUNCATE TABLE
+psql:data_dump_clean_insert.sql:16: NOTICE:  truncate cascades to table "asset_relationships"
+psql:data_dump_clean_insert.sql:16: NOTICE:  truncate cascades to table "vulnerabilities"
+psql:data_dump_clean_insert.sql:16: NOTICE:  truncate cascades to table "vulnerability_assets"
+TRUNCATE TABLE
+TRUNCATE TABLE
+TRUNCATE TABLE
+psql:data_dump_clean_insert.sql:19: NOTICE:  truncate cascades to table "response_cost_modules"
+psql:data_dump_clean_insert.sql:19: NOTICE:  truncate cascades to table "risk_costs"
+TRUNCATE TABLE
+psql:data_dump_clean_insert.sql:20: NOTICE:  truncate cascades to table "controls"
+psql:data_dump_clean_insert.sql:20: NOTICE:  truncate cascades to table "risk_controls"
+TRUNCATE TABLE
+psql:data_dump_clean_insert.sql:21: NOTICE:  truncate cascades to table "risks"
+psql:data_dump_clean_insert.sql:21: NOTICE:  truncate cascades to table "risk_controls"
+psql:data_dump_clean_insert.sql:21: NOTICE:  truncate cascades to table "risk_costs"
+psql:data_dump_clean_insert.sql:21: NOTICE:  truncate cascades to table "risk_responses"
+psql:data_dump_clean_insert.sql:21: NOTICE:  truncate cascades to table "response_cost_modules"
+TRUNCATE TABLE
+psql:data_dump_clean_insert.sql:22: NOTICE:  truncate cascades to table "vulnerability_assets"
+TRUNCATE TABLE
+TRUNCATE TABLE
+TRUNCATE TABLE
+TRUNCATE TABLE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+psql:data_dump_clean_insert.sql:52: ERROR:  column "parent_id" of relation "legal_entities" does not exist
+LINE 1: ...legal_entities (id, entity_id, name, description, parent_id,...
+                                                             ^

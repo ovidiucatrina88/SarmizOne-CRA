@@ -44,12 +44,12 @@ ALTER SEQUENCE auth_config_id_seq RESTART WITH 1;
 ALTER SEQUENCE activity_logs_id_seq RESTART WITH 1;
 ALTER SEQUENCE vulnerabilities_id_seq RESTART WITH 1;
 
--- Insert Legal Entities
-INSERT INTO legal_entities (id, entity_id, name, description, parent_id, hierarchy_level, created_at, updated_at) VALUES
-(1, 'CORP-MAIN', 'Acme Corporation', 'Main corporate entity', NULL, 'strategic_capability', '2025-06-06 19:00:00+00', '2025-06-06 19:00:00+00'),
-(2, 'CORP-TECH', 'Acme Tech Division', 'Technology division responsible for IT infrastructure and development', 1, 'value_capability', '2025-06-06 19:00:00+00', '2025-06-06 19:00:00+00'),
-(3, 'CORP-FIN', 'Acme Financial Services', 'Financial services and accounting division', 1, 'value_capability', '2025-06-06 19:00:00+00', '2025-06-06 19:00:00+00'),
-(4, 'CORP-OPS', 'Acme Operations', 'Operations and logistics division', 1, 'value_capability', '2025-06-06 19:00:00+00', '2025-06-06 19:00:00+00');
+-- Insert Legal Entities (matching actual schema)
+INSERT INTO legal_entities (entity_id, name, description, parent_entity_id, created_at) VALUES
+('CORP-MAIN', 'Acme Corporation', 'Main corporate entity', NULL, '2025-06-06 19:00:00'),
+('CORP-TECH', 'Acme Tech Division', 'Technology division responsible for IT infrastructure and development', 'CORP-MAIN', '2025-06-06 19:00:00'),
+('CORP-FIN', 'Acme Financial Services', 'Financial services and accounting division', 'CORP-MAIN', '2025-06-06 19:00:00'),
+('CORP-OPS', 'Acme Operations', 'Operations and logistics division', 'CORP-MAIN', '2025-06-06 19:00:00');
 
 -- Insert Assets
 INSERT INTO assets (id, asset_id, name, description, type, status, integrity, availability, confidentiality, replacement_cost, operating_cost, currency, legal_entity, owner, location, criticality_level, data_classification, compliance_requirements, vendor, version, support_contact, business_unit, parent_id, created_at, updated_at) VALUES
