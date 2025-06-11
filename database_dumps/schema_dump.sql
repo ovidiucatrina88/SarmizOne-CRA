@@ -485,18 +485,42 @@ CREATE TABLE IF NOT EXISTS vulnerability_assets (
 -- Commit the transaction
 COMMIT;
 
--- Create indexes for better performance (after all tables are created)
-CREATE INDEX IF NOT EXISTS idx_assets_legal_entity ON assets(legal_entity);
-CREATE INDEX IF NOT EXISTS idx_assets_asset_type ON assets(type);
-CREATE INDEX IF NOT EXISTS idx_assets_status ON assets(status);
-CREATE INDEX IF NOT EXISTS idx_risks_severity ON risks(severity);
-CREATE INDEX IF NOT EXISTS idx_risks_category ON risks(risk_category);
-CREATE INDEX IF NOT EXISTS idx_controls_status ON controls(implementation_status);
-CREATE INDEX IF NOT EXISTS idx_risk_summaries_entity_date ON risk_summaries(legal_entity_id, year, month);
-CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at);
-CREATE INDEX IF NOT EXISTS idx_vulnerabilities_severity ON vulnerabilities(severity);
-CREATE INDEX IF NOT EXISTS idx_vulnerabilities_status ON vulnerabilities(status);
-CREATE INDEX IF NOT EXISTS idx_sessions_expire ON sessions(expire);
+-- Create essential indexes for better performance
+DO $$
+BEGIN
+    -- Create indexes with error handling for column existence
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'assets' AND column_name = 'legal_entity') THEN
+        CREATE INDEX IF NOT EXISTS idx_assets_legal_entity ON assets(legal_entity);
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'risks' AND column_name = 'severity') THEN
+        CREATE INDEX IF NOT EXISTS idx_risks_severity ON risks(severity);
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'controls' AND column_name = 'implementation_status') THEN
+        CREATE INDEX IF NOT EXISTS idx_controls_status ON controls(implementation_status);
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'risk_summaries' AND column_name = 'legal_entity_id') THEN
+        CREATE INDEX IF NOT EXISTS idx_risk_summaries_entity_date ON risk_summaries(legal_entity_id, year, month);
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'activity_logs' AND column_name = 'created_at') THEN
+        CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created_at);
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'vulnerabilities' AND column_name = 'severity') THEN
+        CREATE INDEX IF NOT EXISTS idx_vulnerabilities_severity ON vulnerabilities(severity);
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'vulnerabilities' AND column_name = 'status') THEN
+        CREATE INDEX IF NOT EXISTS idx_vulnerabilities_status ON vulnerabilities(status);
+    END IF;
+    
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'sessions' AND column_name = 'expire') THEN
+        CREATE INDEX IF NOT EXISTS idx_sessions_expire ON sessions(expire);
+    END IF;
+END $$;
 
 -- Grant permissions (adjust as needed for your user)
 -- GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO app_user;
