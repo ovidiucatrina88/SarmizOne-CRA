@@ -24,25 +24,19 @@ const createVulnerabilitySchema = z.object({
 // GET /vulnerabilities - List all vulnerabilities  
 router.get('/vulnerabilities', async (req, res) => {
   try {
-    const allVulnerabilities = await db.select({
-      id: vulnerabilities.id,
-      cveId: vulnerabilities.cveId,
-      title: vulnerabilities.title,
-      description: vulnerabilities.description,
-      cvssScore: vulnerabilities.cvssScore,
-      cvssVector: vulnerabilities.cvssVector,
-      severity: vulnerabilities.severity,
-      status: vulnerabilities.status,
-      discoveredDate: vulnerabilities.discoveredDate,
-      remediatedDate: vulnerabilities.remediatedDate,
-      publishedDate: vulnerabilities.publishedDate,
-      modifiedDate: vulnerabilities.modifiedDate,
-      eDetectImpact: vulnerabilities.eDetectImpact,
-      eResistImpact: vulnerabilities.eResistImpact,
-      remediation: vulnerabilities.remediation,
-      createdAt: vulnerabilities.createdAt,
-      updatedAt: vulnerabilities.updatedAt
-    }).from(vulnerabilities);
+    // Use raw SQL to match actual database column names
+    const result = await db.execute(sql`
+      SELECT id, cve_id as "cveId", title, description, cvss_score as "cvssScore", 
+             cvss_vector as "cvssVector", severity, status, 
+             discovered_date as "discoveredDate", remediated_date as "remediatedDate",
+             published_date as "publishedDate", modified_date as "modifiedDate",
+             e_detect_impact as "eDetectImpact", e_resist_impact as "eResistImpact",
+             remediation, created_at as "createdAt", updated_at as "updatedAt"
+      FROM vulnerabilities
+      ORDER BY created_at DESC
+    `);
+    
+    const allVulnerabilities = result.rows;
     
     res.json({
       success: true,
@@ -219,17 +213,17 @@ router.delete('/vulnerabilities/:id', async (req, res) => {
     const vulnerabilityId = parseInt(req.params.id);
 
     // Delete associated asset relationships first
-    await db
-      .delete(vulnerabilityAssets)
-      .where(eq(vulnerabilityAssets.vulnerabilityId, vulnerabilityId));
+    await db.execute(sql`
+      DELETE FROM vulnerability_assets WHERE vulnerability_id = ${vulnerabilityId}
+    `);
 
     // Delete the vulnerability
-    const [deletedVulnerability] = await db
-      .delete(vulnerabilities)
-      .where(eq(vulnerabilities.id, vulnerabilityId))
-      .returning();
+    const result = await db.execute(sql`
+      DELETE FROM vulnerabilities WHERE id = ${vulnerabilityId}
+      RETURNING id, cve_id
+    `);
 
-    if (!deletedVulnerability) {
+    if (result.rows.length === 0) {
       return res.status(404).json({
         success: false,
         error: 'Vulnerability not found'
@@ -238,7 +232,8 @@ router.delete('/vulnerabilities/:id', async (req, res) => {
 
     res.json({
       success: true,
-      message: 'Vulnerability deleted successfully'
+      message: 'Vulnerability deleted successfully',
+      data: result.rows[0]
     });
   } catch (error) {
     console.error('Error deleting vulnerability:', error);
