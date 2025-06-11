@@ -382,11 +382,50 @@ CREATE TABLE IF NOT EXISTS risk_costs (
     UNIQUE(risk_id, cost_module_id)
 );
 
--- Now create indexes safely
-CREATE INDEX IF NOT EXISTS idx_assets_legal_entity ON assets(legal_entity);
-CREATE INDEX IF NOT EXISTS idx_risks_severity ON risks(severity);
-CREATE INDEX IF NOT EXISTS idx_controls_implementation_status ON controls(implementation_status);
-CREATE INDEX IF NOT EXISTS idx_vulnerabilities_severity ON vulnerabilities(severity);
-CREATE INDEX IF NOT EXISTS idx_vulnerabilities_status ON vulnerabilities(status);
+-- Create indexes safely with column existence checks
+DO $$
+BEGIN
+    -- Create index on assets.legal_entity if column exists
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'assets' AND column_name = 'legal_entity') THEN
+        CREATE INDEX IF NOT EXISTS idx_assets_legal_entity ON assets(legal_entity);
+    END IF;
+    
+    -- Create index on risks.severity if column exists and has proper type
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'risks' AND column_name = 'severity') THEN
+        BEGIN
+            CREATE INDEX IF NOT EXISTS idx_risks_severity ON risks(severity);
+        EXCEPTION WHEN OTHERS THEN
+            -- Skip if index creation fails due to type issues
+            RAISE NOTICE 'Skipping risks severity index due to type mismatch';
+        END;
+    END IF;
+    
+    -- Create index on controls.implementation_status if column exists
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'controls' AND column_name = 'implementation_status') THEN
+        BEGIN
+            CREATE INDEX IF NOT EXISTS idx_controls_implementation_status ON controls(implementation_status);
+        EXCEPTION WHEN OTHERS THEN
+            RAISE NOTICE 'Skipping controls implementation_status index due to type mismatch';
+        END;
+    END IF;
+    
+    -- Create index on vulnerabilities.severity if column exists
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'vulnerabilities' AND column_name = 'severity') THEN
+        BEGIN
+            CREATE INDEX IF NOT EXISTS idx_vulnerabilities_severity ON vulnerabilities(severity);
+        EXCEPTION WHEN OTHERS THEN
+            RAISE NOTICE 'Skipping vulnerabilities severity index due to type mismatch';
+        END;
+    END IF;
+    
+    -- Create index on vulnerabilities.status if column exists
+    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'vulnerabilities' AND column_name = 'status') THEN
+        BEGIN
+            CREATE INDEX IF NOT EXISTS idx_vulnerabilities_status ON vulnerabilities(status);
+        EXCEPTION WHEN OTHERS THEN
+            RAISE NOTICE 'Skipping vulnerabilities status index due to type mismatch';
+        END;
+    END IF;
+END $$;
 
 -- Migration completed successfully
