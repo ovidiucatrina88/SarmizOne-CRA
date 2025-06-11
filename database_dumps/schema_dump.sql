@@ -286,7 +286,7 @@ CREATE TABLE IF NOT EXISTS control_library (
     baseline_effectiveness REAL DEFAULT 0.0,
     implementation_guidance TEXT,
     testing_procedures TEXT,
-    references TEXT[],
+    control_references TEXT[],
     tags TEXT[],
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -314,7 +314,7 @@ CREATE TABLE IF NOT EXISTS risk_library (
     secondary_loss_magnitude_min TEXT,
     secondary_loss_magnitude_ml TEXT,
     secondary_loss_magnitude_max TEXT,
-    references TEXT[],
+    risk_references TEXT[],
     tags TEXT[],
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

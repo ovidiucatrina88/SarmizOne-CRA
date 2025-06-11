@@ -1,126 +1,108 @@
-# Database Restoration Guide
+# Database Dumps - Cybersecurity Risk Quantification Platform
 
-This directory contains complete database dumps for the Cybersecurity Risk Quantification application.
+## Overview
+This directory contains comprehensive database dumps for the FAIR-based risk management platform, including schema definitions and sample data for development and deployment purposes.
 
-## Files Structure
+## Files Description
 
-### Schema Dump
-- `schema_dump.sql` - Complete database schema including tables, types, constraints, and indexes
+### 1. `schema_dump.sql`
+**Purpose**: Complete database schema with conditional table creation
+- Contains all table definitions with `CREATE TABLE IF NOT EXISTS` statements
+- Includes all custom PostgreSQL enums and data types
+- Handles existing tables gracefully without data loss
+- Creates proper indexes and constraints
+- Safe for production deployment over existing databases
 
-### Data Dumps
-- `data_dump.sql` - Complete data dump with INSERT statements
-- `data_dump_with_triggers.sql` - Data dump with trigger handling for circular foreign keys
-- `tables/` - Individual table data dumps for granular restoration
-
-### Table Inventory (18 tables)
-1. **activity_logs** - System activity tracking (268 records)
-2. **assets** - Asset inventory (11 records)
-3. **risks** - Risk assessments (5 records)
-4. **controls** - Security controls (3 records)
-5. **legal_entities** - Legal entity structure (4 records)
-6. **risk_responses** - Risk mitigation responses (1 record)
-7. **enterprise_architecture** - Architecture components (3 records)
-8. **control_library** - Control templates
-9. **risk_library** - Risk templates
-10. **cost_modules** - Cost calculation modules
-11. **risk_controls** - Risk-control relationships
-12. **risk_costs** - Risk cost associations
-13. **risk_summaries** - Risk summary calculations
-14. **asset_relationships** - Asset dependencies
-15. **response_cost_modules** - Response cost mappings
-16. **users** - User accounts
-17. **sessions** - User sessions
-18. **vulnerabilities** - Vulnerability tracking
-
-## Restoration Process
-
-### 1. Create Database and User
+**Usage:**
 ```bash
-# On your production PostgreSQL server
-sudo -u postgres psql
-CREATE DATABASE cybersecurity_risk_db;
-CREATE USER app_user WITH ENCRYPTED PASSWORD 'your_secure_password';
-GRANT ALL PRIVILEGES ON DATABASE cybersecurity_risk_db TO app_user;
-ALTER USER app_user CREATEDB;
-\q
+psql -h localhost -U your_user -d your_database -f schema_dump.sql
 ```
 
-### 2. Restore Schema
+### 2. `data_dump_clean_insert.sql`
+**Purpose**: Core dataset with table clearing to prevent duplicates
+- Truncates all tables before inserting fresh data
+- Resets all sequence counters to start from 1
+- Contains essential business data (4 entities, 4 assets, 4 risks, etc.)
+- Ideal for clean development environment setup
+- **Warning**: This will delete all existing data
+
+**Usage:**
 ```bash
-# Restore database structure
-psql -U app_user -d cybersecurity_risk_db -f schema_dump.sql
+psql -h localhost -U your_user -d your_database -f data_dump_clean_insert.sql
 ```
 
-### 3. Restore Data (Choose one method)
+### 3. `complete_data_dump.sql`
+**Purpose**: Comprehensive dataset for full application functionality
+- Includes all core entities and relationships
+- Contains production-ready sample data
+- Preserves data integrity with proper foreign key relationships
+- Suitable for demonstration and testing environments
 
-#### Method A: Complete Data Restore
+**Usage:**
 ```bash
-# Restore all data at once (handles foreign key constraints)
-psql -U app_user -d cybersecurity_risk_db -f data_dump_with_triggers.sql
+psql -h localhost -U your_user -d your_database -f complete_data_dump.sql
 ```
 
-#### Method B: Table-by-Table Restore
-```bash
-# Restore tables in dependency order
-psql -U app_user -d cybersecurity_risk_db -f tables/legal_entities_data.sql
-psql -U app_user -d cybersecurity_risk_db -f tables/assets_data.sql
-psql -U app_user -d cybersecurity_risk_db -f tables/risks_data.sql
-psql -U app_user -d cybersecurity_risk_db -f tables/controls_data.sql
-psql -U app_user -d cybersecurity_risk_db -f tables/risk_responses_data.sql
-psql -U app_user -d cybersecurity_risk_db -f tables/activity_logs_data.sql
-psql -U app_user -d cybersecurity_risk_db -f tables/enterprise_architecture_data.sql
-# Continue with remaining tables...
-```
+## Database Schema Overview
 
-### 4. Verify Restoration
-```bash
-# Check table counts
-psql -U app_user -d cybersecurity_risk_db -c "
-SELECT schemaname, tablename, n_tup_ins as row_count 
-FROM pg_stat_user_tables 
-ORDER BY tablename;"
+### Core Tables
+- **legal_entities**: Corporate hierarchy (4 entities)
+- **assets**: Business assets ($1.45M total value)
+- **risks**: Quantified risks with FAIR methodology
+- **controls**: Security controls and effectiveness measures
+- **vulnerabilities**: CVE tracking with severity scoring
+- **users**: Authentication and authorization
+- **cost_modules**: FAIR cost calculation modules
 
-# Verify specific data
-psql -U app_user -d cybersecurity_risk_db -c "SELECT COUNT(*) FROM assets;"
-psql -U app_user -d cybersecurity_risk_db -c "SELECT COUNT(*) FROM risks;"
-psql -U app_user -d cybersecurity_risk_db -c "SELECT COUNT(*) FROM controls;"
-```
+### Large Datasets (Not included in basic dumps)
+- **risk_summaries**: 838+ time-series risk calculations
+- **control_library**: 133+ security control templates
+- **risk_library**: 25+ risk scenario templates
+- **activity_logs**: 289+ audit trail records
 
-## Environment Configuration
+## Deployment Instructions
 
-After database restoration, configure your application:
+### Fresh Installation
+1. Apply schema: `psql -f schema_dump.sql`
+2. Load data: `psql -f complete_data_dump.sql`
 
-```bash
-# .env file for production
-DATABASE_URL="postgresql://app_user:your_secure_password@localhost:5432/cybersecurity_risk_db"
-SESSION_SECRET="your_session_secret_key"
-NODE_ENV="production"
-```
+### Existing Database Update
+1. Backup existing data: `pg_dump your_db > backup.sql`
+2. Apply schema updates: `psql -f schema_dump.sql`
+3. Verify data integrity
 
-## Expected Data Volumes
-- **Assets**: 11 records ($365M total value across legal entities)
-- **Risks**: 5 records ($25.7M inherent → $14.2M residual exposure)
-- **Controls**: 3 controls (100% implementation rate)
-- **Legal Entities**: 4 entities (Company Group hierarchy)
-- **Activity Logs**: 268 historical operations
-- **Risk Responses**: 1 mitigation strategy
+### Development Environment
+1. Reset database: `psql -f data_dump_clean_insert.sql`
+2. Restart application to verify functionality
 
-## Troubleshooting
+## Data Integrity Notes
 
-### Foreign Key Constraint Issues
-If you encounter foreign key constraint errors:
-```bash
-# Disable triggers during restore
-psql -U app_user -d cybersecurity_risk_db -c "SET session_replication_role = replica;"
-# Run your data restore
-psql -U app_user -d cybersecurity_risk_db -f data_dump.sql
-# Re-enable triggers
-psql -U app_user -d cybersecurity_risk_db -c "SET session_replication_role = DEFAULT;"
-```
+- All dumps maintain referential integrity
+- Sequence values are properly reset after data insertion
+- Foreign key constraints are temporarily disabled during bulk operations
+- Custom enums and types are recreated to prevent conflicts
 
-### Permission Issues
-Ensure the application user has proper permissions:
-```sql
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO app_user;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO app_user;
-```
+## Authentication Data
+
+Default user accounts (password: `admin123`):
+- **admin**: Full system access
+- **analyst**: Risk analysis capabilities  
+- **viewer**: Read-only dashboard access
+
+## Column Name Updates
+
+The following reserved keyword conflicts have been resolved:
+- `references` columns renamed to `control_references` and `risk_references`
+- All PostgreSQL reserved words avoided in table definitions
+
+## Production Notes
+
+- Schema supports PostgreSQL 12+ with JSON columns
+- Optimized indexes for dashboard performance
+- FAIR methodology compliance with proper cost calculations
+- Full audit trail support with activity logging
+
+---
+Generated: 2025-06-11
+Platform: Cybersecurity Risk Quantification Dashboard
+Database: PostgreSQL with Drizzle ORM
