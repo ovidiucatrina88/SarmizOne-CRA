@@ -418,7 +418,7 @@ export default function Dashboard() {
         />
         
         <TopRisks 
-          risks={[]}
+          risks={risksData?.data || []}
           maxItems={5}
         />
       </div>
