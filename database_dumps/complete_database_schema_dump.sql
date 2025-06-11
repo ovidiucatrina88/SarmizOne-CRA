@@ -57,6 +57,26 @@ CREATE TYPE risk_category AS ENUM ('operational', 'strategic', 'compliance', 'fi
 CREATE TYPE risk_response_type AS ENUM ('accept', 'avoid', 'transfer', 'mitigate');
 CREATE TYPE severity AS ENUM ('low', 'medium', 'high', 'critical');
 
+-- Create sequences first
+CREATE SEQUENCE activity_logs_id_seq;
+CREATE SEQUENCE asset_relationships_id_seq;
+CREATE SEQUENCE assets_id_seq;
+CREATE SEQUENCE auth_config_id_seq;
+CREATE SEQUENCE control_library_id_seq;
+CREATE SEQUENCE controls_id_seq;
+CREATE SEQUENCE cost_modules_id_seq;
+CREATE SEQUENCE enterprise_architecture_id_seq;
+CREATE SEQUENCE legal_entities_id_seq;
+CREATE SEQUENCE response_cost_modules_id_seq;
+CREATE SEQUENCE risk_controls_id_seq;
+CREATE SEQUENCE risk_costs_id_seq;
+CREATE SEQUENCE risk_library_id_seq;
+CREATE SEQUENCE risk_responses_id_seq;
+CREATE SEQUENCE risk_summaries_id_seq;
+CREATE SEQUENCE risks_id_seq;
+CREATE SEQUENCE users_id_seq;
+CREATE SEQUENCE vulnerabilities_id_seq;
+
 -- Create all tables with exact column definitions
 
 -- Activity Logs Table
@@ -478,25 +498,25 @@ CREATE TABLE vulnerabilities (
     CHECK (status = ANY (ARRAY['open'::text, 'in_progress'::text, 'remediated'::text, 'exception'::text]))
 );
 
--- Create sequences for serial columns
-CREATE SEQUENCE IF NOT EXISTS activity_logs_id_seq OWNED BY activity_logs.id;
-CREATE SEQUENCE IF NOT EXISTS asset_relationships_id_seq OWNED BY asset_relationships.id;
-CREATE SEQUENCE IF NOT EXISTS assets_id_seq OWNED BY assets.id;
-CREATE SEQUENCE IF NOT EXISTS auth_config_id_seq OWNED BY auth_config.id;
-CREATE SEQUENCE IF NOT EXISTS control_library_id_seq OWNED BY control_library.id;
-CREATE SEQUENCE IF NOT EXISTS controls_id_seq OWNED BY controls.id;
-CREATE SEQUENCE IF NOT EXISTS cost_modules_id_seq OWNED BY cost_modules.id;
-CREATE SEQUENCE IF NOT EXISTS enterprise_architecture_id_seq OWNED BY enterprise_architecture.id;
-CREATE SEQUENCE IF NOT EXISTS legal_entities_id_seq OWNED BY legal_entities.id;
-CREATE SEQUENCE IF NOT EXISTS response_cost_modules_id_seq OWNED BY response_cost_modules.id;
-CREATE SEQUENCE IF NOT EXISTS risk_controls_id_seq OWNED BY risk_controls.id;
-CREATE SEQUENCE IF NOT EXISTS risk_costs_id_seq OWNED BY risk_costs.id;
-CREATE SEQUENCE IF NOT EXISTS risk_library_id_seq OWNED BY risk_library.id;
-CREATE SEQUENCE IF NOT EXISTS risk_responses_id_seq OWNED BY risk_responses.id;
-CREATE SEQUENCE IF NOT EXISTS risk_summaries_id_seq OWNED BY risk_summaries.id;
-CREATE SEQUENCE IF NOT EXISTS risks_id_seq OWNED BY risks.id;
-CREATE SEQUENCE IF NOT EXISTS users_id_seq OWNED BY users.id;
-CREATE SEQUENCE IF NOT EXISTS vulnerabilities_id_seq OWNED BY vulnerabilities.id;
+-- Set sequence ownership
+ALTER SEQUENCE activity_logs_id_seq OWNED BY activity_logs.id;
+ALTER SEQUENCE asset_relationships_id_seq OWNED BY asset_relationships.id;
+ALTER SEQUENCE assets_id_seq OWNED BY assets.id;
+ALTER SEQUENCE auth_config_id_seq OWNED BY auth_config.id;
+ALTER SEQUENCE control_library_id_seq OWNED BY control_library.id;
+ALTER SEQUENCE controls_id_seq OWNED BY controls.id;
+ALTER SEQUENCE cost_modules_id_seq OWNED BY cost_modules.id;
+ALTER SEQUENCE enterprise_architecture_id_seq OWNED BY enterprise_architecture.id;
+ALTER SEQUENCE legal_entities_id_seq OWNED BY legal_entities.id;
+ALTER SEQUENCE response_cost_modules_id_seq OWNED BY response_cost_modules.id;
+ALTER SEQUENCE risk_controls_id_seq OWNED BY risk_controls.id;
+ALTER SEQUENCE risk_costs_id_seq OWNED BY risk_costs.id;
+ALTER SEQUENCE risk_library_id_seq OWNED BY risk_library.id;
+ALTER SEQUENCE risk_responses_id_seq OWNED BY risk_responses.id;
+ALTER SEQUENCE risk_summaries_id_seq OWNED BY risk_summaries.id;
+ALTER SEQUENCE risks_id_seq OWNED BY risks.id;
+ALTER SEQUENCE users_id_seq OWNED BY users.id;
+ALTER SEQUENCE vulnerabilities_id_seq OWNED BY vulnerabilities.id;
 
 -- Add foreign key constraints
 ALTER TABLE asset_relationships ADD CONSTRAINT asset_relationships_target_asset_id_fkey FOREIGN KEY (target_asset_id) REFERENCES assets(id);
