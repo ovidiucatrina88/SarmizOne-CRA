@@ -498,6 +498,11 @@ CREATE TABLE vulnerabilities (
     CHECK (status = ANY (ARRAY['open'::text, 'in_progress'::text, 'remediated'::text, 'exception'::text]))
 );
 
+-- Add unique constraints where needed
+ALTER TABLE risks ADD CONSTRAINT risks_risk_id_unique UNIQUE (risk_id);
+ALTER TABLE legal_entities ADD CONSTRAINT legal_entities_entity_id_unique UNIQUE (entity_id);
+ALTER TABLE vulnerabilities ADD CONSTRAINT vulnerabilities_cve_id_unique UNIQUE (cve_id);
+
 -- Set sequence ownership
 ALTER SEQUENCE activity_logs_id_seq OWNED BY activity_logs.id;
 ALTER SEQUENCE asset_relationships_id_seq OWNED BY asset_relationships.id;
@@ -530,7 +535,7 @@ ALTER TABLE risk_controls ADD CONSTRAINT risk_controls_control_id_fkey FOREIGN K
 ALTER TABLE risk_controls ADD CONSTRAINT risk_controls_risk_id_fkey FOREIGN KEY (risk_id) REFERENCES risks(id);
 ALTER TABLE risk_costs ADD CONSTRAINT risk_costs_risk_id_fkey FOREIGN KEY (risk_id) REFERENCES risks(id);
 ALTER TABLE risk_costs ADD CONSTRAINT risk_costs_cost_module_id_fkey FOREIGN KEY (cost_module_id) REFERENCES cost_modules(id);
-ALTER TABLE risk_responses ADD CONSTRAINT risk_responses_risk_id_risks_risk_id_fk FOREIGN KEY (risk_id) REFERENCES risks(risk_id);
+ALTER TABLE risk_responses ADD CONSTRAINT risk_responses_risk_id_fkey FOREIGN KEY (risk_id) REFERENCES risks(risk_id);
 ALTER TABLE risks ADD CONSTRAINT risks_library_item_id_fkey FOREIGN KEY (library_item_id) REFERENCES risk_library(id);
 
 -- Create indexes for performance

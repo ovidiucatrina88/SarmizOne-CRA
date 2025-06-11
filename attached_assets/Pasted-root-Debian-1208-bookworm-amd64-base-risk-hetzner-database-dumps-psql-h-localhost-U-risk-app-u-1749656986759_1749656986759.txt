@@ -1,0 +1,137 @@
+root@Debian-1208-bookworm-amd64-base ~/risk-hetzner/database_dumps # psql -h localhost -U risk_app_user -d fair_risk_db -v ON_ERROR_STOP=1 -f complete_database_schema_dump.sql
+Password for user risk_app_user:
+psql:complete_database_schema_dump.sql:6: NOTICE:  table "activity_logs" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:7: NOTICE:  table "asset_relationships" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:8: NOTICE:  table "response_cost_modules" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:9: NOTICE:  table "risk_costs" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:10: NOTICE:  table "risk_controls" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:11: NOTICE:  table "risk_summaries" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:12: NOTICE:  table "risk_responses" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:13: NOTICE:  table "vulnerabilities" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:14: NOTICE:  table "controls" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:15: NOTICE:  table "risks" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:16: NOTICE:  table "assets" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:17: NOTICE:  table "enterprise_architecture" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:18: NOTICE:  table "legal_entities" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:19: NOTICE:  table "cost_modules" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:20: NOTICE:  table "control_library" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:21: NOTICE:  table "risk_library" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:22: NOTICE:  table "users" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:23: NOTICE:  table "auth_config" does not exist, skipping
+DROP TABLE
+psql:complete_database_schema_dump.sql:24: NOTICE:  table "sessions" does not exist, skipping
+DROP TABLE
+DROP TYPE
+DROP TYPE
+DROP TYPE
+DROP TYPE
+DROP TYPE
+DROP TYPE
+DROP TYPE
+DROP TYPE
+DROP TYPE
+DROP TYPE
+DROP TYPE
+DROP TYPE
+DROP TYPE
+DROP TYPE
+DROP TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE TYPE
+CREATE SEQUENCE
+CREATE SEQUENCE
+CREATE SEQUENCE
+CREATE SEQUENCE
+CREATE SEQUENCE
+CREATE SEQUENCE
+CREATE SEQUENCE
+CREATE SEQUENCE
+CREATE SEQUENCE
+CREATE SEQUENCE
+CREATE SEQUENCE
+CREATE SEQUENCE
+CREATE SEQUENCE
+CREATE SEQUENCE
+CREATE SEQUENCE
+CREATE SEQUENCE
+CREATE SEQUENCE
+CREATE SEQUENCE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+CREATE TABLE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER SEQUENCE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+ALTER TABLE
+psql:complete_database_schema_dump.sql:533: ERROR:  there is no unique constraint matching given keys for referenced table "risks"
