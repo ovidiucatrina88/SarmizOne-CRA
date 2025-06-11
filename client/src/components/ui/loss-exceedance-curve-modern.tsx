@@ -743,38 +743,27 @@ export function LossExceedanceCurveModern({
           probability = Math.max(0, 10 - ((point - maxExposure) / (maxExposure * 0.2)) * 10);
         }
         
-        // Calculate threshold probability with smooth gradients
+        // Standardize tolerance calculation to always use fixed thresholds
         let toleranceProbability;
         
-        // Use the same data-driven tolerance calculation as the main loop
-        const dataMinThreshold = minExposure * 0.8;
-        const dataLowThreshold = avgExposure * 0.6;
-        const dataMedThreshold = avgExposure * 1.0;
-        const dataHighThreshold = avgExposure * 1.4;
-        const dataMaxThreshold = maxExposure * 0.8;
-        
-        if (point <= dataMinThreshold) {
+        if (point <= toleranceThresholds.fullAcceptance) {
           toleranceProbability = 100;
-        } else if (point <= dataLowThreshold) {
-          const range = dataLowThreshold - dataMinThreshold;
-          const position = point - dataMinThreshold;
-          const ratio = range > 0 ? position / range : 0;
-          toleranceProbability = 100 - (15 * ratio);
-        } else if (point <= dataMedThreshold) {
-          const range = dataMedThreshold - dataLowThreshold;
-          const position = point - dataLowThreshold;
-          const ratio = range > 0 ? position / range : 0;
-          toleranceProbability = 85 - (15 * ratio);
-        } else if (point <= dataHighThreshold) {
-          const range = dataHighThreshold - dataMedThreshold;
-          const position = point - dataMedThreshold;
-          const ratio = range > 0 ? position / range : 0;
-          toleranceProbability = 70 - (25 * ratio);
-        } else if (point <= dataMaxThreshold) {
-          const range = dataMaxThreshold - dataHighThreshold;
-          const position = point - dataHighThreshold;
-          const ratio = range > 0 ? position / range : 0;
-          toleranceProbability = 45 - (45 * ratio);
+        } else if (point <= toleranceThresholds.highAcceptance) {
+          const range = toleranceThresholds.highAcceptance - toleranceThresholds.fullAcceptance;
+          const position = point - toleranceThresholds.fullAcceptance;
+          toleranceProbability = 100 - (25 * (position / range));
+        } else if (point <= toleranceThresholds.mediumAcceptance) {
+          const range = toleranceThresholds.mediumAcceptance - toleranceThresholds.highAcceptance;
+          const position = point - toleranceThresholds.highAcceptance;
+          toleranceProbability = 75 - (25 * (position / range));
+        } else if (point <= toleranceThresholds.lowAcceptance) {
+          const range = toleranceThresholds.lowAcceptance - toleranceThresholds.mediumAcceptance;
+          const position = point - toleranceThresholds.mediumAcceptance;
+          toleranceProbability = 50 - (25 * (position / range));
+        } else if (point <= toleranceThresholds.zeroAcceptance) {
+          const range = toleranceThresholds.zeroAcceptance - toleranceThresholds.lowAcceptance;
+          const position = point - toleranceThresholds.lowAcceptance;
+          toleranceProbability = 25 - (25 * (position / range));
         } else {
           toleranceProbability = 0;
         }
