@@ -66,7 +66,12 @@ psql -h localhost -U your_user -d your_database -f complete_data_dump.sql
 1. Apply schema: `psql -f schema_dump.sql`
 2. Load data: `psql -f complete_data_dump.sql`
 
-### Existing Database Update
+### Existing Database Update (Missing Columns)
+1. Backup existing data: `pg_dump your_db > backup.sql`
+2. Apply migration: `psql -f schema_migration.sql`
+3. Verify data integrity
+
+### Schema Recreation (Full Reset)
 1. Backup existing data: `pg_dump your_db > backup.sql`
 2. Apply schema updates: `psql -f schema_dump.sql`
 3. Verify data integrity
