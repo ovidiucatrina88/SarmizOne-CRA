@@ -95,3 +95,22 @@ INSERT INTO vulnerabilities (id, cve_id, discovery_date, severity_cvss3, exploit
 (9,'CVE-2024-0002','2025-06-01 00:35:08.966349',8.10,NULL,NULL,NULL,'in_progress',NULL,true,'scanner',NULL,NULL,NULL,NULL,'2025-06-11 00:35:08.966349','2025-06-11 00:35:08.966349','SQL Injection in Database Layer','SQL injection vulnerability in the database access layer',8.1,'CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N','2025-06-01 00:35:08.966349',NULL,NULL,NULL,0.2,0.3,'[]','[]',NULL,'high'),
 (10,'CVE-2024-0003','2025-06-08 00:35:08.966349',6.10,NULL,NULL,NULL,'open',NULL,true,'pen_test',NULL,NULL,NULL,NULL,'2025-06-11 00:35:08.966349','2025-06-11 00:35:08.966349','Cross-Site Scripting Vulnerability','Stored XSS vulnerability in user input fields',6.1,'CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N','2025-06-08 00:35:08.966349',NULL,NULL,NULL,0.1,0.1,'[]','[]',NULL,'medium'),
 (11,'CVE-2024-0004','2025-05-27 00:35:08.966349',5.30,NULL,NULL,NULL,'remediated',NULL,true,'manual',NULL,NULL,NULL,NULL,'2025-06-11 00:35:08.966349','2025-06-11 00:35:08.966349','Information Disclosure','Sensitive information disclosed in error messages',5.3,'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N','2025-05-27 00:35:08.966349',NULL,NULL,NULL,0.05,0,'[]','[]',NULL,'medium');
+
+-- Insert ALL Enterprise Architecture (3 records)
+INSERT INTO enterprise_architecture (id, asset_id, name, description, level, type, architecture_domain, parent_id, created_at, updated_at) VALUES
+(1,'SC-902','Information Security','','L1','strategic_capability','Information Security',NULL,'2025-05-21 12:05:15.850044','2025-05-21 12:05:15.850044'),
+(2,'VC-401','Cyber Defense Department','','L2','value_capability','Information Security',1,'2025-05-21 12:05:39.764466','2025-05-21 12:05:39.764466'),
+(3,'BS-609','Threat Detection & Monitoring','','L3','business_service','Information Security',2,'2025-05-21 12:06:32.31958','2025-05-21 12:06:32.31958');
+
+-- Insert ALL Risk Controls (2 records)
+INSERT INTO risk_controls (id, risk_id, control_id, effectiveness, notes, created_at, updated_at) VALUES
+(4,52,28,0,'','2025-06-10 23:05:22.78189','2025-06-10 23:05:22.78189'),
+(5,53,29,0,'','2025-06-10 23:22:37.403271','2025-06-10 23:22:37.403271');
+
+-- Insert ALL Risk Costs (5 records)
+INSERT INTO risk_costs (id, risk_id, cost_module_id, weight, created_at) VALUES
+(13,52,9,9.5,'2025-06-10 23:07:33.752071'),
+(14,52,5,0.4,'2025-06-10 23:07:33.752071'),
+(18,53,2,10,'2025-06-10 23:22:04.739918'),
+(19,53,5,0.4,'2025-06-10 23:22:04.739918'),
+(20,53,7,2.4,'2025-06-10 23:22:04.739918');
