@@ -349,6 +349,17 @@ export class AuthService {
       return false;
     }
   }
+
+  // Permanently delete user from database
+  async permanentlyDeleteUser(id: number): Promise<boolean> {
+    try {
+      await db.delete(users).where(eq(users.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error permanently deleting user:', error);
+      return false;
+    }
+  }
 }
 
 export const authService = AuthService.getInstance();

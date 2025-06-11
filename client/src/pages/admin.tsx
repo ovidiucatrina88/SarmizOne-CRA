@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { AlertTriangle, Database, RefreshCw, Settings, Shield, User, Users, Key, Globe, UserPlus, ShieldCheck, UserX, Calendar, Eye, EyeOff } from "lucide-react";
+import { AlertTriangle, Database, RefreshCw, Settings, Shield, User, Users, Key, Globe, UserPlus, ShieldCheck, UserX, Calendar, Eye, EyeOff, Trash2 } from "lucide-react";
 import Layout from "@/components/layout/layout";
 import { 
   Table, 
@@ -338,6 +338,36 @@ function UserTable() {
     },
   });
 
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await fetch(`/api/auth/users/${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete user');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "User Deleted",
+        description: "User has been permanently deleted",
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/users"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Delete User",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const getRoleBadgeVariant = (role: string) => {
     return role === 'admin' ? 'destructive' : 'secondary';
   };
@@ -443,10 +473,26 @@ function UserTable() {
                     size="sm"
                     onClick={() => deactivateUserMutation.mutate(user.id)}
                     disabled={deactivateUserMutation.isPending}
+                    title="Deactivate user"
                   >
                     <UserX className="h-4 w-4" />
                   </Button>
                 )}
+                
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (window.confirm(`Are you sure you want to permanently delete ${user.displayName}? This action cannot be undone.`)) {
+                      deleteUserMutation.mutate(user.id);
+                    }
+                  }}
+                  disabled={deleteUserMutation.isPending}
+                  className="text-destructive hover:text-destructive"
+                  title="Delete user permanently"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               </div>
             </TableCell>
           </TableRow>

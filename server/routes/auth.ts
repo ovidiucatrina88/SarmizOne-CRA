@@ -440,6 +440,53 @@ router.patch('/auth/users/:id/reset-password', requireAdmin, async (req, res) =>
   }
 });
 
+// Delete user permanently (admin only)
+router.delete('/auth/users/:id', requireAdmin, async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    
+    // Prevent deleting the current admin user
+    const session = (req as any).session;
+    let currentUserId = null;
+    
+    if (session?.user) {
+      currentUserId = session.user.id;
+    } else if ((req as any).isAuthenticated && (req as any).isAuthenticated()) {
+      const ssoUser = (req as any).user;
+      if (ssoUser?.claims?.sub) {
+        currentUserId = ssoUser.claims.sub;
+      }
+    }
+    
+    if (currentUserId === userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot delete your own account'
+      });
+    }
+    
+    const success = await authService.permanentlyDeleteUser(userId);
+    
+    if (!success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Failed to delete user'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'User deleted permanently'
+    });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(400).json({
+      success: false,
+      error: 'Invalid request'
+    });
+  }
+});
+
 /**
  * OIDC Configuration Routes (Admin only)
  */
