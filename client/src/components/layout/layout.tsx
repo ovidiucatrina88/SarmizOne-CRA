@@ -234,12 +234,8 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
               <img 
                 src={logoPath} 
                 alt="SARMIZ-ONE Logo" 
-                className="w-12 h-12 object-contain"
+                className="w-20 h-20 object-contain"
               />
-              <div>
-                <h1 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>SARMIZ-ONE</h1>
-                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Risk Management Platform</p>
-              </div>
             </div>
           )}
           {sidebarCollapsed && (
