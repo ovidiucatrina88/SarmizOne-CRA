@@ -228,7 +228,7 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
       {/* Sidebar */}
       <div className={`${sidebarCollapsed ? 'w-16' : 'w-64'} ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-r flex flex-col transition-all duration-300`}>
         {/* Header */}
-        <div className={`${sidebarCollapsed ? 'p-2' : 'p-3'} border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+        <div className="p-3 border-b border-gray-700 pl-[0px] pr-[0px] pt-[0px] pb-[0px] mt-[-1px] mb-[-1px] ml-[0px] mr-[0px]">
           {!sidebarCollapsed && (
             <div className="flex items-center justify-center">
               <img 
@@ -344,7 +344,6 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
           </Button>
         </div>
       </div>
-
       {/* Content */}
       <div className="flex-1 overflow-auto">
         {/* Top Bar */}
