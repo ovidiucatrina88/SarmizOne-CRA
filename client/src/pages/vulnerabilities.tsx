@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,7 +23,8 @@ import {
   Clock, 
   RefreshCw,
   AlertTriangle,
-  Plus
+  Plus,
+  Trash2
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Link } from "wouter";
@@ -32,63 +34,49 @@ export default function VulnerabilitiesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   
-  // Fetch vulnerabilities data
-  const { data, isLoading, refetch } = useQuery({
+  // Fetch vulnerabilities data from API
+  const { data: vulnerabilitiesData, isLoading, refetch } = useQuery({
+    queryKey: ['/api/vulnerabilities'],
+  });
+  
+  // Fetch vulnerability metrics
+  const { data: metricsData } = useQuery({
     queryKey: ['/api/vulnerability-metrics'],
   });
   
-  // Create sample vulnerabilities data for demonstration purposes
-  // This would normally come from a real API
-  const vulnerabilities = [
-    {
-      id: 1,
-      cveId: "CVE-2023-0001",
-      description: "Remote code execution vulnerability in web server",
-      cvss: 8.4,
-      status: "open",
-      discoveredDate: "2025-04-15",
-      affectedAssets: [
-        { id: 1, name: "Web Server 1", assetId: "AST-001" }
-      ]
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: async (vulnerabilityId: number) => {
+      return apiRequest(`/api/vulnerabilities/${vulnerabilityId}`, {
+        method: 'DELETE',
+      });
     },
-    {
-      id: 2,
-      cveId: "CVE-2023-0002",
-      description: "SQL injection vulnerability in application",
-      cvss: 7.2,
-      status: "in_progress",
-      discoveredDate: "2025-04-18",
-      affectedAssets: [
-        { id: 2, name: "Application Server", assetId: "AST-002" }
-      ]
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/vulnerabilities'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/vulnerability-metrics'] });
     },
-    {
-      id: 3,
-      cveId: "CVE-2023-0003",
-      description: "Cross-site scripting in web portal",
-      cvss: 5.4,
-      status: "remediated",
-      discoveredDate: "2025-04-10",
-      remediatedDate: "2025-04-20",
-      affectedAssets: [
-        { id: 3, name: "Customer Portal", assetId: "AST-003" }
-      ]
-    }
-  ];
+  });
+  
+  const vulnerabilities = vulnerabilitiesData?.data || [];
   
   // Filter vulnerabilities based on search term and status
   const filteredVulnerabilities = vulnerabilities.filter((vuln: any) => {
     const matchesSearch = 
       vuln.cveId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vuln.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vuln.affectedAssets?.some((asset: any) => 
-        asset.name?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      vuln.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      vuln.description?.toLowerCase().includes(searchTerm.toLowerCase());
       
     const matchesStatus = statusFilter === "all" || vuln.status === statusFilter;
     
     return matchesSearch && matchesStatus;
   });
+  
+  // Handle delete vulnerability
+  const handleDelete = async (vulnerability: any) => {
+    if (window.confirm(`Are you sure you want to delete vulnerability ${vulnerability.cveId}?`)) {
+      deleteMutation.mutate(vulnerability.id);
+    }
+  };
   
   const getSeverityColor = (cvss: number) => {
     if (cvss >= 9.0) return "bg-red-100 text-red-800";
@@ -240,20 +228,20 @@ export default function VulnerabilitiesPage() {
                           <TableCell className="font-medium">{vuln.cveId}</TableCell>
                           <TableCell className="max-w-md truncate">{vuln.description}</TableCell>
                           <TableCell>
-                            <Badge className={getSeverityColor(vuln.cvss3)}>
-                              {vuln.cvss3?.toFixed(1) || "N/A"}
+                            <Badge className={getSeverityColor(vuln.cvssScore || 0)}>
+                              {vuln.cvssScore?.toFixed(1) || "N/A"}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col gap-1">
-                              <Progress value={vuln.eDetect * 100} className="h-2" />
-                              <span className="text-xs text-right">{(vuln.eDetect * 100).toFixed(0)}%</span>
+                              <Progress value={(vuln.eDetectImpact || 0) * 100} className="h-2" />
+                              <span className="text-xs text-right">{((vuln.eDetectImpact || 0) * 100).toFixed(0)}%</span>
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col gap-1">
-                              <Progress value={vuln.eResist * 100} className="h-2" />
-                              <span className="text-xs text-right">{(vuln.eResist * 100).toFixed(0)}%</span>
+                              <Progress value={(vuln.eResistImpact || 0) * 100} className="h-2" />
+                              <span className="text-xs text-right">{((vuln.eResistImpact || 0) * 100).toFixed(0)}%</span>
                             </div>
                           </TableCell>
                           <TableCell>
@@ -289,6 +277,15 @@ export default function VulnerabilitiesPage() {
                                   Remediate
                                 </Button>
                               )}
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={() => handleDelete(vuln)}
+                                disabled={deleteMutation.isPending}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
