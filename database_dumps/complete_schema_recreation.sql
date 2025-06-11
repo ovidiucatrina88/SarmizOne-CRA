@@ -394,7 +394,31 @@ CREATE TABLE users (
     role CHARACTER VARYING NOT NULL DEFAULT 'user',
     auth_type CHARACTER VARYING NOT NULL DEFAULT 'local',
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    failed_login_attempts INTEGER DEFAULT 0
+    failed_login_attempts INTEGER DEFAULT 0,
+    locked_until TIMESTAMP WITHOUT TIME ZONE,
+    last_login TIMESTAMP WITHOUT TIME ZONE,
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT NOW(),
+    password_salt CHARACTER VARYING,
+    password_iterations INTEGER DEFAULT 100,
+    account_locked_until TIMESTAMP WITHOUT TIME ZONE,
+    sso_subject CHARACTER VARYING,
+    sso_provider CHARACTER VARYING,
+    first_name CHARACTER VARYING,
+    last_name CHARACTER VARYING,
+    profile_image_url CHARACTER VARYING,
+    created_by INTEGER,
+    updated_by INTEGER,
+    is_email_verified BOOLEAN DEFAULT FALSE,
+    email_verified_at TIMESTAMP WITHOUT TIME ZONE,
+    timezone CHARACTER VARYING DEFAULT 'UTC',
+    language CHARACTER VARYING DEFAULT 'en',
+    phone CHARACTER VARYING,
+    department CHARACTER VARYING,
+    job_title CHARACTER VARYING,
+    manager_id INTEGER,
+    login_count INTEGER DEFAULT 0,
+    last_failed_login TIMESTAMP WITHOUT TIME ZONE
 );
 
 -- Auth Config Table
