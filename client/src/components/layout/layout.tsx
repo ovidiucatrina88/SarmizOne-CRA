@@ -229,15 +229,24 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
         {/* Header */}
         <div className={`${sidebarCollapsed ? 'p-4' : 'p-6'} border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
           {!sidebarCollapsed && (
-            <>
-              <h1 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>CyberSec Risk</h1>
-              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Risk Management Platform</p>
-            </>
+            <div className="flex items-center space-x-3">
+              <img 
+                src="/attached_assets/ChatGPT Image Jun 11, 2025, 07_13_39 PM_1749662025817.png" 
+                alt="SARMIZ-ONE Logo" 
+                className="w-12 h-12 object-contain"
+              />
+              <div>
+                <h1 className={`text-xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>SARMIZ-ONE</h1>
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Risk Management Platform</p>
+              </div>
+            </div>
           )}
           {sidebarCollapsed && (
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <Shield className="h-6 w-6 text-white" />
-            </div>
+            <img 
+              src="/attached_assets/ChatGPT Image Jun 11, 2025, 07_13_39 PM_1749662025817.png" 
+              alt="SARMIZ-ONE Logo" 
+              className="w-10 h-10 object-contain"
+            />
           )}
         </div>
         
