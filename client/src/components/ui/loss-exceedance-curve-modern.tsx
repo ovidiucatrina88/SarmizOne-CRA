@@ -465,6 +465,7 @@ export function LossExceedanceCurveModern({
     let calculatedAvgExposure = 0;
     let actualExposureCurveData: Array<{ impact: number; probability: number }> = [];
     
+    // Build exposure curve array for all filter types
     if (filterType === 'all') {
       // For ALL filter: Use aggregated data from risk_summaries directly
       console.log(`Using aggregated risk_summaries data for ALL filter`);
@@ -474,93 +475,48 @@ export function LossExceedanceCurveModern({
       calculatedAvgExposure = exposureData?.average || 0;
       
       // Use exposure curve data from risk_summaries exactly as provided
-      if (currentExposure && Array.isArray(currentExposure.exposureCurveData)) {
-        actualExposureCurveData = currentExposure.exposureCurveData;
-        console.log(`Using ${actualExposureCurveData.length} curve points from risk_summaries`);
+      actualExposureCurveData = currentExposure?.exposureCurveData || [];
+      console.log(`Using ${actualExposureCurveData.length} curve points from risk_summaries`);
+    } else {
+      // For all other filters: build a true curve array from filtered risks
+      const exposures = filteredRisks
+        .map(risk => ensureFiniteNumber(risk.residualRisk || risk.inherentRisk || 0))
+        .filter(v => v > 0)
+        .sort((a, b) => b - a); // Sort descending for exceedance calculation
+      
+      if (exposures.length === 0) {
+        console.log(`No valid exposures found for filter ${filterType}`);
+        return [];
       }
       
-      console.log(`Risk summaries values: min=${calculatedMinExposure}, avg=${calculatedAvgExposure}, max=${calculatedMaxExposure}`);
-    } else if (filterType === 'entity') {
-      // For ENTITY filter: Sum risks for selected legal entity
-      const entityRisks = filteredRisks.filter(risk => 
-        selectedEntityId && risk.legalEntity === selectedEntityId
-      );
-      console.log(`Entity filter: Found ${entityRisks.length} risks for entity ${selectedEntityId}`);
+      const n = exposures.length;
+      console.log(`Building curve from ${n} exposure values for ${filterType} filter`);
       
-      if (entityRisks.length > 0) {
-        const riskValues = entityRisks.map(risk => parseFloat(risk.residualRisk || risk.inherentRisk || '0'));
-        const totalExposure = riskValues.reduce((sum, val) => sum + val, 0);
-        
-        calculatedMinExposure = totalExposure * 0.1; // 10% of total
-        calculatedMaxExposure = totalExposure * 1.5; // 150% of total  
+      if (filterType === 'entity' || ['l1', 'l2', 'l3', 'l4'].includes(filterType || '')) {
+        // For entity and architecture filters: Sum the exposures (aggregated risk)
+        const totalExposure = exposures.reduce((sum, val) => sum + val, 0);
+        calculatedMinExposure = totalExposure * 0.1;
+        calculatedMaxExposure = totalExposure * 1.5;
         calculatedAvgExposure = totalExposure;
         
-        // Create curve for summed entity risk
+        // Create simple 3-point curve for summed risk
         actualExposureCurveData = [
           { impact: calculatedMaxExposure, probability: 0.1 },
           { impact: calculatedAvgExposure, probability: 0.5 },
           { impact: calculatedMinExposure, probability: 0.9 }
         ];
       } else {
-        console.log(`No risks found for entity ${selectedEntityId}`);
-        return [];
-      }
-    } else if (filterType === 'asset') {
-      // For ASSET filter: Use individual asset values directly (no summing)
-      const assetRisks = filteredRisks.filter(risk => 
-        selectedAssetId && risk.associatedAssets.includes(selectedAssetId)
-      );
-      console.log(`Asset filter: Found ${assetRisks.length} risks for asset ${selectedAssetId}`);
-      
-      if (assetRisks.length > 0) {
-        // Use individual risk values, not summed
-        const riskValues = assetRisks.map(risk => parseFloat(risk.residualRisk || risk.inherentRisk || '0'));
+        // For asset filter: Use individual risk values (no summing)
+        calculatedMinExposure = Math.min(...exposures);
+        calculatedMaxExposure = Math.max(...exposures);
+        calculatedAvgExposure = exposures.reduce((sum, val) => sum + val, 0) / exposures.length;
         
-        calculatedMinExposure = Math.min(...riskValues.filter(v => v > 0));
-        calculatedMaxExposure = Math.max(...riskValues);
-        calculatedAvgExposure = riskValues.reduce((sum, val) => sum + val, 0) / riskValues.length;
-        
-        // Create curve from individual asset risk values
-        const sortedRisks = riskValues.filter(v => v > 0).sort((a, b) => b - a);
-        actualExposureCurveData = sortedRisks.map((impact, index) => ({
+        // Create curve from individual exposures
+        actualExposureCurveData = exposures.map((impact, i) => ({
           impact,
-          probability: (index + 1) / sortedRisks.length
+          probability: (i + 1) / n
         }));
-      } else {
-        console.log(`No risks found for asset ${selectedAssetId}`);
-        return [];
       }
-    } else if (['l1', 'l2', 'l3', 'l4'].includes(filterType || '')) {
-      // For L1-L4 filters: Sum risks based on architecture hierarchy
-      const architectureRisks = filteredRisks.filter(risk => {
-        // This would need proper architecture mapping - for now use all filtered risks
-        return risk.associatedAssets.some(assetId => 
-          selectedArchitectureId && assetId.includes(selectedArchitectureId)
-        );
-      });
-      console.log(`${filterType?.toUpperCase()} filter: Found ${architectureRisks.length} risks for architecture ${selectedArchitectureId}`);
-      
-      if (architectureRisks.length > 0) {
-        const riskValues = architectureRisks.map(risk => parseFloat(risk.residualRisk || risk.inherentRisk || '0'));
-        const totalExposure = riskValues.reduce((sum, val) => sum + val, 0);
-        
-        calculatedMinExposure = totalExposure * 0.2;
-        calculatedMaxExposure = totalExposure * 1.3;
-        calculatedAvgExposure = totalExposure;
-        
-        // Create curve for summed architecture risk
-        actualExposureCurveData = [
-          { impact: calculatedMaxExposure, probability: 0.15 },
-          { impact: calculatedAvgExposure, probability: 0.5 },
-          { impact: calculatedMinExposure, probability: 0.85 }
-        ];
-      } else {
-        console.log(`No risks found for ${filterType} ${selectedArchitectureId}`);
-        return [];
-      }
-    } else {
-      console.log(`Unknown filter type: ${filterType}`);
-      return [];
     }
     
     // Ensure we have valid exposure values
@@ -1146,7 +1102,7 @@ export function LossExceedanceCurveModern({
                 {/* Previous line */}
                 {showHistory && previousExposure && (
                   <Line 
-                    type="natural"
+                    type="monotone"
                     dataKey="previousProbability"
                     name="Previous Loss Probability"
                     stroke="#facc15"
@@ -1160,7 +1116,7 @@ export function LossExceedanceCurveModern({
                 
                 {/* Current line */}
                 <Line 
-                  type="natural"
+                  type="monotone"
                   dataKey="probability"
                   name="Current Loss Probability"
                   stroke="#3b82f6"
