@@ -1,48 +1,90 @@
 -- Database Schema Dump for Cybersecurity Risk Quantification Platform
 -- Generated on 2025-06-11
--- PostgreSQL Database Schema with ALTER/CREATE IF NOT EXISTS statements
+-- PostgreSQL Database Schema with conditional type and table creation
 
--- Drop existing enums if they exist and recreate
-DROP TYPE IF EXISTS cost_module_type CASCADE;
-DROP TYPE IF EXISTS asset_type CASCADE;
-DROP TYPE IF EXISTS asset_status CASCADE;
-DROP TYPE IF EXISTS cia_rating CASCADE;
-DROP TYPE IF EXISTS external_internal CASCADE;
-DROP TYPE IF EXISTS hierarchy_level CASCADE;
-DROP TYPE IF EXISTS relationship_type CASCADE;
-DROP TYPE IF EXISTS risk_category CASCADE;
-DROP TYPE IF EXISTS control_type CASCADE;
-DROP TYPE IF EXISTS control_category CASCADE;
-DROP TYPE IF EXISTS implementation_status CASCADE;
-DROP TYPE IF EXISTS risk_response_type CASCADE;
-DROP TYPE IF EXISTS severity CASCADE;
-DROP TYPE IF EXISTS currency CASCADE;
-DROP TYPE IF EXISTS vulnerability_status CASCADE;
-DROP TYPE IF EXISTS vulnerability_severity CASCADE;
-DROP TYPE IF EXISTS item_type CASCADE;
-DROP TYPE IF EXISTS auth_type CASCADE;
-DROP TYPE IF EXISTS user_role CASCADE;
+-- Begin transaction for atomic schema updates
+BEGIN;
 
--- Create enums
-CREATE TYPE cost_module_type AS ENUM ('fixed', 'per_event', 'per_hour', 'percentage');
-CREATE TYPE asset_type AS ENUM ('data', 'application', 'device', 'system', 'network', 'facility', 'personnel', 'other', 'application_service', 'technical_component');
-CREATE TYPE asset_status AS ENUM ('Active', 'Decommissioned', 'To Adopt');
-CREATE TYPE cia_rating AS ENUM ('low', 'medium', 'high');
-CREATE TYPE external_internal AS ENUM ('external', 'internal');
-CREATE TYPE hierarchy_level AS ENUM ('strategic_capability', 'value_capability', 'business_service', 'application_service', 'technical_component');
-CREATE TYPE relationship_type AS ENUM ('part_of', 'depends_on', 'contains');
-CREATE TYPE risk_category AS ENUM ('operational', 'strategic', 'compliance', 'financial');
-CREATE TYPE control_type AS ENUM ('preventive', 'detective', 'corrective');
-CREATE TYPE control_category AS ENUM ('technical', 'administrative', 'physical');
-CREATE TYPE implementation_status AS ENUM ('not_implemented', 'in_progress', 'fully_implemented', 'planned');
-CREATE TYPE risk_response_type AS ENUM ('accept', 'avoid', 'transfer', 'mitigate');
-CREATE TYPE severity AS ENUM ('low', 'medium', 'high', 'critical');
-CREATE TYPE currency AS ENUM ('USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'SEK', 'NOK', 'DKK');
-CREATE TYPE vulnerability_status AS ENUM ('open', 'in_progress', 'mitigated', 'resolved', 'false_positive');
-CREATE TYPE vulnerability_severity AS ENUM ('critical', 'high', 'medium', 'low', 'info');
-CREATE TYPE item_type AS ENUM ('template', 'instance');
-CREATE TYPE auth_type AS ENUM ('local', 'sso');
-CREATE TYPE user_role AS ENUM ('admin', 'analyst', 'viewer');
+-- Safely recreate enum types only if they don't exist or need updates
+DO $$ 
+BEGIN 
+    -- Create enums only if they don't exist
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'cost_module_type') THEN
+        CREATE TYPE cost_module_type AS ENUM ('fixed', 'per_event', 'per_hour', 'percentage');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'asset_type') THEN
+        CREATE TYPE asset_type AS ENUM ('data', 'application', 'device', 'system', 'network', 'facility', 'personnel', 'other', 'application_service', 'technical_component');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'asset_status') THEN
+        CREATE TYPE asset_status AS ENUM ('Active', 'Decommissioned', 'To Adopt');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'cia_rating') THEN
+        CREATE TYPE cia_rating AS ENUM ('low', 'medium', 'high');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'external_internal') THEN
+        CREATE TYPE external_internal AS ENUM ('external', 'internal');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'hierarchy_level') THEN
+        CREATE TYPE hierarchy_level AS ENUM ('strategic_capability', 'value_capability', 'business_service', 'application_service', 'technical_component');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'relationship_type') THEN
+        CREATE TYPE relationship_type AS ENUM ('part_of', 'depends_on', 'contains');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'risk_category') THEN
+        CREATE TYPE risk_category AS ENUM ('operational', 'strategic', 'compliance', 'financial');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'control_type') THEN
+        CREATE TYPE control_type AS ENUM ('preventive', 'detective', 'corrective');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'control_category') THEN
+        CREATE TYPE control_category AS ENUM ('technical', 'administrative', 'physical');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'implementation_status') THEN
+        CREATE TYPE implementation_status AS ENUM ('not_implemented', 'in_progress', 'fully_implemented', 'planned');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'risk_response_type') THEN
+        CREATE TYPE risk_response_type AS ENUM ('accept', 'avoid', 'transfer', 'mitigate');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'severity') THEN
+        CREATE TYPE severity AS ENUM ('low', 'medium', 'high', 'critical');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'currency') THEN
+        CREATE TYPE currency AS ENUM ('USD', 'EUR', 'GBP', 'CAD', 'AUD', 'JPY', 'CHF', 'SEK', 'NOK', 'DKK');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'vulnerability_status') THEN
+        CREATE TYPE vulnerability_status AS ENUM ('open', 'in_progress', 'mitigated', 'resolved', 'false_positive');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'vulnerability_severity') THEN
+        CREATE TYPE vulnerability_severity AS ENUM ('critical', 'high', 'medium', 'low', 'info');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'item_type') THEN
+        CREATE TYPE item_type AS ENUM ('template', 'instance');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'auth_type') THEN
+        CREATE TYPE auth_type AS ENUM ('local', 'sso');
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+        CREATE TYPE user_role AS ENUM ('admin', 'analyst', 'viewer');
+    END IF;
+END $$;
 
 -- Legal Entities Table
 CREATE TABLE IF NOT EXISTS legal_entities (
@@ -440,9 +482,12 @@ CREATE TABLE IF NOT EXISTS vulnerability_assets (
     UNIQUE(vulnerability_id, asset_id)
 );
 
--- Create indexes for better performance
+-- Commit the transaction
+COMMIT;
+
+-- Create indexes for better performance (after all tables are created)
 CREATE INDEX IF NOT EXISTS idx_assets_legal_entity ON assets(legal_entity);
-CREATE INDEX IF NOT EXISTS idx_assets_type ON assets(type);
+CREATE INDEX IF NOT EXISTS idx_assets_asset_type ON assets(type);
 CREATE INDEX IF NOT EXISTS idx_assets_status ON assets(status);
 CREATE INDEX IF NOT EXISTS idx_risks_severity ON risks(severity);
 CREATE INDEX IF NOT EXISTS idx_risks_category ON risks(risk_category);
@@ -457,4 +502,4 @@ CREATE INDEX IF NOT EXISTS idx_sessions_expire ON sessions(expire);
 -- GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO app_user;
 -- GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO app_user;
 
--- Schema dump completed
+-- Schema dump completed successfully

@@ -89,9 +89,15 @@ Default user accounts (password: `admin123`):
 - **analyst**: Risk analysis capabilities  
 - **viewer**: Read-only dashboard access
 
-## Column Name Updates
+## Schema Updates (Version 2)
 
-The following reserved keyword conflicts have been resolved:
+**Fixed PostgreSQL Compatibility Issues:**
+- Enhanced enum type handling with conditional creation
+- Transaction-based schema updates for better reliability
+- Resolved index creation conflicts during enum recreation
+- Safe schema application over existing databases
+
+**Reserved Keyword Fixes:**
 - `references` columns renamed to `control_references` and `risk_references`
 - All PostgreSQL reserved words avoided in table definitions
 
