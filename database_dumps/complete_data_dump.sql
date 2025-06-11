@@ -2,9 +2,6 @@
 -- Generated on 2025-06-11
 -- This script clears existing data and inserts complete dataset
 
--- Disable foreign key checks temporarily
-SET session_replication_role = replica;
-
 -- Clear all existing data in dependency order
 TRUNCATE TABLE activity_logs CASCADE;
 TRUNCATE TABLE asset_relationships CASCADE;
@@ -121,8 +118,7 @@ INSERT INTO vulnerabilities (cve_id, title, description, cvss_score, cvss_vector
 ('CVE-2024-0003', 'Cross-Site Scripting Vulnerability', 'Stored XSS vulnerability in user input fields', 6.1, 'CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N', 'medium', 'open', '2025-06-08 00:34:20+00', NULL, NULL, NULL, 0.1, 0.1, '[]', '[]', NULL, '2025-06-08 00:34:20', 6.1, NULL, NULL, NULL, NULL, true, 'pen_test', NULL, NULL, NULL, NULL, '2025-06-11 00:34:20+00', '2025-06-11 00:34:20+00'),
 ('CVE-2024-0004', 'Information Disclosure', 'Sensitive information disclosed in error messages', 5.3, 'CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N', 'medium', 'remediated', '2025-05-27 00:34:20+00', NULL, NULL, NULL, 0.05, 0.0, '[]', '[]', NULL, '2025-05-27 00:34:20', 5.3, NULL, NULL, NULL, NULL, true, 'manual', NULL, NULL, NULL, NULL, '2025-06-11 00:34:20+00', '2025-06-11 00:34:20+00');
 
--- Re-enable foreign key checks
-SET session_replication_role = DEFAULT;
+-- Foreign key constraints automatically re-enabled after data insertion
 
 -- Update sequence values to match inserted data
 SELECT setval('legal_entities_id_seq', (SELECT MAX(id) FROM legal_entities));

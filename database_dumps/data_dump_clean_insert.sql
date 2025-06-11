@@ -2,10 +2,8 @@
 -- Generated on 2025-06-11
 -- This script clears existing data and inserts fresh records to avoid duplicates
 
--- Disable foreign key checks temporarily for clean data insertion
-SET session_replication_role = replica;
-
 -- Clear all existing data in dependency order (children first)
+-- Note: Foreign key constraints will be checked during insertion
 TRUNCATE TABLE activity_logs CASCADE;
 TRUNCATE TABLE asset_relationships CASCADE;
 TRUNCATE TABLE response_cost_modules CASCADE;
@@ -125,8 +123,7 @@ INSERT INTO vulnerabilities (id, cve_id, title, description, cvss_score, cvss_ve
 -- These would be inserted here but are truncated for brevity in this example
 -- The full datasets can be extracted using individual SELECT statements
 
--- Re-enable foreign key checks
-SET session_replication_role = DEFAULT;
+-- Foreign key constraints automatically re-enabled after data insertion
 
 -- Update sequence values to match inserted data
 SELECT setval('legal_entities_id_seq', (SELECT MAX(id) FROM legal_entities));
