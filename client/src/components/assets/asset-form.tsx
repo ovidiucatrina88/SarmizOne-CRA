@@ -348,9 +348,8 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full max-h-[80vh]">
-        <div className="flex-1 overflow-y-auto space-y-6 pr-2">
-          <div className="grid grid-cols-2 gap-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-2 gap-4">
           {/* Asset ID field */}
           <FormField
             control={form.control}
@@ -891,23 +890,19 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
           )}
         />
 
-        </div>
-        
-        {/* Footer with form actions */}
-        <div className="flex-shrink-0 bg-white border-t pt-4 mt-4">
-          <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={mutation.isPending}
-              className="gap-1"
-            >
-              {mutation.isPending && <Loader className="h-4 w-4 animate-spin" />}
-              {asset ? "Update Asset" : "Create Asset"}
-            </Button>
-          </div>
+        {/* Form actions */}
+        <div className="flex justify-end space-x-2">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={mutation.isPending}
+            className="gap-1"
+          >
+            {mutation.isPending && <Loader className="h-4 w-4 animate-spin" />}
+            {asset ? "Update Asset" : "Create Asset"}
+          </Button>
         </div>
       </form>
     </Form>

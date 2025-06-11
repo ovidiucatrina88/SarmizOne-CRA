@@ -47,18 +47,9 @@ export default function VulnerabilitiesPage() {
   // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (vulnerabilityId: number) => {
-      const response = await fetch(`/api/vulnerabilities/${vulnerabilityId}`, {
+      return apiRequest(`/api/vulnerabilities/${vulnerabilityId}`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to delete vulnerability');
-      }
-      
-      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/vulnerabilities'] });
