@@ -24,6 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import logoPath from "@assets/ChatGPT Image Jun 11, 2025, 07_13_39 PM_1749662025817.png";
 
 const navigation = [
   { 
@@ -231,7 +232,7 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
           {!sidebarCollapsed && (
             <div className="flex items-center space-x-3">
               <img 
-                src="/attached_assets/ChatGPT Image Jun 11, 2025, 07_13_39 PM_1749662025817.png" 
+                src={logoPath} 
                 alt="SARMIZ-ONE Logo" 
                 className="w-12 h-12 object-contain"
               />
@@ -243,7 +244,7 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
           )}
           {sidebarCollapsed && (
             <img 
-              src="/attached_assets/ChatGPT Image Jun 11, 2025, 07_13_39 PM_1749662025817.png" 
+              src={logoPath} 
               alt="SARMIZ-ONE Logo" 
               className="w-10 h-10 object-contain"
             />
