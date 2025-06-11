@@ -228,13 +228,13 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
       {/* Sidebar */}
       <div className={`${sidebarCollapsed ? 'w-16' : 'w-64'} ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} border-r flex flex-col transition-all duration-300`}>
         {/* Header */}
-        <div className={`${sidebarCollapsed ? 'p-4' : 'p-6'} border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+        <div className={`${sidebarCollapsed ? 'p-2' : 'p-3'} border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
           {!sidebarCollapsed && (
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-center">
               <img 
                 src={logoPath} 
                 alt="SARMIZ-ONE Logo" 
-                className="w-20 h-20 object-contain"
+                className="w-32 h-32 object-contain"
               />
             </div>
           )}
