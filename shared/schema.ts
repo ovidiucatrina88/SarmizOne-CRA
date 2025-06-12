@@ -273,6 +273,33 @@ export const risks = pgTable('risks', {
   residualRisk: text('residual_risk').notNull().default('0'), // In dollars (after controls)
   rankPercentile: real('rank_percentile').notNull().default(0), // Percentile ranking of this risk
   
+  // Enhanced percentile values from FAIR calculations
+  aleP10: numeric('ale_p10', { precision: 38, scale: 2 }).default('0'),
+  aleP25: numeric('ale_p25', { precision: 38, scale: 2 }).default('0'),
+  aleP50: numeric('ale_p50', { precision: 38, scale: 2 }).default('0'),
+  aleP75: numeric('ale_p75', { precision: 38, scale: 2 }).default('0'),
+  aleP90: numeric('ale_p90', { precision: 38, scale: 2 }).default('0'),
+  aleP95: numeric('ale_p95', { precision: 38, scale: 2 }).default('0'),
+  aleP99: numeric('ale_p99', { precision: 38, scale: 2 }).default('0'),
+  
+  // Inherent risk percentiles (before controls)
+  inherentP10: numeric('inherent_p10', { precision: 38, scale: 2 }).default('0'),
+  inherentP25: numeric('inherent_p25', { precision: 38, scale: 2 }).default('0'),
+  inherentP50: numeric('inherent_p50', { precision: 38, scale: 2 }).default('0'),
+  inherentP75: numeric('inherent_p75', { precision: 38, scale: 2 }).default('0'),
+  inherentP90: numeric('inherent_p90', { precision: 38, scale: 2 }).default('0'),
+  inherentP95: numeric('inherent_p95', { precision: 38, scale: 2 }).default('0'),
+  inherentP99: numeric('inherent_p99', { precision: 38, scale: 2 }).default('0'),
+  
+  // Residual risk percentiles (after controls)
+  residualP10: numeric('residual_p10', { precision: 38, scale: 2 }).default('0'),
+  residualP25: numeric('residual_p25', { precision: 38, scale: 2 }).default('0'),
+  residualP50: numeric('residual_p50', { precision: 38, scale: 2 }).default('0'),
+  residualP75: numeric('residual_p75', { precision: 38, scale: 2 }).default('0'),
+  residualP90: numeric('residual_p90', { precision: 38, scale: 2 }).default('0'),
+  residualP95: numeric('residual_p95', { precision: 38, scale: 2 }).default('0'),
+  residualP99: numeric('residual_p99', { precision: 38, scale: 2 }).default('0'),
+  
   // Additional metadata
   // notes field doesn't exist in the actual database, commented out to match DB schema
   // notes: text('notes').notNull().default(''), // Additional notes about the risk
@@ -657,6 +684,13 @@ export const riskSummaries = pgTable('risk_summaries', {
   maximumExposure: real('maximum_exposure').notNull().default(0),
   meanExposure: real('mean_exposure').notNull().default(0),
   medianExposure: real('median_exposure').notNull().default(0),
+  
+  // Enhanced percentile exposures
+  percentile10Exposure: real('percentile_10_exposure').notNull().default(0),
+  percentile25Exposure: real('percentile_25_exposure').notNull().default(0),
+  percentile50Exposure: real('percentile_50_exposure').notNull().default(0),
+  percentile75Exposure: real('percentile_75_exposure').notNull().default(0),
+  percentile90Exposure: real('percentile_90_exposure').notNull().default(0),
   percentile95Exposure: real('percentile_95_exposure').notNull().default(0),
   percentile99Exposure: real('percentile_99_exposure').notNull().default(0),
   

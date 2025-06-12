@@ -13,8 +13,12 @@ export interface RiskParams {
 
 export interface FairCalculationResult {
   ale10: number;
+  ale25: number;
   ale50: number;
+  ale75: number;
   ale90: number;
+  ale95: number;
+  ale99: number;
   aleMean: number;
   aleMedian: number;
 }

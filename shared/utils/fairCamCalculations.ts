@@ -146,15 +146,23 @@ export function runMonteCarloSimulation(
     ? (aleResults[iterations / 2 - 1] + aleResults[iterations / 2]) / 2
     : aleResults[Math.floor(iterations / 2)];
   
-  // Calculate percentiles
+  // Calculate enhanced percentiles
   const p10 = aleResults[Math.floor(iterations * 0.1)];
+  const p25 = aleResults[Math.floor(iterations * 0.25)];
   const p50 = aleResults[Math.floor(iterations * 0.5)];
+  const p75 = aleResults[Math.floor(iterations * 0.75)];
   const p90 = aleResults[Math.floor(iterations * 0.9)];
+  const p95 = aleResults[Math.floor(iterations * 0.95)];
+  const p99 = aleResults[Math.floor(iterations * 0.99)];
   
   return {
     ale10: p10,
+    ale25: p25,
     ale50: p50,
+    ale75: p75,
     ale90: p90,
+    ale95: p95,
+    ale99: p99,
     aleMean: mean,
     aleMedian: median
   };
