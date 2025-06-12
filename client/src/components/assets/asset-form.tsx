@@ -44,14 +44,27 @@ const assetFormSchema = z.object({
   confidentiality: z.enum(["low", "medium", "high"]),
   integrity: z.enum(["low", "medium", "high"]),
   availability: z.enum(["low", "medium", "high"]),
-  assetValue: z.number().min(0, "Asset value must be a positive number"),
+  assetValue: z.union([
+    z.number().min(0, "Asset value must be a positive number"),
+    z.string().transform(val => {
+      const cleanVal = val.replace(/[^0-9.-]/g, '');
+      const numValue = parseFloat(cleanVal);
+      return isNaN(numValue) ? 0 : numValue;
+    })
+  ]),
   currency: z.enum(["USD", "EUR"]),
   regulatoryImpact: z.array(z.string()).optional(),
   externalInternal: z.enum(["external", "internal"]),
   dependencies: z.array(z.string()).optional(),
   description: z.string().default(''),
-  parentId: z.number().optional().nullable(),
-  agentCount: z.number().optional(),
+  parentId: z.union([
+    z.number(),
+    z.string().transform(val => val === "none" || val === "" ? null : parseInt(val))
+  ]).optional().nullable(),
+  agentCount: z.union([
+    z.number(),
+    z.string().transform(val => parseInt(val) || 1)
+  ]).optional(),
   legalEntity: z.string().optional().nullable(),
 });
 
@@ -290,7 +303,10 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
       parentId: values.parentId,
     };
     
-    console.log('Submitting asset with carefully formatted data:', payload);
+    console.log('Form values before processing:', values);
+    console.log('Submitting asset payload:', payload);
+    console.log('Asset ID for update:', assetId);
+    console.log('Is update operation:', !!asset);
     mutation.mutate(payload);
   };
 
