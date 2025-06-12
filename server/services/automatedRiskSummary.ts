@@ -90,6 +90,7 @@ export class AutomatedRiskSummaryService {
           total_inherent_risk, total_residual_risk,
           minimum_exposure, maximum_exposure, average_exposure,
           mean_exposure, median_exposure, percentile_95_exposure, percentile_99_exposure,
+          tenth_percentile_exposure, most_likely_exposure, ninetieth_percentile_exposure,
           exposure_curve_data, created_at, updated_at
         ) VALUES (
           ${now.getFullYear()}, ${now.getMonth() + 1}, NULL,
@@ -97,6 +98,7 @@ export class AutomatedRiskSummaryService {
           ${stats.total_inherent_risk}, ${stats.total_residual_risk},
           ${stats.minimum_exposure}, ${stats.maximum_exposure}, ${stats.mean_exposure},
           ${stats.mean_exposure}, ${stats.median_exposure}, ${stats.percentile_95_exposure}, ${stats.percentile_99_exposure},
+          ${stats.minimum_exposure}, ${stats.mean_exposure}, ${stats.percentile_95_exposure},
           ${JSON.stringify(exposureCurveData)}::jsonb, ${now}, ${now}
         )
       `);
