@@ -40,7 +40,7 @@ export default function Risks() {
   });
   
   // Extract risks array from the API response and ensure it's always an array
-  const allRisks = (risksResponse?.data || []) as Risk[];
+  const allRisks = ((risksResponse as any)?.data || []) as Risk[];
   
   console.log("Loaded", allRisks.length, "total risks from the server");
   
@@ -142,19 +142,44 @@ export default function Risks() {
   return (
     <Layout>
       <div>
-      {!Array.isArray(risks) || risks.length === 0 ? (
-        <Card className="p-8">
-          <div className="text-center">
-            <h3 className="text-lg font-medium mb-2">No Risks Added Yet</h3>
-            <p className="text-gray-500 mb-4">Click "Add New Risk" to create a new risk.</p>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold">Risk Register</h1>
+          <div className="flex items-center gap-2">
+            <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRefresh} 
+              disabled={isRefreshing}
+              title="Refresh risk data"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button onClick={handleCreateNew}>
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add New Risk
+            </Button>
           </div>
-        </Card>
-      ) : (
-        <RiskList
-          risks={risks}
-          onEdit={handleEdit}
-        />
-      )}
+        </div>
+
+        {!Array.isArray(risks) || risks.length === 0 ? (
+          <Card className="p-8">
+            <div className="text-center">
+              <h3 className="text-lg font-medium mb-2">No Risks Added Yet</h3>
+              <p className="text-gray-500 mb-4">Click "Add New Risk" to create a new risk.</p>
+            </div>
+          </Card>
+        ) : viewMode === 'grouped' ? (
+          <AssetGroupedRiskList
+            risks={risks}
+            onRiskEdit={handleEdit}
+          />
+        ) : (
+          <RiskList
+            risks={risks}
+            onEdit={handleEdit}
+          />
+        )}
 
       {/* Risk Form Dialog */}
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
