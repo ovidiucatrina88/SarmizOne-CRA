@@ -52,26 +52,23 @@ export class AutomatedRiskSummaryService {
       
       // Get current risk statistics using a single SQL query
       const result = await db.execute(sql`
-        WITH risk_stats AS (
-          SELECT 
-            COUNT(*) as total_risks,
-            COUNT(CASE WHEN severity = 'critical' THEN 1 END) as critical_risks,
-            COUNT(CASE WHEN severity = 'high' THEN 1 END) as high_risks,
-            COUNT(CASE WHEN severity = 'medium' THEN 1 END) as medium_risks,
-            COUNT(CASE WHEN severity = 'low' THEN 1 END) as low_risks,
-            COALESCE(SUM(CASE WHEN inherent_risk IS NOT NULL AND inherent_risk != '' THEN CAST(inherent_risk AS NUMERIC) ELSE 0 END), 0) as total_inherent_risk,
-            COALESCE(SUM(CASE WHEN residual_risk IS NOT NULL AND residual_risk != '' THEN CAST(residual_risk AS NUMERIC) ELSE 0 END), 0) as total_residual_risk,
-            COALESCE(MIN(CASE WHEN residual_risk IS NOT NULL AND residual_risk != '' THEN CAST(residual_risk AS NUMERIC) ELSE NULL END), 0) as minimum_exposure,
-            COALESCE(MAX(CASE WHEN residual_risk IS NOT NULL AND residual_risk != '' THEN CAST(residual_risk AS NUMERIC) ELSE NULL END), 0) as maximum_exposure,
-            COALESCE(AVG(CASE WHEN residual_risk IS NOT NULL AND residual_risk != '' THEN CAST(residual_risk AS NUMERIC) ELSE NULL END), 0) as mean_exposure,
-            COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY CASE WHEN residual_risk IS NOT NULL AND residual_risk != '' THEN CAST(residual_risk AS NUMERIC) ELSE NULL END), 0) as median_exposure,
-            COALESCE(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY CASE WHEN residual_risk IS NOT NULL AND residual_risk != '' THEN CAST(residual_risk AS NUMERIC) ELSE NULL END), 0) as percentile_95_exposure,
-            COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY CASE WHEN residual_risk IS NOT NULL AND residual_risk != '' THEN CAST(residual_risk AS NUMERIC) ELSE NULL END), 0) as percentile_99_exposure
-          FROM risks 
-          WHERE (item_type = 'instance' OR item_type IS NULL)
-            AND NULLIF(residual_risk, '') IS NOT NULL
-        )
-        SELECT * FROM risk_stats;
+        SELECT 
+          COUNT(*) as total_risks,
+          COUNT(CASE WHEN severity = 'critical' THEN 1 END) as critical_risks,
+          COUNT(CASE WHEN severity = 'high' THEN 1 END) as high_risks,
+          COUNT(CASE WHEN severity = 'medium' THEN 1 END) as medium_risks,
+          COUNT(CASE WHEN severity = 'low' THEN 1 END) as low_risks,
+          COALESCE(SUM(inherent_risk), 0) as total_inherent_risk,
+          COALESCE(SUM(residual_risk), 0) as total_residual_risk,
+          COALESCE(MIN(residual_risk), 0) as minimum_exposure,
+          COALESCE(MAX(residual_risk), 0) as maximum_exposure,
+          COALESCE(AVG(residual_risk), 0) as mean_exposure,
+          COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY residual_risk), 0) as median_exposure,
+          COALESCE(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY residual_risk), 0) as percentile_95_exposure,
+          COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY residual_risk), 0) as percentile_99_exposure
+        FROM risks 
+        WHERE (item_type = 'instance' OR item_type IS NULL)
+          AND residual_risk IS NOT NULL;
       `);
 
       const stats = result.rows[0];
