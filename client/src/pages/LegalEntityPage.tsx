@@ -185,7 +185,16 @@ export default function LegalEntityPage() {
   const onSubmit = (data: LegalEntityFormData) => {
     console.log("Legal entity form submission:", data);
     console.log("Form errors:", form.formState.errors);
-    saveEntityMutation.mutate(data);
+    
+    // Clean up the data to ensure proper types
+    const cleanedData = {
+      ...data,
+      description: data.description || "",
+      parentEntityId: data.parentEntityId || "",
+    };
+    
+    console.log("API Request to /api/legal-entities with data:", cleanedData);
+    saveEntityMutation.mutate(cleanedData);
   };
 
   const handleAddEntity = () => {
@@ -448,7 +457,11 @@ export default function LegalEntityPage() {
                   <FormItem>
                     <FormLabel>Description</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Optional description" {...field} />
+                      <Textarea 
+                        placeholder="Optional description" 
+                        {...field}
+                        value={field.value || ""}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -461,7 +474,11 @@ export default function LegalEntityPage() {
                   <FormItem>
                     <FormLabel>Parent Entity ID (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Parent entity reference" {...field} />
+                      <Input 
+                        placeholder="Parent entity reference" 
+                        {...field}
+                        value={field.value || ""}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
