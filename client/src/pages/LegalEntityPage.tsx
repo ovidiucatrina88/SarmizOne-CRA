@@ -1,12 +1,25 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation, Link } from "wouter";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import Layout from "@/components/layout/layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import {
   Table,
   TableBody,
@@ -52,12 +65,52 @@ interface LegalEntity {
   createdAt: string;
 }
 
+const legalEntitySchema = z.object({
+  entityId: z.string().min(1, "Entity ID is required"),
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  parentEntityId: z.string().optional(),
+});
+
+type LegalEntityFormData = z.infer<typeof legalEntitySchema>;
+
 export default function LegalEntityPage() {
   const [location] = useLocation();
   const [searchTerm, setSearchTerm] = useState("");
   const [editingEntity, setEditingEntity] = useState<LegalEntity | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  const form = useForm<LegalEntityFormData>({
+    resolver: zodResolver(legalEntitySchema),
+    defaultValues: {
+      entityId: "",
+      name: "",
+      description: "",
+      parentEntityId: "",
+    },
+  });
+
+  // Reset form when editing entity changes
+  React.useEffect(() => {
+    if (editingEntity) {
+      form.reset({
+        entityId: editingEntity.entityId,
+        name: editingEntity.name,
+        description: editingEntity.description || "",
+        parentEntityId: editingEntity.parentEntityId || "",
+      });
+      setDialogOpen(true);
+    } else {
+      form.reset({
+        entityId: "",
+        name: "",
+        description: "",
+        parentEntityId: "",
+      });
+    }
+  }, [editingEntity, form]);
 
   // Check if we're viewing a specific entity
   const entityId = location.split("/")[2];
@@ -78,6 +131,34 @@ export default function LegalEntityPage() {
     );
   }, [entities, searchTerm]);
 
+  // Create/Update mutation
+  const saveEntityMutation = useMutation({
+    mutationFn: (data: LegalEntityFormData) => {
+      if (editingEntity) {
+        return apiRequest("PATCH", `/api/legal-entities/${editingEntity.id}`, data);
+      } else {
+        return apiRequest("POST", "/api/legal-entities", data);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/legal-entities"] });
+      toast({
+        title: "Success",
+        description: editingEntity ? "Legal entity updated successfully" : "Legal entity created successfully",
+      });
+      setDialogOpen(false);
+      setEditingEntity(null);
+      form.reset();
+    },
+    onError: () => {
+      toast({
+        title: "Error",
+        description: editingEntity ? "Failed to update legal entity" : "Failed to create legal entity",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Delete mutation
   const deleteEntityMutation = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/legal-entities/${id}`),
@@ -96,6 +177,25 @@ export default function LegalEntityPage() {
       });
     },
   });
+
+  const onSubmit = (data: LegalEntityFormData) => {
+    saveEntityMutation.mutate(data);
+  };
+
+  const handleAddEntity = () => {
+    setEditingEntity(null);
+    setDialogOpen(true);
+  };
+
+  const handleEditEntity = (entity: LegalEntity) => {
+    setEditingEntity(entity);
+  };
+
+  const handleCloseDialog = () => {
+    setDialogOpen(false);
+    setEditingEntity(null);
+    form.reset();
+  };
 
   // Single entity view
   if (entityId) {
@@ -174,7 +274,7 @@ export default function LegalEntityPage() {
       pageIcon="LEG"
       pageDescription="Manage legal entities across your organization and their associated assets and risks."
       pageActions={
-        <Button onClick={() => setEditingEntity(null)} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={handleAddEntity} className="bg-blue-600 hover:bg-blue-700">
           <Plus className="mr-2 h-4 w-4" />
           Add Legal Entity
         </Button>
@@ -226,7 +326,7 @@ export default function LegalEntityPage() {
                       variant="ghost" 
                       size="icon"
                       className="h-8 w-8 text-gray-400 hover:text-gray-200"
-                      onClick={() => setEditingEntity(entity)}
+                      onClick={() => handleEditEntity(entity)}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -290,7 +390,7 @@ export default function LegalEntityPage() {
               Clear Search
             </Button>
           ) : (
-            <Button onClick={() => setEditingEntity(null)}>
+            <Button onClick={handleAddEntity}>
               <Plus className="mr-2 h-4 w-4" />
               New Entity
             </Button>
