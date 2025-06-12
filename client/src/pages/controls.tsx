@@ -1,10 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Control, Risk } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, RefreshCw } from "lucide-react";
 import { ControlList } from "@/components/controls/control-list";
+import { EnhancedControlTable } from "@/components/controls/enhanced-control-table";
+import { FrameworkGroupedControlList } from "@/components/controls/framework-grouped-control-list";
+import { ControlFiltersComponent, ControlFilters } from "@/components/controls/control-filters";
+import { ControlViewToggle, ControlViewMode } from "@/components/controls/control-view-toggle";
 import { ControlForm } from "@/components/controls/control-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
@@ -14,6 +18,14 @@ import Layout from "@/components/layout/layout";
 export default function Controls() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedControl, setSelectedControl] = useState<Control | null>(null);
+  const [viewMode, setViewMode] = useState<ControlViewMode>('list');
+  const [filters, setFilters] = useState<ControlFilters>({
+    search: '',
+    type: '',
+    category: '',
+    status: '',
+    framework: ''
+  });
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -28,6 +40,52 @@ export default function Controls() {
 
   // Extract the controls array from the API response and ensure it's always an array
   const allControls = (controlsResponse?.data || []) as Control[];
+
+  // Filter controls based on current filters
+  const filteredControls = useMemo(() => {
+    return allControls.filter(control => {
+      // Search filter
+      if (filters.search) {
+        const searchLower = filters.search.toLowerCase();
+        const matchesSearch = 
+          control.name.toLowerCase().includes(searchLower) ||
+          control.controlId.toLowerCase().includes(searchLower) ||
+          (control.description && control.description.toLowerCase().includes(searchLower));
+        if (!matchesSearch) return false;
+      }
+
+      // Type filter
+      if (filters.type && control.controlType !== filters.type) {
+        return false;
+      }
+
+      // Category filter
+      if (filters.category && control.controlCategory !== filters.category) {
+        return false;
+      }
+
+      // Status filter
+      if (filters.status && control.implementationStatus !== filters.status) {
+        return false;
+      }
+
+      // Framework filter - note: using description as proxy for framework since complianceFramework doesn't exist
+      if (filters.framework) {
+        const frameworkInDescription = control.description?.toLowerCase().includes(filters.framework.toLowerCase());
+        if (!frameworkInDescription) return false;
+      }
+
+      return true;
+    });
+  }, [allControls, filters]);
+
+  // Control counts for filter summary
+  const controlCounts = useMemo(() => {
+    return {
+      total: allControls.length,
+      filtered: filteredControls.length
+    };
+  }, [allControls.length, filteredControls.length]);
   
   // Filter controls to only show instances (not templates)
   const controlInstances = React.useMemo(() => {
