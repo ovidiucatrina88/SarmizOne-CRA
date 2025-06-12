@@ -115,12 +115,12 @@ export class AutomatedRiskSummaryService {
   private async generateExposureCurveData(): Promise<Array<{impact: number, probability: number}>> {
     try {
       const result = await db.execute(sql`
-        SELECT CAST(NULLIF(residual_risk, '') AS NUMERIC) as residual_risk
+        SELECT residual_risk
         FROM risks 
         WHERE (item_type = 'instance' OR item_type IS NULL)
-          AND NULLIF(residual_risk, '') IS NOT NULL
-          AND CAST(NULLIF(residual_risk, '') AS NUMERIC) > 0
-        ORDER BY CAST(NULLIF(residual_risk, '') AS NUMERIC) DESC
+          AND residual_risk IS NOT NULL
+          AND residual_risk > 0
+        ORDER BY residual_risk DESC
       `);
 
       const exposures = result.rows.map(row => Number(row.residual_risk));
