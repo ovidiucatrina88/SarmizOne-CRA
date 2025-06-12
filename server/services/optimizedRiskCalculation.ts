@@ -110,6 +110,11 @@ export class OptimizedRiskCalculationService {
           maximumExposure: 0,
           meanExposure: 0,
           medianExposure: 0,
+          percentile10Exposure: 0,
+          percentile25Exposure: 0,
+          percentile50Exposure: 0,
+          percentile75Exposure: 0,
+          percentile90Exposure: 0,
           percentile95Exposure: 0,
           percentile99Exposure: 0
         };
@@ -150,8 +155,8 @@ export class OptimizedRiskCalculationService {
         });
       }
 
-      // Calculate percentiles and statistics
-      exposureValues.sort((a, b) => b - a); // Sort descending
+      // Calculate enhanced percentiles and statistics
+      exposureValues.sort((a, b) => b - a); // Sort descending for percentile calculation
       const count = exposureValues.length;
       
       const minimumExposure = exposureValues[count - 1] || 0;
@@ -163,8 +168,20 @@ export class OptimizedRiskCalculationService {
           exposureValues[Math.floor(count/2)]
         ) : 0;
 
-      const percentile95Index = Math.floor(count * 0.05);
-      const percentile99Index = Math.floor(count * 0.01);
+      // Calculate enhanced percentiles (top-down approach for exceedance curve)
+      const percentile10Index = Math.floor(count * 0.1);
+      const percentile25Index = Math.floor(count * 0.25);
+      const percentile50Index = Math.floor(count * 0.5);
+      const percentile75Index = Math.floor(count * 0.75);
+      const percentile90Index = Math.floor(count * 0.9);
+      const percentile95Index = Math.floor(count * 0.95);
+      const percentile99Index = Math.floor(count * 0.99);
+      
+      const percentile10Exposure = exposureValues[percentile10Index] || 0;
+      const percentile25Exposure = exposureValues[percentile25Index] || 0;
+      const percentile50Exposure = exposureValues[percentile50Index] || 0;
+      const percentile75Exposure = exposureValues[percentile75Index] || 0;
+      const percentile90Exposure = exposureValues[percentile90Index] || 0;
       const percentile95Exposure = exposureValues[percentile95Index] || 0;
       const percentile99Exposure = exposureValues[percentile99Index] || 0;
 
@@ -183,6 +200,11 @@ export class OptimizedRiskCalculationService {
         maximumExposure,
         meanExposure: Math.round(meanExposure),
         medianExposure: Math.round(medianExposure),
+        percentile10Exposure: Math.round(percentile10Exposure),
+        percentile25Exposure: Math.round(percentile25Exposure),
+        percentile50Exposure: Math.round(percentile50Exposure),
+        percentile75Exposure: Math.round(percentile75Exposure),
+        percentile90Exposure: Math.round(percentile90Exposure),
         percentile95Exposure: Math.round(percentile95Exposure),
         percentile99Exposure: Math.round(percentile99Exposure)
       };
@@ -205,8 +227,8 @@ export class OptimizedRiskCalculationService {
       await db
         .insert(riskSummaries)
         .values({
-          year,
           month,
+          year,
           legalEntityId: null,
           totalRisks: aggregatedData.totalRisks,
           criticalRisks: aggregatedData.criticalRisks,
@@ -219,12 +241,17 @@ export class OptimizedRiskCalculationService {
           maximumExposure: aggregatedData.maximumExposure,
           meanExposure: aggregatedData.meanExposure,
           medianExposure: aggregatedData.medianExposure,
+          tenthPercentileExposure: aggregatedData.percentile10Exposure,
+          twentyFifthPercentileExposure: aggregatedData.percentile25Exposure,
+          fiftiethPercentileExposure: aggregatedData.percentile50Exposure,
+          seventyFifthPercentileExposure: aggregatedData.percentile75Exposure,
+          ninetiethPercentileExposure: aggregatedData.percentile90Exposure,
           percentile95Exposure: aggregatedData.percentile95Exposure,
           percentile99Exposure: aggregatedData.percentile99Exposure,
-          exposureCurveData: JSON.stringify(aggregatedData.exposureCurveData)
+          exposureCurveData: aggregatedData.exposureCurveData
         })
         .onConflictDoUpdate({
-          target: [riskSummaries.year, riskSummaries.month, riskSummaries.legalEntityId],
+          target: [riskSummaries.month, riskSummaries.year, riskSummaries.legalEntityId],
           set: {
             totalRisks: aggregatedData.totalRisks,
             criticalRisks: aggregatedData.criticalRisks,
@@ -237,9 +264,14 @@ export class OptimizedRiskCalculationService {
             maximumExposure: aggregatedData.maximumExposure,
             meanExposure: aggregatedData.meanExposure,
             medianExposure: aggregatedData.medianExposure,
+            tenthPercentileExposure: aggregatedData.percentile10Exposure,
+            twentyFifthPercentileExposure: aggregatedData.percentile25Exposure,
+            fiftiethPercentileExposure: aggregatedData.percentile50Exposure,
+            seventyFifthPercentileExposure: aggregatedData.percentile75Exposure,
+            ninetiethPercentileExposure: aggregatedData.percentile90Exposure,
             percentile95Exposure: aggregatedData.percentile95Exposure,
             percentile99Exposure: aggregatedData.percentile99Exposure,
-            exposureCurveData: JSON.stringify(aggregatedData.exposureCurveData),
+            exposureCurveData: aggregatedData.exposureCurveData,
             updatedAt: sql`CURRENT_TIMESTAMP`
           }
         });
