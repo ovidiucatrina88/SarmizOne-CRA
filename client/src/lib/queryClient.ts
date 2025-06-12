@@ -36,9 +36,10 @@ export async function apiRequest(
     
     data = JSON.parse(JSON.stringify(data, (key, value) => {
       // Convert stringified numbers to actual numbers
-      // But preserve certain fields as strings
-      if (typeof value === 'string' && !isNaN(Number(value)) && 
-          key !== 'riskId' && key !== 'assetId' && key !== 'itemType') {
+      // But preserve certain fields as strings and don't convert empty strings
+      if (typeof value === 'string' && value !== '' && !isNaN(Number(value)) && 
+          key !== 'riskId' && key !== 'assetId' && key !== 'itemType' && 
+          key !== 'entityId' && key !== 'description' && key !== 'parentEntityId') {
         return Number(value);
       }
       return value;
