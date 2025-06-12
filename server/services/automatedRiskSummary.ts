@@ -59,14 +59,14 @@ export class AutomatedRiskSummaryService {
             COUNT(CASE WHEN severity = 'high' THEN 1 END) as high_risks,
             COUNT(CASE WHEN severity = 'medium' THEN 1 END) as medium_risks,
             COUNT(CASE WHEN severity = 'low' THEN 1 END) as low_risks,
-            COALESCE(SUM(CAST(NULLIF(inherent_risk, '') AS NUMERIC)), 0) as total_inherent_risk,
-            COALESCE(SUM(CAST(NULLIF(residual_risk, '') AS NUMERIC)), 0) as total_residual_risk,
-            COALESCE(MIN(CAST(NULLIF(residual_risk, '') AS NUMERIC)), 0) as minimum_exposure,
-            COALESCE(MAX(CAST(NULLIF(residual_risk, '') AS NUMERIC)), 0) as maximum_exposure,
-            COALESCE(AVG(CAST(NULLIF(residual_risk, '') AS NUMERIC)), 0) as mean_exposure,
-            COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY CAST(NULLIF(residual_risk, '') AS NUMERIC)), 0) as median_exposure,
-            COALESCE(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY CAST(NULLIF(residual_risk, '') AS NUMERIC)), 0) as percentile_95_exposure,
-            COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY CAST(NULLIF(residual_risk, '') AS NUMERIC)), 0) as percentile_99_exposure
+            COALESCE(SUM(CASE WHEN inherent_risk IS NOT NULL AND inherent_risk != '' THEN CAST(inherent_risk AS NUMERIC) ELSE 0 END), 0) as total_inherent_risk,
+            COALESCE(SUM(CASE WHEN residual_risk IS NOT NULL AND residual_risk != '' THEN CAST(residual_risk AS NUMERIC) ELSE 0 END), 0) as total_residual_risk,
+            COALESCE(MIN(CASE WHEN residual_risk IS NOT NULL AND residual_risk != '' THEN CAST(residual_risk AS NUMERIC) ELSE NULL END), 0) as minimum_exposure,
+            COALESCE(MAX(CASE WHEN residual_risk IS NOT NULL AND residual_risk != '' THEN CAST(residual_risk AS NUMERIC) ELSE NULL END), 0) as maximum_exposure,
+            COALESCE(AVG(CASE WHEN residual_risk IS NOT NULL AND residual_risk != '' THEN CAST(residual_risk AS NUMERIC) ELSE NULL END), 0) as mean_exposure,
+            COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY CASE WHEN residual_risk IS NOT NULL AND residual_risk != '' THEN CAST(residual_risk AS NUMERIC) ELSE NULL END), 0) as median_exposure,
+            COALESCE(PERCENTILE_CONT(0.95) WITHIN GROUP (ORDER BY CASE WHEN residual_risk IS NOT NULL AND residual_risk != '' THEN CAST(residual_risk AS NUMERIC) ELSE NULL END), 0) as percentile_95_exposure,
+            COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY CASE WHEN residual_risk IS NOT NULL AND residual_risk != '' THEN CAST(residual_risk AS NUMERIC) ELSE NULL END), 0) as percentile_99_exposure
           FROM risks 
           WHERE (item_type = 'instance' OR item_type IS NULL)
             AND NULLIF(residual_risk, '') IS NOT NULL

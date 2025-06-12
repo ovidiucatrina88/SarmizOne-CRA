@@ -150,10 +150,14 @@ export default function LegalEntityPage() {
       setEditingEntity(null);
       form.reset();
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Legal entity save error:", error);
+      const errorMessage = error?.response?.data?.error?.message || 
+                          error?.message || 
+                          (editingEntity ? "Failed to update legal entity" : "Failed to create legal entity");
       toast({
         title: "Error",
-        description: editingEntity ? "Failed to update legal entity" : "Failed to create legal entity",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -179,6 +183,8 @@ export default function LegalEntityPage() {
   });
 
   const onSubmit = (data: LegalEntityFormData) => {
+    console.log("Legal entity form submission:", data);
+    console.log("Form errors:", form.formState.errors);
     saveEntityMutation.mutate(data);
   };
 
