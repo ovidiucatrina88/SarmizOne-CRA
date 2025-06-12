@@ -21,17 +21,25 @@ router.get('/summary', async (req, res) => {
     const mediumRisks = risks.filter(r => r.severity === 'medium').length;
     const lowRisks = risks.filter(r => r.severity === 'low').length;
     
-    // Calculate total risk exposure
+    // Calculate total risk exposure with detailed logging
     let totalInherentRisk = 0;
     let totalResidualRisk = 0;
     
-    risks.forEach(risk => {
+    console.log(`[Dashboard] Processing ${risks.length} risks for exposure calculation`);
+    
+    risks.forEach((risk, index) => {
       const inherentRiskValue = parseFloat(risk.inherentRisk) || 0;
       const residualRiskValue = parseFloat(risk.residualRisk) || 0;
+      
+      if (index < 3) { // Log first 3 risks for debugging
+        console.log(`[Dashboard] Risk ${risk.riskId}: inherent=${risk.inherentRisk} (${inherentRiskValue}), residual=${risk.residualRisk} (${residualRiskValue})`);
+      }
       
       totalInherentRisk += inherentRiskValue;
       totalResidualRisk += residualRiskValue;
     });
+    
+    console.log(`[Dashboard] Total calculated exposure - Inherent: ${totalInherentRisk}, Residual: ${totalResidualRisk}`);
     
     // Get controls for dashboard - remove filter parameter for compatibility
     const controls = await controlService.getAllControls();
@@ -55,6 +63,12 @@ router.get('/summary', async (req, res) => {
     // Return dashboard data
     // Get latest risk summary from centralized service
     const latestRiskSummary = await riskSummaryService.getLatestRiskSummary();
+    
+    console.log(`[Dashboard] Latest risk summary from service:`, latestRiskSummary ? {
+      totalRisks: latestRiskSummary.totalRisks,
+      totalResidualRisk: latestRiskSummary.totalResidualRisk,
+      totalInherentRisk: latestRiskSummary.totalInherentRisk
+    } : 'null');
     
     return sendSuccess(res, {
       riskSummary: latestRiskSummary ? {
