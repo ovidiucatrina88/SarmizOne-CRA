@@ -156,7 +156,7 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
       ? {
           assetId: asset.assetId || "",
           name: asset.name || "",
-          type: asset.type || "technical_component",
+          type: asset.type || "application",
           status: asset.status || "Active",
           owner: asset.owner || "",
           confidentiality: asset.confidentiality || "medium",
@@ -170,16 +170,13 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
           agentCount: asset.agentCount || 1,
           description: asset.description || "",
           parentId: asset.parentId || null,
-
-          business_unit: asset.business_unit || "Information Technology",
-          hierarchy_level: asset.hierarchy_level || "technical_component",
-          architecture_domain: asset.architecture_domain || "Application",
+          legalEntity: asset.legalEntity || null,
         }
       : {
           assetId: "",
           name: "",
-          type: "technical_component", // Default to L5 (Technical Component)
-          status: "Active", // Default to Active status
+          type: "application",
+          status: "Active",
           owner: "",
           confidentiality: "medium",
           integrity: "medium",
@@ -189,14 +186,10 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
           regulatoryImpact: [],
           externalInternal: "internal",
           dependencies: [],
-          agentCount: 1, // Default number of agents
+          agentCount: 1,
           description: "",
-          // Only keeping parentId for hierarchy
-          parentId: null, // Use null instead of undefined to match expected database format
-          parentBusinessServiceId: null, // New field for L3 business service parent
-          business_unit: "Information Technology",
-          hierarchy_level: "technical_component",
-          architecture_domain: "Application",
+          parentId: null,
+          legalEntity: null,
         },
   });
   
@@ -276,53 +269,25 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
       assetId = asset.assetId;
     }
     
-    // Create payload that exactly matches the server-side validation schema
+    // Create simplified payload for asset update/creation
     const payload = {
-      // Use the determined asset ID
       assetId: assetId,
       name: values.name,
-      // Must match server's enum exactly - using 'application' for both our new types
-      type: values.type === 'application_service' || values.type === 'technical_component' 
-        ? 'application' 
-        : values.type,
+      type: values.type,
       status: values.status,
-      // Required server fields
-      owner: values.owner || "System Administrator",
-      // Convert empty string to null for optional fields
-      legalEntity: values.legalEntity || null,
+      owner: values.owner,
+      legalEntity: values.legalEntity,
       confidentiality: values.confidentiality,
       integrity: values.integrity,
       availability: values.availability,
-      // Server expects number
-      assetValue: Number(typeof values.assetValue === 'string' 
-        ? values.assetValue.replace(/[^0-9.-]/g, '') 
-        : values.assetValue) || 0,
-      currency: values.currency || "USD",
+      assetValue: values.assetValue,
+      currency: values.currency,
       regulatoryImpact: selectedRegulations,
-      externalInternal: values.externalInternal || "internal",
-      dependencies: Array.isArray(values.dependencies) ? values.dependencies : [],
-      agentCount: Number(values.agentCount) || 1,
-      // Description must be a non-null string, not an empty string
-      description: String(values.description || " ").trim() || "No description provided",
-      // Include these as fields that will be stored in the database but ignored by validation
-      businessUnit: "Information Technology",
-      criticality: "medium",
-      // PARENT RELATIONSHIP HANDLING
-      // For Technical Components using the application service parent
-      ...(values.type === 'technical_component' && {
-        parentId: typeof values.parentId === "string" 
-          ? (values.parentId === "none" ? null : parseInt(values.parentId)) 
-          : values.parentId
-      }),
-      // Map the hierarchy_level to one of the allowed values in the schema
-      hierarchy_level: values.type === 'application_service' ? 'application_service' : 
-                      values.type === 'technical_component' ? 'technical_component' : 
-                      'application_service',
-      architecture_domain: "Application",
-      // Extra fields to ensure we match all server requirements
-      location: null,
-      custodian: null,
-      notes: null
+      externalInternal: values.externalInternal,
+      dependencies: values.dependencies || [],
+      agentCount: values.agentCount || 1,
+      description: values.description || "",
+      parentId: values.parentId,
     };
     
     console.log('Submitting asset with carefully formatted data:', payload);
