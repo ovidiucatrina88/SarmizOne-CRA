@@ -42,6 +42,14 @@ interface LossExceedanceCurveModernProps {
     minimumExposure?: number;
     averageExposure?: number;
     maximumExposure?: number;
+    // Enhanced percentile system
+    percentile10Exposure?: number;
+    percentile25Exposure?: number;
+    percentile50Exposure?: number;
+    percentile75Exposure?: number;
+    percentile90Exposure?: number;
+    percentile95Exposure?: number;
+    percentile99Exposure?: number;
     // Legacy fields (for backward compatibility)
     tenthPercentile?: number;
     mostLikely?: number;
@@ -394,10 +402,19 @@ export function LossExceedanceCurveModern({
     return filteredByEntityOrAsset;
   }, [risks, filterType, selectedEntityId, selectedAssetId, selectedArchitectureId]);
 
-  // Process current exposure data with validation
+  // Process current exposure data with enhanced percentile validation
   const exposureData = useMemo(() => {
     if (!currentExposure) {
       return {
+        // Enhanced percentiles
+        percentile10: 0,
+        percentile25: 0,
+        percentile50: 0,
+        percentile75: 0,
+        percentile90: 0,
+        percentile95: 0,
+        percentile99: 0,
+        // Legacy compatibility
         tenthPercentile: 0,
         mostLikely: 0,
         ninetiethPercentile: 0,
@@ -407,25 +424,42 @@ export function LossExceedanceCurveModern({
       };
     }
     
-    // Prioritize primary fields, fall back to legacy fields if needed
+    // Extract enhanced percentiles
+    const p10 = ensureFiniteNumber(currentExposure.percentile10Exposure);
+    const p25 = ensureFiniteNumber(currentExposure.percentile25Exposure);
+    const p50 = ensureFiniteNumber(currentExposure.percentile50Exposure);
+    const p75 = ensureFiniteNumber(currentExposure.percentile75Exposure);
+    const p90 = ensureFiniteNumber(currentExposure.percentile90Exposure);
+    const p95 = ensureFiniteNumber(currentExposure.percentile95Exposure);
+    const p99 = ensureFiniteNumber(currentExposure.percentile99Exposure);
+    
+    // Extract primary fields
     const minimum = ensureFiniteNumber(currentExposure.minimumExposure);
     const average = ensureFiniteNumber(currentExposure.averageExposure);
     const maximum = ensureFiniteNumber(currentExposure.maximumExposure);
     
-    // Safely extract legacy values with fallbacks as secondary options
+    // Extract legacy values for fallback
     const tenthPercentile = ensureFiniteNumber(currentExposure.tenthPercentile);
     const mostLikely = ensureFiniteNumber(currentExposure.mostLikely);
     const ninetiethPercentile = ensureFiniteNumber(currentExposure.ninetiethPercentile);
     
-    // Use primary fields as source of truth, fall back to legacy fields if primary are not available
     return {
-      minimum: minimum || tenthPercentile,
-      average: average || mostLikely,
-      maximum: maximum || ninetiethPercentile,
-      // Keep legacy fields for backward compatibility
-      tenthPercentile: minimum || tenthPercentile,
-      mostLikely: average || mostLikely,
-      ninetiethPercentile: maximum || ninetiethPercentile
+      // Enhanced percentiles with fallbacks to legacy
+      percentile10: p10 || tenthPercentile || minimum,
+      percentile25: p25 || (p10 + p50) / 2,
+      percentile50: p50 || mostLikely || average,
+      percentile75: p75 || (p50 + p90) / 2,
+      percentile90: p90 || ninetiethPercentile || maximum,
+      percentile95: p95 || p90 * 1.1,
+      percentile99: p99 || p95 * 1.2,
+      // Primary fields
+      minimum: minimum || p10 || tenthPercentile,
+      average: average || p50 || mostLikely,
+      maximum: maximum || p99 || ninetiethPercentile,
+      // Legacy compatibility
+      tenthPercentile: p10 || tenthPercentile || minimum,
+      mostLikely: p50 || mostLikely || average,
+      ninetiethPercentile: p90 || ninetiethPercentile || maximum
     };
   }, [currentExposure]);
 
@@ -504,32 +538,76 @@ export function LossExceedanceCurveModern({
     }
     
     const data: DataPoint[] = [];
-    const numPoints = 50; // More points for smoother curve
     
-    // Use calculated exposure values
-    const minExposure = calculatedMinExposure;
-    const maxExposure = calculatedMaxExposure;
-    const avgExposure = calculatedAvgExposure;
+    // Use enhanced percentile data for more accurate Loss Exceedance Curve
+    const percentileData = [
+      { exposure: exposureData.percentile10, probability: 90.0 },
+      { exposure: exposureData.percentile25, probability: 75.0 },
+      { exposure: exposureData.percentile50, probability: 50.0 },
+      { exposure: exposureData.percentile75, probability: 25.0 },
+      { exposure: exposureData.percentile90, probability: 10.0 },
+      { exposure: exposureData.percentile95, probability: 5.0 },
+      { exposure: exposureData.percentile99, probability: 1.0 }
+    ].filter(point => point.exposure > 0);
     
-    // Create smooth exponential decay curve from P10 to P90 range
-    const extendedMaxExposure = maxExposure * 1.1; // Extend 10% beyond P90 for better visualization
+    // Use calculated exposure values with enhanced percentiles
+    const minExposure = Math.min(calculatedMinExposure, exposureData.percentile10 || calculatedMinExposure);
+    const maxExposure = Math.max(calculatedMaxExposure, exposureData.percentile99 || calculatedMaxExposure);
+    const avgExposure = exposureData.percentile50 || calculatedAvgExposure;
     
+    // Extend beyond P99 for tail visualization
+    const extendedMaxExposure = maxExposure * 1.2;
+    
+    // Add key percentile points as anchors
+    percentileData.forEach(point => {
+      data.push({
+        lossExposure: point.exposure,
+        probability: point.probability,
+        formattedLoss: formatExposure(point.exposure),
+        isThresholdPoint: true,
+        exposureData: {
+          minimum: minExposure,
+          average: avgExposure,
+          maximum: maxExposure
+        }
+      });
+    });
+    
+    // Generate interpolated points for smooth curve
+    const numPoints = 40;
     for (let i = 0; i <= numPoints; i++) {
       const lossExposure = i * (extendedMaxExposure / numPoints);
       
-      // Create smooth exponential decay probability based on normalized exposure
-      let probability;
+      // Skip if we already have this as a percentile point
+      if (percentileData.some(p => Math.abs(p.exposure - lossExposure) < maxExposure * 0.01)) {
+        continue;
+      }
       
-      if (lossExposure <= 0) {
+      // Interpolate probability using percentile anchors
+      let probability = 0.1;
+      
+      if (lossExposure <= minExposure) {
         probability = 100;
+      } else if (lossExposure >= maxExposure) {
+        // Exponential decay beyond P99
+        const normalizedExposure = (lossExposure - maxExposure) / (extendedMaxExposure - maxExposure);
+        probability = Math.max(0.1, 1.0 * Math.exp(-2 * normalizedExposure));
       } else {
-        // Normalize the exposure (0 to 1) using the extended range
-        const normalizedExposure = Math.min(1, lossExposure / extendedMaxExposure);
+        // Linear interpolation between percentile points
+        const sortedPercentiles = percentileData.sort((a, b) => a.exposure - b.exposure);
         
-        // Use exponential decay: P = 100 * e^(-k * x)
-        // Adjust k to control the steepness of the curve
-        const decayRate = 4; // Controls how steep the curve is
-        probability = Math.max(0.1, 100 * Math.exp(-decayRate * normalizedExposure));
+        for (let j = 0; j < sortedPercentiles.length - 1; j++) {
+          const lower = sortedPercentiles[j];
+          const upper = sortedPercentiles[j + 1];
+          
+          if (lossExposure >= lower.exposure && lossExposure <= upper.exposure) {
+            const range = upper.exposure - lower.exposure;
+            const position = lossExposure - lower.exposure;
+            const ratio = range > 0 ? position / range : 0;
+            probability = lower.probability - (lower.probability - upper.probability) * ratio;
+            break;
+          }
+        }
       }
       
       // Previous probability based on actual historical data
