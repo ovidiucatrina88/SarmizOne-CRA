@@ -1,6 +1,7 @@
 import { DatabaseStorage, repositoryStorage } from './repositoryStorage';
 import { Risk, InsertRisk, Control, riskLibrary } from '@shared/schema';
 import { calculateRiskValues as calculateRiskValuesUtil } from '@shared/utils/calculations';
+import { automatedRiskSummary } from './automatedRiskSummary';
 
 // Define filter types for risks
 export interface RiskFilterOptions {
@@ -196,8 +197,8 @@ export class RiskService {
     // Create the risk
     const risk = await this.repository.createRisk(riskData);
     
-    // Recalculate risk summaries
-    await this.recalculateRiskSummaries();
+    // Trigger automated risk summary recalculation
+    await automatedRiskSummary.triggerRecalculation();
     
     return risk;
   }
@@ -248,8 +249,8 @@ export class RiskService {
     }
     
     if (updatedRisk) {
-      // Recalculate risk summaries
-      await this.recalculateRiskSummaries();
+      // Trigger automated risk summary recalculation
+      await automatedRiskSummary.triggerRecalculation();
       
       // Get the updated risk with all changes applied
       return this.repository.getRisk(id);
@@ -274,8 +275,8 @@ export class RiskService {
       
       if (success) {
         try {
-          // Try to recalculate risk summaries, but don't fail if it errors
-          await this.recalculateRiskSummaries();
+          // Trigger automated risk summary recalculation
+          await automatedRiskSummary.triggerRecalculation();
         } catch (summaryError) {
           console.log('Non-fatal error recalculating risk summaries:', summaryError);
           // Continue without failing the deletion operation

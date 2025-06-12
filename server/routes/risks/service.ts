@@ -129,16 +129,7 @@ export class RiskService {
         });
       }
       
-      // Automatically update risk summaries after creation
-      // Add a small delay to ensure database transaction is committed
-      setTimeout(async () => {
-        try {
-          await riskSummaryService.updateRiskSummaries();
-          console.log('Risk summaries updated after risk creation');
-        } catch (summaryError) {
-          console.error('Error updating risk summaries after creation:', summaryError);
-        }
-      }, 100);
+      // Note: Automated risk summaries are handled by the main risk service
       
       // Fetch the updated risk
       return await storage.getRisk(risk.id) || risk;
@@ -164,16 +155,7 @@ export class RiskService {
           });
         }
         
-        // Automatically update risk summaries after modification
-        // Add a small delay to ensure database transaction is committed
-        setTimeout(async () => {
-          try {
-            await riskSummaryService.updateRiskSummaries();
-            console.log('Risk summaries updated after risk modification');
-          } catch (summaryError) {
-            console.error('Error updating risk summaries after modification:', summaryError);
-          }
-        }, 100);
+        // Note: Automated risk summaries are handled by the main risk service
         
         // Fetch the updated risk again
         return await storage.getRisk(id);
