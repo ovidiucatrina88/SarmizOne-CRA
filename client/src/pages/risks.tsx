@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { RefreshCw, PlusCircle } from "lucide-react";
 import { RiskList } from "@/components/risks/risk-list";
+import { AssetGroupedRiskList } from "@/components/risks/asset-grouped-risk-list";
+import { ViewToggle } from "@/components/risks/view-toggle";
 import { RiskForm } from "@/components/risks";
 import { Skeleton } from "@/components/ui/skeleton";
 import Layout from "@/components/layout/layout";
@@ -21,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 export default function Risks() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedRisk, setSelectedRisk] = useState<Risk | null>(null);
+  const [viewMode, setViewMode] = useState<'list' | 'grouped'>('grouped');
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();

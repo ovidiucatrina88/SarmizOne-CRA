@@ -194,7 +194,7 @@ export function AssetGroupedRiskList({
           
           const group = groups.get(assetId)!;
           group.risks.push(risk);
-          group.totalExposure += risk.residualRisk || 0;
+          group.totalExposure += Number(risk.residualRisk) || 0;
           
           // Update severity counts and highest severity
           const severity = risk.severity as keyof typeof group.riskCounts;
@@ -556,7 +556,7 @@ export function AssetGroupedRiskList({
             <DialogHeader>
               <DialogTitle>{selectedRisk.name}</DialogTitle>
             </DialogHeader>
-            <RiskDetailView risk={selectedRisk} />
+            <RiskDetailView risk={selectedRisk} onBack={() => setIsDetailDialogOpen(false)} />
           </DialogContent>
         </Dialog>
       )}
