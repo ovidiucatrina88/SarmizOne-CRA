@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { RefreshCw, PlusCircle } from "lucide-react";
 import { RiskList } from "@/components/risks/risk-list";
-import { AssetGroupedRiskList } from "@/components/risks/asset-grouped-risk-list";
+import { EnhancedAssetGroupedRiskList } from "@/components/risks/enhanced-asset-grouped-risk-list";
 import { ViewToggle } from "@/components/risks/view-toggle";
 import { RiskForm } from "@/components/risks";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -170,9 +170,10 @@ export default function Risks() {
             </div>
           </Card>
         ) : viewMode === 'grouped' ? (
-          <AssetGroupedRiskList
+          <EnhancedAssetGroupedRiskList
             risks={risks}
             onRiskEdit={handleEdit}
+            onRiskDelete={handleDelete}
           />
         ) : (
           <RiskList
