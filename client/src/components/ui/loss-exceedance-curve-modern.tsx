@@ -511,9 +511,11 @@ export function LossExceedanceCurveModern({
     const maxExposure = calculatedMaxExposure;
     const avgExposure = calculatedAvgExposure;
     
-    // Create smooth exponential decay curve
+    // Create smooth exponential decay curve - extend range to show full maximum exposure
+    const extendedMaxExposure = maxExposure * 1.5; // Extend 50% beyond max for better visualization
+    
     for (let i = 0; i <= numPoints; i++) {
-      const lossExposure = i * (maxExposure * 1.2 / numPoints);
+      const lossExposure = i * (extendedMaxExposure / numPoints);
       
       // Create smooth exponential decay probability based on normalized exposure
       let probability;
@@ -521,8 +523,8 @@ export function LossExceedanceCurveModern({
       if (lossExposure <= 0) {
         probability = 100;
       } else {
-        // Normalize the exposure (0 to 1)
-        const normalizedExposure = Math.min(1, lossExposure / (maxExposure * 1.2));
+        // Normalize the exposure (0 to 1) using the extended range
+        const normalizedExposure = Math.min(1, lossExposure / extendedMaxExposure);
         
         // Use exponential decay: P = 100 * e^(-k * x)
         // Adjust k to control the steepness of the curve
