@@ -158,7 +158,7 @@ export class RiskService {
         }
         
         // Trigger immediate risk summary recalculation
-        const { automatedRiskSummary } = await import('../services/automatedRiskSummary');
+        const { automatedRiskSummary } = await import('../../services/automatedRiskSummary');
         await automatedRiskSummary.triggerRecalculation();
         
         // Fetch the updated risk again

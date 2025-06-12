@@ -1054,60 +1054,7 @@ export function LossExceedanceCurveModern({
                     stroke="#10b981"
                     strokeWidth={2}
                     strokeDasharray="4 4"
-                    dot={(props) => {
-                      // Check if props are valid
-                      if (!props || typeof props !== 'object') return null;
-                      
-                      const { cx, cy, payload, index } = props;
-                      
-                      // If coordinates are NaN, return null
-                      if (isNaN(cx) || isNaN(cy) || !payload) return null;
-                      
-                      // Show dots at tolerance threshold changes
-                      const getToleranceThresholdType = () => {
-                        if (Math.abs(payload.lossExposure - DEFAULT_THRESHOLDS.FULL_ACCEPTANCE) < 500000) {
-                          return "full";
-                        } else if (Math.abs(payload.lossExposure - DEFAULT_THRESHOLDS.HIGH_ACCEPTANCE) < 500000) {
-                          return "high";
-                        } else if (Math.abs(payload.lossExposure - DEFAULT_THRESHOLDS.MEDIUM_ACCEPTANCE) < 500000) {
-                          return "medium";
-                        } else if (Math.abs(payload.lossExposure - DEFAULT_THRESHOLDS.LOW_ACCEPTANCE) < 500000) {
-                          return "low";
-                        } else if (Math.abs(payload.lossExposure - DEFAULT_THRESHOLDS.ZERO_ACCEPTANCE) < 500000) {
-                          return "zero";
-                        }
-                        return null;
-                      };
-                      
-                      const thresholdType = getToleranceThresholdType();
-                      
-                      if (thresholdType) {
-                        // Size based on threshold type
-                        const getSize = () => {
-                          switch(thresholdType) {
-                            case "full": return 6; // 100% acceptance 
-                            case "high": return 5; // 75% acceptance
-                            case "medium": return 5; // 50% acceptance
-                            case "low": return 5; // 25% acceptance
-                            case "zero": return 6; // 0% acceptance
-                            default: return 4;
-                          }
-                        };
-                        
-                        return (
-                          <circle
-                            key={`tolerance-dot-${index}-${payload.lossExposure}`}
-                            cx={cx}
-                            cy={cy}
-                            r={getSize()}
-                            fill="#10b981"
-                            stroke="#fff"
-                            strokeWidth={2}
-                          />
-                        );
-                      }
-                      return null;
-                    }}
+                    dot={false}
                     activeDot={{ r: 6, fill: "#10b981", stroke: "#fff", strokeWidth: 2 }}
                     animationDuration={1000}
                     isAnimationActive={true}
