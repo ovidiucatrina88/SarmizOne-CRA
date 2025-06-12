@@ -764,7 +764,21 @@ export function LossExceedanceCurveModern({
                 <XAxis 
                   dataKey="lossExposure" 
                   type="number"
-                  domain={['dataMin', 'dataMax']}
+                  domain={[0, (dataMax: number) => {
+                    // Use the actual maximum exposure from exposureData if available
+                    let actualMax = exposureData?.maximum || dataMax;
+                    
+                    // If we're looking at filtered risks that show higher exposures, use those
+                    if (filteredRisks && filteredRisks.length > 0) {
+                      const maxFromRisks = Math.max(...filteredRisks.map(risk => 
+                        parseFloat(risk.residualRisk || risk.inherentRisk || '0') * 2.0 // Use the same 2x multiplier as the summary cards
+                      ));
+                      actualMax = Math.max(actualMax, maxFromRisks);
+                    }
+                    
+                    console.log(`X-axis domain calculation - exposureData.max: ${exposureData?.maximum}, dataMax: ${dataMax}, actualMax: ${actualMax}`);
+                    return actualMax * 1.2; // Extend 20% beyond actual maximum for better visualization
+                  }]}
                   tick={{ fill: 'rgba(255,255,255,0.7)' }}
                   tickLine={{ stroke: 'rgba(255,255,255,0.2)' }}
                   axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
