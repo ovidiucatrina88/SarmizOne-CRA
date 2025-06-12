@@ -120,13 +120,40 @@ export class RiskService {
     try {
       const risk = await storage.createRisk(riskData);
       
-      // Calculate and update risk values
-      const calculationResults = await calculateRiskValues(risk);
+      // Calculate and update risk values with enhanced percentiles
+      const { calculateEnhancedRiskValues } = await import('../../../shared/utils/enhancedRiskCalculations');
+      
+      // Get controls for this risk
+      const controls = await storage.getControlsForRisk(risk.id);
+      
+      // Calculate using enhanced FAIR-CAM methodology
+      const calculationResults = calculateEnhancedRiskValues(risk, controls, []);
+      
       if (calculationResults) {
-        await storage.updateRisk(risk.id, {
+        const updateData: any = {
           inherentRisk: calculationResults.inherentRisk.toString(),
-          residualRisk: calculationResults.residualRisk.toString()
-        });
+          residualRisk: calculationResults.residualRisk.toString(),
+          
+          // Store inherent risk percentiles
+          inherentP10: calculationResults.inherentPercentiles.ale10.toString(),
+          inherentP25: calculationResults.inherentPercentiles.ale25.toString(),
+          inherentP50: calculationResults.inherentPercentiles.ale50.toString(),
+          inherentP75: calculationResults.inherentPercentiles.ale75.toString(),
+          inherentP90: calculationResults.inherentPercentiles.ale90.toString(),
+          inherentP95: calculationResults.inherentPercentiles.ale95.toString(),
+          inherentP99: calculationResults.inherentPercentiles.ale99.toString(),
+          
+          // Store residual risk percentiles
+          residualP10: calculationResults.residualPercentiles.ale10.toString(),
+          residualP25: calculationResults.residualPercentiles.ale25.toString(),
+          residualP50: calculationResults.residualPercentiles.ale50.toString(),
+          residualP75: calculationResults.residualPercentiles.ale75.toString(),
+          residualP90: calculationResults.residualPercentiles.ale90.toString(),
+          residualP95: calculationResults.residualPercentiles.ale95.toString(),
+          residualP99: calculationResults.residualPercentiles.ale99.toString(),
+        };
+        
+        await storage.updateRisk(risk.id, updateData);
       }
       
       // Trigger immediate optimized risk summary recalculation

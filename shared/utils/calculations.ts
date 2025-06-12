@@ -129,6 +129,8 @@ export function calculateRiskValues(
   inherentRisk: number, 
   residualRisk: number, 
   susceptibility: number,
+  inherentPercentiles?: import('./types').FairCalculationResult,
+  residualPercentiles?: import('./types').FairCalculationResult,
   monteCarloResults: { 
     mean: number, 
     p05: number, 

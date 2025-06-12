@@ -58,13 +58,18 @@ export class OptimizedRiskCalculationService {
     maximumExposure: number;
     meanExposure: number;
     medianExposure: number;
+    percentile10Exposure: number;
+    percentile25Exposure: number;
+    percentile50Exposure: number;
+    percentile75Exposure: number;
+    percentile90Exposure: number;
     percentile95Exposure: number;
     percentile99Exposure: number;
   }> {
     return this.getCached('aggregated-risk-exposure', async () => {
       console.log('[OptimizedRisk] Starting single-query risk aggregation');
 
-      // Single optimized query to get all risk data
+      // Single optimized query to get all risk data including enhanced percentiles
       const riskData = await db
         .select({
           id: risks.id,
@@ -72,11 +77,19 @@ export class OptimizedRiskCalculationService {
           inherentRisk: risks.inherentRisk,
           residualRisk: risks.residualRisk,
           primaryLossMagnitudeMin: risks.primaryLossMagnitudeMin,
-          primaryLossMagnitudeML: risks.primaryLossMagnitudeML,
+          primaryLossMagnitudeAvg: risks.primaryLossMagnitudeAvg,
           primaryLossMagnitudeMax: risks.primaryLossMagnitudeMax,
           threatEventFrequencyMin: risks.threatEventFrequencyMin,
-          threatEventFrequencyML: risks.threatEventFrequencyML,
-          threatEventFrequencyMax: risks.threatEventFrequencyMax
+          threatEventFrequencyAvg: risks.threatEventFrequencyAvg,
+          threatEventFrequencyMax: risks.threatEventFrequencyMax,
+          // Enhanced percentiles
+          residualP10: risks.residualP10,
+          residualP25: risks.residualP25,
+          residualP50: risks.residualP50,
+          residualP75: risks.residualP75,
+          residualP90: risks.residualP90,
+          residualP95: risks.residualP95,
+          residualP99: risks.residualP99
         })
         .from(risks)
         .orderBy(desc(risks.residualRisk));
