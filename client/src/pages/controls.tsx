@@ -7,6 +7,7 @@ import { PlusCircle, RefreshCw } from "lucide-react";
 import { ControlList } from "@/components/controls/control-list";
 import { EnhancedControlTable } from "@/components/controls/enhanced-control-table";
 import { FrameworkGroupedControlList } from "@/components/controls/framework-grouped-control-list";
+import { RiskGroupedControlList } from "@/components/controls/risk-grouped-control-list";
 import { ControlFiltersComponent, ControlFilters } from "@/components/controls/control-filters";
 import { ControlViewToggle, ControlViewMode } from "@/components/controls/control-view-toggle";
 import { ControlForm } from "@/components/controls/control-form";
@@ -204,6 +205,12 @@ export default function Controls() {
               </p>
             </div>
           </Card>
+        ) : viewMode === 'risk' ? (
+          <RiskGroupedControlList
+            controls={filteredControls}
+            onControlEdit={handleEditControl}
+            onControlDelete={handleDeleteControl}
+          />
         ) : viewMode === 'framework' ? (
           <FrameworkGroupedControlList
             controls={filteredControls}

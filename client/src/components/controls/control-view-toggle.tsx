@@ -1,8 +1,8 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { List, Grid3X3, Shield } from "lucide-react";
+import { List, Grid3X3, Shield, ShieldCheck } from "lucide-react";
 
-export type ControlViewMode = 'list' | 'cards' | 'framework';
+export type ControlViewMode = 'list' | 'cards' | 'framework' | 'risk';
 
 interface ControlViewToggleProps {
   viewMode: ControlViewMode;
@@ -29,6 +29,15 @@ export function ControlViewToggle({ viewMode, onViewModeChange }: ControlViewTog
       >
         <Grid3X3 className="w-4 h-4 mr-2" />
         Card View
+      </Button>
+      <Button
+        variant={viewMode === 'risk' ? 'default' : 'outline'}
+        size="sm"
+        className="rounded-none border-0 border-l"
+        onClick={() => onViewModeChange('risk')}
+      >
+        <ShieldCheck className="w-4 h-4 mr-2" />
+        Risk View
       </Button>
       <Button
         variant={viewMode === 'framework' ? 'default' : 'outline'}

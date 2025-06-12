@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { Control } from "@shared/schema";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Control, Risk } from "@shared/schema";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
@@ -38,7 +38,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { 
-  Shield, 
+  ShieldCheck, 
   ChevronDown, 
   ChevronRight, 
   Edit, 
@@ -46,17 +46,18 @@ import {
   AlertTriangle 
 } from "lucide-react";
 
-interface FrameworkGroupedControlListProps {
+interface RiskGroupedControlListProps {
   controls: Control[];
   onControlEdit?: (control: Control) => void;
   onControlDelete?: (control: Control) => void;
 }
 
-interface FrameworkControlGroup {
-  framework: string;
-  frameworkName: string;
+interface RiskControlGroup {
+  riskId: string;
+  riskName: string;
   controls: Control[];
   totalCost: number;
+  averageEffectiveness: number;
   implementationRate: number;
   controlCounts: {
     total: number;
@@ -64,80 +65,107 @@ interface FrameworkControlGroup {
     in_progress: number;
     not_implemented: number;
   };
+  riskSeverity: string;
+  residualRisk: number;
 }
 
-export function FrameworkGroupedControlList({ 
+export function RiskGroupedControlList({ 
   controls, 
   onControlEdit, 
   onControlDelete 
-}: FrameworkGroupedControlListProps) {
-  const [expandedFrameworks, setExpandedFrameworks] = useState<Set<string>>(new Set());
+}: RiskGroupedControlListProps) {
+  const [expandedRisks, setExpandedRisks] = useState<Set<string>>(new Set());
   const [controlToDelete, setControlToDelete] = useState<Control | null>(null);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const getFrameworkDisplayName = (framework: string) => {
-    const names = {
-      'ISO27001': 'ISO 27001',
-      'NIST': 'NIST Cybersecurity Framework',
-      'SOC2': 'SOC 2',
-      'CIS': 'CIS Controls',
-      'Custom': 'Custom Controls'
-    };
-    return names[framework as keyof typeof names] || framework;
-  };
+  // Fetch risks for risk names and details
+  const { data: risksResponse } = useQuery({
+    queryKey: ["/api/risks"],
+  });
+  const risks = (risksResponse as any)?.data || [];
 
-  // Group controls by framework
-  const frameworkGroups = useMemo(() => {
-    const groups = new Map<string, FrameworkControlGroup>();
+  // Create risk lookup map
+  const riskLookup = useMemo(() => {
+    const lookup = new Map();
+    risks.forEach((risk: Risk) => {
+      lookup.set(risk.riskId, {
+        name: risk.name,
+        severity: risk.severity,
+        residualRisk: Number(risk.residualRisk) || 0
+      });
+    });
+    return lookup;
+  }, [risks]);
+
+  // Group controls by associated risks
+  const riskGroups = useMemo(() => {
+    const groups = new Map<string, RiskControlGroup>();
     
     controls.forEach(control => {
-      const framework = (control as any).complianceFramework || 'Custom';
-      const frameworkName = getFrameworkDisplayName(framework);
+      const associatedRisks = Array.isArray(control.associatedRisks) 
+        ? control.associatedRisks 
+        : typeof control.associatedRisks === 'string' 
+          ? (control.associatedRisks as string).split(',').map((r: string) => r.trim())
+          : [];
 
-      if (!groups.has(framework)) {
-        groups.set(framework, {
-          framework,
-          frameworkName,
-          controls: [],
-          totalCost: 0,
-          implementationRate: 0,
-          controlCounts: {
-            total: 0,
-            fully_implemented: 0,
-            in_progress: 0,
-            not_implemented: 0
-          }
-        });
-      }
-      
-      const group = groups.get(framework)!;
-      group.controls.push(control);
-      group.totalCost += calculateControlCost(control);
-      
-      // Update counts
-      group.controlCounts.total++;
-      group.controlCounts[control.implementationStatus as keyof typeof group.controlCounts]++;
+      // If no associated risks, group under "Unassigned"
+      const risksToProcess = associatedRisks.length > 0 ? associatedRisks : ['unassigned'];
+
+      risksToProcess.forEach((riskId: any) => {
+        const groupKey = riskId;
+        const riskInfo = riskId === 'unassigned' 
+          ? { name: 'Unassigned Controls', severity: 'low', residualRisk: 0 }
+          : (riskLookup.get(riskId) || { name: riskId, severity: 'low', residualRisk: 0 });
+
+        if (!groups.has(groupKey)) {
+          groups.set(groupKey, {
+            riskId: groupKey,
+            riskName: riskInfo.name,
+            controls: [],
+            totalCost: 0,
+            averageEffectiveness: 0,
+            implementationRate: 0,
+            controlCounts: {
+              total: 0,
+              fully_implemented: 0,
+              in_progress: 0,
+              not_implemented: 0
+            },
+            riskSeverity: riskInfo.severity,
+            residualRisk: riskInfo.residualRisk
+          });
+        }
+        
+        const group = groups.get(groupKey)!;
+        group.controls.push(control);
+        group.totalCost += calculateControlCost(control);
+        
+        // Update counts
+        group.controlCounts.total++;
+        group.controlCounts[control.implementationStatus as keyof typeof group.controlCounts]++;
+      });
     });
 
-    // Calculate implementation rates
+    // Calculate averages and rates
     groups.forEach(group => {
       const implementedCount = group.controlCounts.fully_implemented + (group.controlCounts.in_progress * 0.5);
       group.implementationRate = (implementedCount / group.controlCounts.total) * 100;
+      
+      const totalEffectiveness = group.controls.reduce((sum, control) => sum + (control.controlEffectiveness || 0), 0);
+      group.averageEffectiveness = totalEffectiveness / group.controls.length;
     });
 
     return Array.from(groups.values())
       .sort((a, b) => {
-        // Sort by implementation rate (highest first), then by name
-        if (b.implementationRate !== a.implementationRate) {
-          return b.implementationRate - a.implementationRate;
+        // Sort by residual risk (highest first), then by implementation rate (lowest first)
+        if (b.residualRisk !== a.residualRisk) {
+          return b.residualRisk - a.residualRisk;
         }
-        return a.frameworkName.localeCompare(b.frameworkName);
+        return a.implementationRate - b.implementationRate;
       });
-  }, [controls]);
-
-
+  }, [controls, riskLookup]);
 
   const calculateControlCost = (control: Control) => {
     if (control.implementationStatus === "fully_implemented") {
@@ -154,14 +182,24 @@ export function FrameworkGroupedControlList({
     return 0;
   };
 
-  const toggleFrameworkExpansion = (framework: string) => {
-    const newExpanded = new Set(expandedFrameworks);
-    if (newExpanded.has(framework)) {
-      newExpanded.delete(framework);
+  const toggleRiskExpansion = (riskId: string) => {
+    const newExpanded = new Set(expandedRisks);
+    if (newExpanded.has(riskId)) {
+      newExpanded.delete(riskId);
     } else {
-      newExpanded.add(framework);
+      newExpanded.add(riskId);
     }
-    setExpandedFrameworks(newExpanded);
+    setExpandedRisks(newExpanded);
+  };
+
+  const getSeverityColor = (severity: string) => {
+    const colors = {
+      critical: "bg-red-500 text-white",
+      high: "bg-orange-500 text-white",
+      medium: "bg-yellow-500 text-black",
+      low: "bg-green-500 text-white"
+    };
+    return colors[severity as keyof typeof colors] || "bg-gray-500 text-white";
   };
 
   const getStatusColor = (status: string) => {
@@ -214,7 +252,7 @@ export function FrameworkGroupedControlList({
 
   return (
     <div className="space-y-4">
-      {frameworkGroups.length === 0 ? (
+      {riskGroups.length === 0 ? (
         <Card>
           <CardContent className="p-6 text-center">
             <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
@@ -225,57 +263,67 @@ export function FrameworkGroupedControlList({
           </CardContent>
         </Card>
       ) : (
-        frameworkGroups.map(group => (
-          <Card key={group.framework} className="overflow-hidden">
+        riskGroups.map(group => (
+          <Card key={group.riskId} className="overflow-hidden">
             <Collapsible 
-              open={expandedFrameworks.has(group.framework)}
-              onOpenChange={() => toggleFrameworkExpansion(group.framework)}
+              open={expandedRisks.has(group.riskId)}
+              onOpenChange={() => toggleRiskExpansion(group.riskId)}
             >
               <CollapsibleTrigger asChild>
                 <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      {expandedFrameworks.has(group.framework) ? (
+                      {expandedRisks.has(group.riskId) ? (
                         <ChevronDown className="w-5 h-5" />
                       ) : (
                         <ChevronRight className="w-5 h-5" />
                       )}
-                      <Shield className="w-5 h-5 text-muted-foreground" />
+                      <ShieldCheck className="w-5 h-5 text-muted-foreground" />
                       <div>
-                        <CardTitle className="text-lg">{group.frameworkName}</CardTitle>
+                        <CardTitle className="text-lg">{group.riskName}</CardTitle>
                         <div className="flex items-center gap-4 mt-1">
                           <Badge variant="outline" className="text-xs">
                             {group.controlCounts.total} control{group.controlCounts.total !== 1 ? 's' : ''}
                           </Badge>
+                          <Badge className={`text-xs ${getSeverityColor(group.riskSeverity)}`}>
+                            {group.riskSeverity} severity
+                          </Badge>
                           <span className="text-sm text-muted-foreground">
                             Total Cost: {formatCurrency(group.totalCost)}
                           </span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">Implementation:</span>
-                            <Progress value={group.implementationRate} className="w-20 h-2" />
+                          {group.riskId !== 'unassigned' && (
                             <span className="text-sm text-muted-foreground">
-                              {group.implementationRate.toFixed(0)}%
+                              Risk Exposure: {formatCurrency(group.residualRisk)}
                             </span>
-                          </div>
+                          )}
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      {group.controlCounts.fully_implemented > 0 && (
-                        <Badge className="bg-green-500 text-white text-xs">
-                          {group.controlCounts.fully_implemented} Implemented
-                        </Badge>
-                      )}
-                      {group.controlCounts.in_progress > 0 && (
-                        <Badge className="bg-yellow-500 text-black text-xs">
-                          {group.controlCounts.in_progress} In Progress
-                        </Badge>
-                      )}
-                      {group.controlCounts.not_implemented > 0 && (
-                        <Badge className="bg-red-500 text-white text-xs">
-                          {group.controlCounts.not_implemented} Not Implemented
-                        </Badge>
-                      )}
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">Implementation:</span>
+                        <Progress value={group.implementationRate} className="w-20 h-2" />
+                        <span className="text-sm text-muted-foreground">
+                          {group.implementationRate.toFixed(0)}%
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {group.controlCounts.fully_implemented > 0 && (
+                          <Badge className="bg-green-500 text-white text-xs">
+                            {group.controlCounts.fully_implemented} Implemented
+                          </Badge>
+                        )}
+                        {group.controlCounts.in_progress > 0 && (
+                          <Badge className="bg-yellow-500 text-black text-xs">
+                            {group.controlCounts.in_progress} In Progress
+                          </Badge>
+                        )}
+                        {group.controlCounts.not_implemented > 0 && (
+                          <Badge className="bg-red-500 text-white text-xs">
+                            {group.controlCounts.not_implemented} Not Implemented
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
