@@ -129,9 +129,9 @@ export class RiskService {
         });
       }
       
-      // Trigger immediate risk summary recalculation
-      const { automatedRiskSummary } = await import('../../services/automatedRiskSummary');
-      await automatedRiskSummary.triggerRecalculation();
+      // Trigger immediate optimized risk summary recalculation
+      const { optimizedRiskCalculation } = await import('../../services/optimizedRiskCalculation');
+      await optimizedRiskCalculation.onRiskChange();
       
       // Fetch the updated risk
       return await storage.getRisk(risk.id) || risk;
@@ -178,7 +178,9 @@ export class RiskService {
     try {
       const result = await storage.deleteRisk(id);
       
-      // Note: Automated risk summaries are handled by the main risk service
+      // Trigger immediate optimized risk summary recalculation
+      const { optimizedRiskCalculation } = await import('../../services/optimizedRiskCalculation');
+      await optimizedRiskCalculation.onRiskChange();
       
       return result;
     } catch (error) {
