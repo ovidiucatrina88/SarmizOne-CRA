@@ -174,18 +174,7 @@ export class RiskService {
     try {
       const result = await storage.deleteRisk(id);
       
-      // Automatically update risk summaries after deletion
-      if (result) {
-        // Add a small delay to ensure database transaction is committed
-        setTimeout(async () => {
-          try {
-            await riskSummaryService.updateRiskSummaries();
-            console.log('Risk summaries updated after risk deletion');
-          } catch (summaryError) {
-            console.error('Error updating risk summaries after deletion:', summaryError);
-          }
-        }, 100);
-      }
+      // Note: Automated risk summaries are handled by the main risk service
       
       return result;
     } catch (error) {
