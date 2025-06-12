@@ -99,6 +99,21 @@ export function RiskGroupedControlList({
     return lookup;
   }, [risks]);
 
+  const calculateControlCost = (control: Control) => {
+    if (control.implementationStatus === "fully_implemented") {
+      if (control.isPerAgentPricing) {
+        return Number(control.costPerAgent) || 0;
+      } else {
+        return Number(control.implementationCost) || 0;
+      }
+    } else if (control.implementationStatus === "in_progress") {
+      const deployed = Number(control.deployedAgentCount) || 0;
+      const costPerAgent = Number(control.costPerAgent) || 0;
+      return deployed * costPerAgent;
+    }
+    return 0;
+  };
+
   // Group controls by associated risks
   const riskGroups = useMemo(() => {
     const groups = new Map<string, RiskControlGroup>();
@@ -166,21 +181,6 @@ export function RiskGroupedControlList({
         return a.implementationRate - b.implementationRate;
       });
   }, [controls, riskLookup]);
-
-  const calculateControlCost = (control: Control) => {
-    if (control.implementationStatus === "fully_implemented") {
-      if (control.isPerAgentPricing) {
-        return Number(control.costPerAgent) || 0;
-      } else {
-        return Number(control.implementationCost) || 0;
-      }
-    } else if (control.implementationStatus === "in_progress") {
-      const deployed = Number(control.deployedAgentCount) || 0;
-      const costPerAgent = Number(control.costPerAgent) || 0;
-      return deployed * costPerAgent;
-    }
-    return 0;
-  };
 
   const toggleRiskExpansion = (riskId: string) => {
     const newExpanded = new Set(expandedRisks);
