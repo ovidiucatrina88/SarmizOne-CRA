@@ -68,8 +68,8 @@ interface LegalEntity {
 const legalEntitySchema = z.object({
   entityId: z.string().min(1, "Entity ID is required"),
   name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  parentEntityId: z.string().optional(),
+  description: z.string().optional().default(""),
+  parentEntityId: z.string().optional().default(""),
 });
 
 type LegalEntityFormData = z.infer<typeof legalEntitySchema>;
@@ -460,7 +460,8 @@ export default function LegalEntityPage() {
                       <Textarea 
                         placeholder="Optional description" 
                         {...field}
-                        value={field.value || ""}
+                        value={field.value ?? ""}
+                        onChange={(e) => field.onChange(e.target.value === "" ? "" : e.target.value)}
                       />
                     </FormControl>
                     <FormMessage />
@@ -477,7 +478,8 @@ export default function LegalEntityPage() {
                       <Input 
                         placeholder="Parent entity reference" 
                         {...field}
-                        value={field.value || ""}
+                        value={field.value ?? ""}
+                        onChange={(e) => field.onChange(e.target.value === "" ? "" : e.target.value)}
                       />
                     </FormControl>
                     <FormMessage />
