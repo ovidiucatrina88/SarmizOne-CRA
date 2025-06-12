@@ -21,10 +21,10 @@ export default function Controls() {
   const [viewMode, setViewMode] = useState<ControlViewMode>('list');
   const [filters, setFilters] = useState<ControlFilters>({
     search: '',
-    type: '',
-    category: '',
-    status: '',
-    framework: ''
+    type: 'all',
+    category: 'all',
+    status: 'all',
+    framework: 'all'
   });
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -55,22 +55,22 @@ export default function Controls() {
       }
 
       // Type filter
-      if (filters.type && control.controlType !== filters.type) {
+      if (filters.type && filters.type !== 'all' && control.controlType !== filters.type) {
         return false;
       }
 
       // Category filter
-      if (filters.category && control.controlCategory !== filters.category) {
+      if (filters.category && filters.category !== 'all' && control.controlCategory !== filters.category) {
         return false;
       }
 
       // Status filter
-      if (filters.status && control.implementationStatus !== filters.status) {
+      if (filters.status && filters.status !== 'all' && control.implementationStatus !== filters.status) {
         return false;
       }
 
       // Framework filter - note: using description as proxy for framework since complianceFramework doesn't exist
-      if (filters.framework) {
+      if (filters.framework && filters.framework !== 'all') {
         const frameworkInDescription = control.description?.toLowerCase().includes(filters.framework.toLowerCase());
         if (!frameworkInDescription) return false;
       }

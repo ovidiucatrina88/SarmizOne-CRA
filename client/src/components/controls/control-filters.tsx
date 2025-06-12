@@ -44,10 +44,10 @@ export function ControlFiltersComponent({
   const clearFilters = () => {
     onFiltersChange({
       search: '',
-      type: '',
-      category: '',
-      status: '',
-      framework: ''
+      type: 'all',
+      category: 'all',
+      status: 'all',
+      framework: 'all'
     });
   };
 
@@ -122,7 +122,7 @@ export function ControlFiltersComponent({
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="fully_implemented">Fully Implemented</SelectItem>
                 <SelectItem value="in_progress">In Progress</SelectItem>
                 <SelectItem value="not_implemented">Not Implemented</SelectItem>
@@ -142,7 +142,7 @@ export function ControlFiltersComponent({
                 <SelectValue placeholder="All Frameworks" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Frameworks</SelectItem>
+                <SelectItem value="all">All Frameworks</SelectItem>
                 <SelectItem value="ISO27001">ISO 27001</SelectItem>
                 <SelectItem value="NIST">NIST</SelectItem>
                 <SelectItem value="SOC2">SOC 2</SelectItem>
