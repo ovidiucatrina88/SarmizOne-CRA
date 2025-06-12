@@ -157,9 +157,9 @@ export class RiskService {
           });
         }
         
-        // Trigger immediate risk summary recalculation
-        const { automatedRiskSummary } = await import('../../services/automatedRiskSummary');
-        await automatedRiskSummary.triggerRecalculation();
+        // Trigger immediate optimized risk summary recalculation
+        const { optimizedRiskCalculation } = await import('../../services/optimizedRiskCalculation');
+        await optimizedRiskCalculation.onRiskChange();
         
         // Fetch the updated risk again
         return await storage.getRisk(id);

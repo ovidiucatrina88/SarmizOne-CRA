@@ -2,6 +2,7 @@ import express from 'express';
 // import { isAuthenticated } from '../../auth';
 import { riskService, assetService, controlService } from '../../services';
 import { riskSummaryService } from '../../services/riskSummaryService';
+import { optimizedRiskCalculation } from '../../services/optimizedRiskCalculation';
 import { DatabaseStorage } from '../../services/repositoryStorage';
 import { sendError, sendSuccess } from '../common/responses/apiResponse';
 
