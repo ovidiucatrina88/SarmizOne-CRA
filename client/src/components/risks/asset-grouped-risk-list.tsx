@@ -5,6 +5,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
 import { RiskDetailView } from "@/components/risks/risk-detail-view";
+import { RiskFiltersComponent, RiskFilters } from "./risk-filters";
 import { Link } from "wouter";
 
 import {
@@ -114,10 +115,11 @@ export function AssetGroupedRiskList({
   onRiskEdit, 
   onRiskDelete 
 }: AssetGroupedRiskListProps) {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [severityFilter, setSeverityFilter] = useState<string>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [assetFilter, setAssetFilter] = useState<string>("all");
+  const [filters, setFilters] = useState<RiskFilters>({
+    asset: '',
+    severity: '',
+    category: ''
+  });
   const [expandedAssets, setExpandedAssets] = useState<Set<string>>(new Set());
   const [selectedRisk, setSelectedRisk] = useState<Risk | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);

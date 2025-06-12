@@ -1,9 +1,9 @@
 import React from 'react';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Filter } from "lucide-react";
 
 export interface RiskFilters {
   asset: string;
@@ -47,27 +47,32 @@ export function RiskFiltersComponent({
 
   return (
     <Card className="mb-6">
-      <CardContent className="pt-6">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Filters</h3>
-            {hasActiveFilters && (
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-xs">
-                  {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active
-                </Badge>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={clearFilters}
-                  className="h-7 px-2"
-                >
-                  <X className="h-3 w-3 mr-1" />
-                  Clear
-                </Button>
-              </div>
-            )}
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Filter className="w-5 h-5 text-muted-foreground" />
+            <CardTitle className="text-lg">Filters</CardTitle>
           </div>
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary" className="text-xs">
+                {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearFilters}
+                className="h-7 px-2"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Clear
+              </Button>
+            </div>
+          )}
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col gap-4">
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Asset Filter */}
