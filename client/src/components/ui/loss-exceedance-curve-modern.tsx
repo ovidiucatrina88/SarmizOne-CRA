@@ -511,8 +511,8 @@ export function LossExceedanceCurveModern({
     const maxExposure = calculatedMaxExposure;
     const avgExposure = calculatedAvgExposure;
     
-    // Create smooth exponential decay curve - extend range to show full maximum exposure
-    const extendedMaxExposure = maxExposure * 1.5; // Extend 50% beyond max for better visualization
+    // Create smooth exponential decay curve from P10 to P90 range
+    const extendedMaxExposure = maxExposure * 1.1; // Extend 10% beyond P90 for better visualization
     
     for (let i = 0; i <= numPoints; i++) {
       const lossExposure = i * (extendedMaxExposure / numPoints);
@@ -765,19 +765,11 @@ export function LossExceedanceCurveModern({
                   dataKey="lossExposure" 
                   type="number"
                   domain={[0, (dataMax: number) => {
-                    // Calculate the same maximum exposure as shown in the summary cards
-                    let calculatedMaxExposure = dataMax;
+                    // Use the actual P90 exposure value from risk calculations
+                    let p90Exposure = exposureData?.maximum || dataMax;
                     
-                    if (filteredRisks && filteredRisks.length > 0) {
-                      // Use the exact same calculation as the Maximum Exposure card
-                      calculatedMaxExposure = filteredRisks.reduce((sum, risk) => {
-                        const riskValue = parseFloat(risk.residualRisk || risk.inherentRisk || '0');
-                        return sum + riskValue * 2.0; // Maximum as 200% of risk value
-                      }, 0);
-                    }
-                    
-                    console.log(`X-axis extending to show maximum exposure: ${calculatedMaxExposure}`);
-                    return calculatedMaxExposure * 1.1; // Extend 10% beyond for better visualization
+                    console.log(`X-axis extending to show P90 exposure: ${p90Exposure}`);
+                    return p90Exposure * 1.1; // Extend 10% beyond P90 for better visualization
                   }]}
                   tick={{ fill: 'rgba(255,255,255,0.7)' }}
                   tickLine={{ stroke: 'rgba(255,255,255,0.2)' }}
@@ -990,45 +982,30 @@ export function LossExceedanceCurveModern({
           className="mt-6 grid grid-cols-3 gap-4"
         >
           <div className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg p-3 text-center">
-            <p className="text-xs text-gray-400">Minimum Exposure</p>
+            <p className="text-xs text-gray-400">P10 Exposure</p>
             <p className="text-xl font-bold text-white">
-              {filteredRisks && filteredRisks.length > 0 ? (
-                formatExposure(
-                  filteredRisks.reduce((sum, risk) => {
-                    const riskValue = parseFloat(risk.residualRisk || risk.inherentRisk || '0');
-                    return sum + riskValue * 0.4; // Minimum as 40% of risk value
-                  }, 0) || 100000
-                )
+              {exposureData?.minimum ? (
+                formatExposure(exposureData.minimum)
               ) : (
                 formatExposure(100000)
               )}
             </p>
           </div>
           <div className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg p-3 text-center">
-            <p className="text-xs text-gray-400">Current Exposure</p>
+            <p className="text-xs text-gray-400">P50 Exposure (Median)</p>
             <p className="text-xl font-bold text-blue-400">
-              {filteredRisks && filteredRisks.length > 0 ? (
-                formatExposure(
-                  filteredRisks.reduce((sum, risk) => {
-                    const riskValue = parseFloat(risk.residualRisk || risk.inherentRisk || '0');
-                    return sum + riskValue; // Current is the average risk value
-                  }, 0) || 1000000
-                )
+              {exposureData?.average ? (
+                formatExposure(exposureData.average)
               ) : (
                 formatExposure(1000000)
               )}
             </p>
           </div>
           <div className="bg-gradient-to-br from-gray-700 to-gray-800 rounded-lg p-3 text-center">
-            <p className="text-xs text-gray-400">Maximum Exposure</p>
+            <p className="text-xs text-gray-400">P90 Exposure</p>
             <p className="text-xl font-bold text-white">
-              {filteredRisks && filteredRisks.length > 0 ? (
-                formatExposure(
-                  filteredRisks.reduce((sum, risk) => {
-                    const riskValue = parseFloat(risk.residualRisk || risk.inherentRisk || '0');
-                    return sum + riskValue * 2.0; // Maximum as 200% of risk value
-                  }, 0) || 10000000
-                )
+              {exposureData?.maximum ? (
+                formatExposure(exposureData.maximum)
               ) : (
                 formatExposure(10000000)
               )}
