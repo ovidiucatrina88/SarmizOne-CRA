@@ -129,7 +129,9 @@ export class RiskService {
         });
       }
       
-      // Note: Automated risk summaries are handled by the main risk service
+      // Trigger immediate risk summary recalculation
+      const { automatedRiskSummary } = await import('../../services/automatedRiskSummary');
+      await automatedRiskSummary.triggerRecalculation();
       
       // Fetch the updated risk
       return await storage.getRisk(risk.id) || risk;
@@ -155,7 +157,9 @@ export class RiskService {
           });
         }
         
-        // Note: Automated risk summaries are handled by the main risk service
+        // Trigger immediate risk summary recalculation
+        const { automatedRiskSummary } = await import('../services/automatedRiskSummary');
+        await automatedRiskSummary.triggerRecalculation();
         
         // Fetch the updated risk again
         return await storage.getRisk(id);

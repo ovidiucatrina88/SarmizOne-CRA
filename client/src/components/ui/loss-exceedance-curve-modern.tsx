@@ -476,7 +476,22 @@ export function LossExceedanceCurveModern({
       
       // Use exposure curve data from risk_summaries exactly as provided
       actualExposureCurveData = currentExposure?.exposureCurveData || [];
-      console.log(`Using ${actualExposureCurveData.length} curve points from risk_summaries`);
+      
+      // If no curve data from risk_summaries, generate from filtered risks
+      if (actualExposureCurveData.length === 0 && filteredRisks.length > 0) {
+        const exposures = filteredRisks
+          .map(risk => ensureFiniteNumber(risk.residualRisk || risk.inherentRisk || 0))
+          .filter(v => v > 0)
+          .sort((a, b) => b - a);
+        
+        actualExposureCurveData = exposures.map((impact, index) => ({
+          impact,
+          probability: (index + 1) / exposures.length
+        }));
+        console.log(`Generated ${actualExposureCurveData.length} curve points from filtered risks`);
+      } else {
+        console.log(`Using ${actualExposureCurveData.length} curve points from risk_summaries`);
+      }
     } else {
       // For all other filters: build a true curve array from filtered risks
       const exposures = filteredRisks
