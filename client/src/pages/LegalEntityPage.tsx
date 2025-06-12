@@ -198,8 +198,33 @@ export default function LegalEntityPage() {
     saveEntityMutation.mutate(cleanedData);
   };
 
+  const generateNextEntityId = () => {
+    if (!entities || entities.length === 0) {
+      return "ENT-001";
+    }
+    
+    // Extract numeric parts from existing entity IDs
+    const existingNumbers = entities
+      .map((entity: LegalEntity) => {
+        const match = entity.entityId.match(/ENT-(\d+)/);
+        return match ? parseInt(match[1], 10) : 0;
+      })
+      .filter((num: number) => !isNaN(num));
+    
+    const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
+    const nextNumber = maxNumber + 1;
+    
+    return `ENT-${nextNumber.toString().padStart(3, '0')}`;
+  };
+
   const handleAddEntity = () => {
     setEditingEntity(null);
+    form.reset({
+      entityId: generateNextEntityId(),
+      name: "",
+      description: "",
+      parentEntityId: "",
+    });
     setDialogOpen(true);
   };
 
@@ -430,9 +455,14 @@ export default function LegalEntityPage() {
                 name="entityId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Entity ID</FormLabel>
+                    <FormLabel>Entity ID (Auto-generated)</FormLabel>
                     <FormControl>
-                      <Input placeholder="e.g., ENTITY-001" {...field} />
+                      <Input 
+                        {...field} 
+                        readOnly 
+                        className="bg-gray-50 text-gray-600"
+                        placeholder="Auto-generated"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
