@@ -1083,74 +1083,8 @@ export function LossExceedanceCurveModern({
                   name="Current Loss Probability"
                   stroke="#3b82f6"
                   strokeWidth={3}
-                  dot={(props) => {
-                    // Check if props are valid
-                    if (!props || typeof props !== 'object') return null;
-                    
-                    const { cx, cy, payload, index } = props;
-                    
-                    // If coordinates are NaN, return null
-                    if (isNaN(cx) || isNaN(cy) || !payload) return null;
-                    
-                    // Determine what type of key point this is
-                    const getKeyPointType = () => {
-                      if (!payload.lossExposure && payload.lossExposure !== 0) return null;
-                      if (payload.lossExposure === 0) return "zero";
-                      
-                      // Check if exposureData exists and has valid properties
-                      if (exposureData) {
-                        if (typeof exposureData.minimum === 'number' && 
-                            Math.abs(payload.lossExposure - exposureData.minimum) < 500) return "min";
-                        if (typeof exposureData.average === 'number' && 
-                            Math.abs(payload.lossExposure - exposureData.average) < 500) return "avg";
-                        if (typeof exposureData.maximum === 'number' && 
-                            Math.abs(payload.lossExposure - exposureData.maximum) < 500) return "max";
-                      }
-                      
-                      // Check tolerance thresholds
-                      if (Math.abs(payload.lossExposure - DEFAULT_THRESHOLDS.FULL_ACCEPTANCE) < 500000) return "full";
-                      if (Math.abs(payload.lossExposure - DEFAULT_THRESHOLDS.HIGH_ACCEPTANCE) < 500000) return "high";
-                      if (Math.abs(payload.lossExposure - DEFAULT_THRESHOLDS.MEDIUM_ACCEPTANCE) < 500000) return "medium";
-                      if (Math.abs(payload.lossExposure - DEFAULT_THRESHOLDS.LOW_ACCEPTANCE) < 500000) return "low";
-                      if (Math.abs(payload.lossExposure - DEFAULT_THRESHOLDS.ZERO_ACCEPTANCE) < 500000) return "zero_tolerance";
-                      
-                      return null;
-                    };
-                    
-                    const keyPointType = getKeyPointType();
-                    
-                    if (keyPointType) {
-                      // Size and appearance based on key point type
-                      const getSize = () => {
-                        switch(keyPointType) {
-                          case "zero": return 5;
-                          case "min": return 5;
-                          case "avg": return 5; 
-                          case "max": return 5;
-                          case "full": return 6; // 100% acceptance
-                          case "high": return 6; // 75% acceptance
-                          case "medium": return 6; // 50% acceptance
-                          case "low": return 6;  // 25% acceptance
-                          case "zero_tolerance": return 6; // 0% acceptance
-                          default: return 4;
-                        }
-                      };
-                      
-                      return (
-                        <circle
-                          key={`current-dot-${index}-${keyPointType}-${payload.lossExposure}`}
-                          cx={cx}
-                          cy={cy}
-                          r={getSize()}
-                          fill="#3b82f6"
-                          stroke="#fff"
-                          strokeWidth={2}
-                        />
-                      );
-                    }
-                    return null;
-                  }}
-                  activeDot={{ r: 6, stroke: 'white', strokeWidth: 2 }}
+                  dot={false}
+                  activeDot={{ r: 6, stroke: 'white', strokeWidth: 2, fill: '#3b82f6' }}
                   animationDuration={1200}
                   isAnimationActive={true}
                 />
