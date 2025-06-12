@@ -463,7 +463,6 @@ export function LossExceedanceCurveModern({
     let calculatedMinExposure = 0;
     let calculatedMaxExposure = 0;
     let calculatedAvgExposure = 0;
-    let actualExposureCurveData: Array<{ impact: number; probability: number }> = [];
     
     // Build exposure curve array for all filter types
     if (filterType === 'all') {
@@ -473,39 +472,16 @@ export function LossExceedanceCurveModern({
       calculatedMinExposure = exposureData?.minimum || 0;
       calculatedMaxExposure = exposureData?.maximum || 0;
       calculatedAvgExposure = exposureData?.average || 0;
-      
-      // Use exposure curve data from risk_summaries exactly as provided
-      actualExposureCurveData = currentExposure?.exposureCurveData || [];
-      
-      // If no curve data from risk_summaries, generate from filtered risks
-      if (actualExposureCurveData.length === 0 && filteredRisks.length > 0) {
-        const exposures = filteredRisks
-          .map(risk => ensureFiniteNumber(risk.residualRisk || risk.inherentRisk || 0))
-          .filter(v => v > 0)
-          .sort((a, b) => b - a);
-        
-        actualExposureCurveData = exposures.map((impact, index) => ({
-          impact,
-          probability: (index + 1) / exposures.length
-        }));
-        console.log(`Generated ${actualExposureCurveData.length} curve points from filtered risks`);
-      } else {
-        console.log(`Using ${actualExposureCurveData.length} curve points from risk_summaries`);
-      }
     } else {
-      // For all other filters: build a true curve array from filtered risks
+      // For all other filters: build from filtered risks
       const exposures = filteredRisks
         .map(risk => ensureFiniteNumber(risk.residualRisk || risk.inherentRisk || 0))
-        .filter(v => v > 0)
-        .sort((a, b) => b - a); // Sort descending for exceedance calculation
+        .filter(v => v > 0);
       
       if (exposures.length === 0) {
         console.log(`No valid exposures found for filter ${filterType}`);
         return [];
       }
-      
-      const n = exposures.length;
-      console.log(`Building curve from ${n} exposure values for ${filterType} filter`);
       
       if (filterType === 'entity' || ['l1', 'l2', 'l3', 'l4'].includes(filterType || '')) {
         // For entity and architecture filters: Sum the exposures (aggregated risk)
@@ -513,24 +489,11 @@ export function LossExceedanceCurveModern({
         calculatedMinExposure = totalExposure * 0.1;
         calculatedMaxExposure = totalExposure * 1.5;
         calculatedAvgExposure = totalExposure;
-        
-        // Create simple 3-point curve for summed risk
-        actualExposureCurveData = [
-          { impact: calculatedMaxExposure, probability: 0.1 },
-          { impact: calculatedAvgExposure, probability: 0.5 },
-          { impact: calculatedMinExposure, probability: 0.9 }
-        ];
       } else {
         // For asset filter: Use individual risk values (no summing)
         calculatedMinExposure = Math.min(...exposures);
         calculatedMaxExposure = Math.max(...exposures);
         calculatedAvgExposure = exposures.reduce((sum, val) => sum + val, 0) / exposures.length;
-        
-        // Create curve from individual exposures
-        actualExposureCurveData = exposures.map((impact, i) => ({
-          impact,
-          probability: (i + 1) / n
-        }));
       }
     }
     
@@ -541,86 +504,31 @@ export function LossExceedanceCurveModern({
     }
     
     const data: DataPoint[] = [];
-    const numPoints = 40;
+    const numPoints = 50; // More points for smoother curve
     
     // Use calculated exposure values
     const minExposure = calculatedMinExposure;
     const maxExposure = calculatedMaxExposure;
     const avgExposure = calculatedAvgExposure;
     
-    // Key threshold points to ensure they're included in the chart
-    const keyPoints = [
-      0, // Zero point
-      minExposure, // Minimum exposure
-      avgExposure, // Average exposure
-      maxExposure, // Maximum exposure
-      toleranceThresholds.fullAcceptance, // 100% acceptance
-      toleranceThresholds.highAcceptance, // 75% acceptance
-      toleranceThresholds.mediumAcceptance, // 50% acceptance
-      toleranceThresholds.lowAcceptance, // 25% acceptance
-      toleranceThresholds.zeroAcceptance // 0% acceptance
-    ].filter(p => p <= maxExposure * 1.2);
-    
-    // Create evenly distributed points between 0 and maxExposure*1.2
+    // Create smooth exponential decay curve
     for (let i = 0; i <= numPoints; i++) {
-      const lossExposure = i * (calculatedMaxExposure * 1.2 / numPoints);
+      const lossExposure = i * (maxExposure * 1.2 / numPoints);
       
-      // Calculate probability ensuring monotonic decreasing property
+      // Create smooth exponential decay probability based on normalized exposure
       let probability;
       
-      if (actualExposureCurveData.length > 0) {
-        // Sort curve data by impact descending to ensure proper exceedance calculation
-        const sortedCurveData = actualExposureCurveData
-          .sort((a, b) => a.impact - b.impact) // Sort ascending by impact
-          .map((point, index, array) => ({
-            ...point,
-            // Convert to exceedance probability (probability of exceeding this impact)
-            probability: 1 - (index / array.length)
-          }));
-        
-        // Find the appropriate probability for this loss exposure
-        if (lossExposure <= sortedCurveData[0].impact) {
-          // Below smallest impact - 100% probability of exceedance
-          probability = 100;
-        } else if (lossExposure >= sortedCurveData[sortedCurveData.length - 1].impact) {
-          // Above largest impact - use the minimum exceedance probability
-          probability = sortedCurveData[sortedCurveData.length - 1].probability * 100;
-        } else {
-          // Find the two points to interpolate between
-          let lowerPoint = sortedCurveData[0];
-          let upperPoint = sortedCurveData[sortedCurveData.length - 1];
-          
-          for (let j = 0; j < sortedCurveData.length - 1; j++) {
-            if (lossExposure >= sortedCurveData[j].impact && lossExposure <= sortedCurveData[j + 1].impact) {
-              lowerPoint = sortedCurveData[j];
-              upperPoint = sortedCurveData[j + 1];
-              break;
-            }
-          }
-          
-          // Linear interpolation ensuring decreasing probability
-          const impactRange = upperPoint.impact - lowerPoint.impact;
-          const position = lossExposure - lowerPoint.impact;
-          const ratio = impactRange > 0 ? position / impactRange : 0;
-          
-          // Interpolate between probabilities (ensuring decreasing trend)
-          probability = (lowerPoint.probability - ratio * (lowerPoint.probability - upperPoint.probability)) * 100;
-        }
+      if (lossExposure <= 0) {
+        probability = 100;
       } else {
-        // Fallback: Simple monotonic decreasing curve
-        if (lossExposure <= 0) {
-          probability = 100;
-        } else if (lossExposure >= calculatedMaxExposure * 1.5) {
-          probability = 0.1; // Near zero for very high exposures
-        } else {
-          // Exponential decay for realistic exceedance curve
-          const normalizedExposure = lossExposure / (calculatedMaxExposure * 1.5);
-          probability = Math.max(0.1, 100 * Math.exp(-3 * normalizedExposure));
-        }
+        // Normalize the exposure (0 to 1)
+        const normalizedExposure = Math.min(1, lossExposure / (maxExposure * 1.2));
+        
+        // Use exponential decay: P = 100 * e^(-k * x)
+        // Adjust k to control the steepness of the curve
+        const decayRate = 4; // Controls how steep the curve is
+        probability = Math.max(0.1, 100 * Math.exp(-decayRate * normalizedExposure));
       }
-      
-      // Ensure probability is within valid range and monotonic
-      probability = Math.max(0.1, Math.min(100, probability));
       
       // Previous probability based on actual historical data
       let previousProbability = null;
@@ -671,29 +579,17 @@ export function LossExceedanceCurveModern({
         toleranceProbability = 0; // 0% acceptable
       }
       
-      // Calculate unacceptable risk (risk exceeding tolerance)
-      const unacceptableRisk = probability > toleranceProbability 
-        ? (probability - toleranceProbability) 
-        : 0;
+      // Calculate acceptable risk buffer: difference between tolerance and actual risk
+      const acceptableRiskBuffer = toleranceProbability > probability ? (toleranceProbability - probability) : null;
       
-      // Calculate acceptable risk buffer (tolerance exceeding current risk)
-      // Use undefined instead of 0 to create proper gaps in the area chart
-      const acceptableRiskBuffer = toleranceProbability > probability 
-        ? (toleranceProbability - probability) 
-        : undefined;
-      
-
-        
-      // Add data point
       data.push({
         lossExposure,
         probability,
         previousProbability,
         toleranceProbability,
-        unacceptableRisk,
+        unacceptableRisk: probability > toleranceProbability ? (probability - toleranceProbability) : 0,
         acceptableRiskBuffer,
-        formattedLoss: formatExposureValue(lossExposure),
-        isThresholdPoint: false,
+        formattedLoss: formatExposure(lossExposure),
         exposureData: {
           minimum: minExposure,
           average: avgExposure,
@@ -702,96 +598,8 @@ export function LossExceedanceCurveModern({
       });
     }
     
-    // Add key threshold points if they're not already included
-    keyPoints.forEach(point => {
-      if (!data.some(d => Math.abs(d.lossExposure - point) < 0.01)) {
-        // Calculate the same values as above, but for this specific point
-        let probability;
-        if (point <= 0) {
-          probability = 100;
-        } 
-        else if (point <= minExposure) {
-          probability = 100 - ((point / minExposure) * 10);
-        } 
-        else if (point <= avgExposure) {
-          const positionRatio = (point - minExposure) / (avgExposure - minExposure);
-          probability = 90 - (positionRatio * 40);
-        } 
-        else if (point <= maxExposure) {
-          const positionRatio = (point - avgExposure) / (maxExposure - avgExposure);
-          probability = 50 - (positionRatio * 40);
-        } 
-        else {
-          probability = Math.max(0, 10 - ((point - maxExposure) / (maxExposure * 0.2)) * 10);
-        }
-        
-        // Standardize tolerance calculation to always use fixed thresholds
-        let toleranceProbability;
-        
-        if (point <= toleranceThresholds.fullAcceptance) {
-          toleranceProbability = 100;
-        } else if (point <= toleranceThresholds.highAcceptance) {
-          const range = toleranceThresholds.highAcceptance - toleranceThresholds.fullAcceptance;
-          const position = point - toleranceThresholds.fullAcceptance;
-          toleranceProbability = 100 - (25 * (position / range));
-        } else if (point <= toleranceThresholds.mediumAcceptance) {
-          const range = toleranceThresholds.mediumAcceptance - toleranceThresholds.highAcceptance;
-          const position = point - toleranceThresholds.highAcceptance;
-          toleranceProbability = 75 - (25 * (position / range));
-        } else if (point <= toleranceThresholds.lowAcceptance) {
-          const range = toleranceThresholds.lowAcceptance - toleranceThresholds.mediumAcceptance;
-          const position = point - toleranceThresholds.mediumAcceptance;
-          toleranceProbability = 50 - (25 * (position / range));
-        } else if (point <= toleranceThresholds.zeroAcceptance) {
-          const range = toleranceThresholds.zeroAcceptance - toleranceThresholds.lowAcceptance;
-          const position = point - toleranceThresholds.lowAcceptance;
-          toleranceProbability = 25 - (25 * (position / range));
-        } else {
-          toleranceProbability = 0;
-        }
-        
-        data.push({
-          lossExposure: point,
-          probability,
-          previousProbability: null,
-          toleranceProbability,
-          unacceptableRisk: probability > toleranceProbability ? (probability - toleranceProbability) : 0,
-          formattedLoss: formatExposure(point),
-          isThresholdPoint: true,
-          exposureData: {
-            minimum: minExposure,
-            average: avgExposure,
-            maximum: maxExposure
-          }
-        });
-      }
-    });
-    
-    // Sort data by lossExposure
-    const sortedData = data.sort((a, b) => a.lossExposure - b.lossExposure);
-    
-    // Enforce monotonic decreasing behavior - ensure probability never increases
-    for (let i = 1; i < sortedData.length; i++) {
-      if (sortedData[i].probability > sortedData[i - 1].probability) {
-        sortedData[i].probability = sortedData[i - 1].probability;
-      }
-      
-      // Also enforce for tolerance probability if it exists
-      if (sortedData[i].toleranceProbability !== null && 
-          sortedData[i - 1].toleranceProbability !== null &&
-          sortedData[i].toleranceProbability! > sortedData[i - 1].toleranceProbability!) {
-        sortedData[i].toleranceProbability = sortedData[i - 1].toleranceProbability;
-      }
-      
-      // Recalculate unacceptable risk after probability adjustment
-      if (sortedData[i].toleranceProbability !== null) {
-        sortedData[i].unacceptableRisk = sortedData[i].probability > sortedData[i].toleranceProbability! 
-          ? (sortedData[i].probability - sortedData[i].toleranceProbability!) 
-          : 0;
-      }
-    }
-    
-    return sortedData;
+    // Sort data by lossExposure and return
+    return data.sort((a, b) => a.lossExposure - b.lossExposure);
   }, [exposureData, previousData, toleranceThresholds, filteredRisks]);
 
   return (
