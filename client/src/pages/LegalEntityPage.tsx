@@ -400,7 +400,7 @@ export default function LegalEntityPage() {
       
       {/* Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && handleCloseDialog()}>
-        <DialogContent>
+        <DialogContent className="max-w-[95vw] w-full max-h-[95vh] overflow-y-auto sm:max-w-lg md:max-w-xl lg:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{editingEntity ? "Edit Legal Entity" : "Create Legal Entity"}</DialogTitle>
             <DialogDescription>

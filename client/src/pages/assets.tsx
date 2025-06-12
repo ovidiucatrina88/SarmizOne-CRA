@@ -101,7 +101,7 @@ export default function Assets() {
         <AssetList assets={assets} onEdit={handleEdit} />
 
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-          <DialogContent className="max-w-6xl w-full">
+          <DialogContent className="max-w-[95vw] w-full max-h-[95vh] overflow-y-auto sm:max-w-2xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl">
             <DialogHeader>
               <DialogTitle>
                 {selectedAsset ? "Edit Asset" : "Add New Asset"}
