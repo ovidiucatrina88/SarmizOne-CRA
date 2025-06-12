@@ -82,7 +82,7 @@ export function FrameworkGroupedControlList({
     const groups = new Map<string, FrameworkControlGroup>();
     
     controls.forEach(control => {
-      const framework = control.complianceFramework || 'Custom';
+      const framework = (control as any).complianceFramework || 'Custom';
       const frameworkName = getFrameworkDisplayName(framework);
 
       if (!groups.has(framework)) {

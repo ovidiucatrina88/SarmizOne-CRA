@@ -204,7 +204,7 @@ export function EnhancedControlTable({
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline">
-                      {control.complianceFramework || 'Custom'}
+                      {(control as any).complianceFramework || 'Custom'}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -278,7 +278,7 @@ export function EnhancedControlTable({
                     <div><span className="font-medium">Control ID:</span> {selectedControl.controlId}</div>
                     <div><span className="font-medium">Type:</span> {selectedControl.controlType}</div>
                     <div><span className="font-medium">Category:</span> {selectedControl.controlCategory}</div>
-                    <div><span className="font-medium">Framework:</span> {selectedControl.complianceFramework || 'Custom'}</div>
+                    <div><span className="font-medium">Framework:</span> {(selectedControl as any).complianceFramework || 'Custom'}</div>
                   </div>
                 </div>
                 <div>

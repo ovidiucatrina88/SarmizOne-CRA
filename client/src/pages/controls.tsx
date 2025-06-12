@@ -102,6 +102,11 @@ export default function Controls() {
     setIsCreateModalOpen(true);
   };
 
+  const handleDeleteControl = (control: Control) => {
+    // Delete handling is managed by individual components' mutations
+    console.log('Deleting control:', control.name);
+  };
+
   const handleCloseControl = () => {
     setIsCreateModalOpen(false);
     setSelectedControl(null);
@@ -151,27 +156,81 @@ export default function Controls() {
           <div>
             <h1 className="text-3xl font-bold">Controls</h1>
             <p className="text-muted-foreground mt-1">
-              Manage and monitor security controls
+              Manage and monitor security controls across frameworks
             </p>
           </div>
-          <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
-            <PlusCircle className="h-4 w-4" />
-            Add New Control
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/controls"] })}
+              className="gap-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+            <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
+              <PlusCircle className="h-4 w-4" />
+              Add New Control
+            </Button>
+          </div>
         </div>
 
-        <ControlList controls={controlInstances || []} onEdit={handleEditControl} />
-        
+        {/* Enhanced Filters */}
+        <ControlFiltersComponent
+          filters={filters}
+          onFiltersChange={setFilters}
+          controlCounts={controlCounts}
+        />
+
+        {/* View Toggle */}
+        <div className="flex justify-between items-center">
+          <ControlViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+          <div className="text-sm text-muted-foreground">
+            {controlCounts.filtered} of {controlCounts.total} controls
+          </div>
+        </div>
+
+        {/* Controls Display */}
+        {!Array.isArray(filteredControls) || filteredControls.length === 0 ? (
+          <Card className="p-8">
+            <div className="text-center">
+              <h3 className="text-lg font-medium mb-2">No Controls Found</h3>
+              <p className="text-gray-500 mb-4">
+                {allControls.length === 0 
+                  ? 'Click "Add New Control" to create a new control.'
+                  : 'No controls match your current filter criteria.'
+                }
+              </p>
+            </div>
+          </Card>
+        ) : viewMode === 'framework' ? (
+          <FrameworkGroupedControlList
+            controls={filteredControls}
+            onControlEdit={handleEditControl}
+            onControlDelete={handleDeleteControl}
+          />
+        ) : viewMode === 'list' ? (
+          <EnhancedControlTable
+            controls={filteredControls}
+            onControlEdit={handleEditControl}
+            onControlDelete={handleDeleteControl}
+          />
+        ) : (
+          <ControlList controls={filteredControls} onEdit={handleEditControl} />
+        )}
+
+        {/* Control Form Dialog */}
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {selectedControl ? "Edit Control" : "Add New Control"}
-            </DialogTitle>
-          </DialogHeader>
-          <ControlForm control={selectedControl} onClose={handleCloseControl} />
-        </DialogContent>
-      </Dialog>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {selectedControl ? "Edit Control" : "Add New Control"}
+              </DialogTitle>
+            </DialogHeader>
+            <ControlForm control={selectedControl} onClose={handleCloseControl} />
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );

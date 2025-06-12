@@ -82,7 +82,7 @@ export function ControlFiltersComponent({
                 <SelectValue placeholder="All Types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Types</SelectItem>
+                <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="preventive">Preventive</SelectItem>
                 <SelectItem value="detective">Detective</SelectItem>
                 <SelectItem value="corrective">Corrective</SelectItem>
@@ -102,7 +102,7 @@ export function ControlFiltersComponent({
                 <SelectValue placeholder="All Categories" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 <SelectItem value="technical">Technical</SelectItem>
                 <SelectItem value="administrative">Administrative</SelectItem>
                 <SelectItem value="physical">Physical</SelectItem>
