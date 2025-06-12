@@ -119,7 +119,7 @@ export default function LegalEntityPage() {
   const { data: entitiesResponse, isLoading } = useQuery({
     queryKey: ["/api/legal-entities"],
   });
-  const entities = entitiesResponse?.data || [];
+  const entities = (entitiesResponse as any)?.data || [];
 
   // Filter entities based on search
   const filteredEntities = useMemo(() => {
@@ -399,7 +399,7 @@ export default function LegalEntityPage() {
       )}
       
       {/* Edit Dialog */}
-      <Dialog open={!!editingEntity} onOpenChange={(open) => !open && setEditingEntity(null)}>
+      <Dialog open={dialogOpen} onOpenChange={(open) => !open && handleCloseDialog()}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{editingEntity ? "Edit Legal Entity" : "Create Legal Entity"}</DialogTitle>
@@ -407,17 +407,70 @@ export default function LegalEntityPage() {
               {editingEntity ? "Update the details of this legal entity." : "Create a new legal entity for your organization."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">Dialog form implementation needed</p>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditingEntity(null)}>
-              Cancel
-            </Button>
-            <Button type="submit">
-              {editingEntity ? "Update" : "Create"}
-            </Button>
-          </DialogFooter>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="entityId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Entity ID</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., ENTITY-001" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Legal entity name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea placeholder="Optional description" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="parentEntityId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Parent Entity ID (Optional)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Parent entity reference" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button variant="outline" type="button" onClick={handleCloseDialog}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={saveEntityMutation.isPending}>
+                  {saveEntityMutation.isPending ? "Saving..." : (editingEntity ? "Update" : "Create")}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </Layout>
