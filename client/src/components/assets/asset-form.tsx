@@ -31,58 +31,28 @@ import {
 import { Loader } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
-// Extended schema with validation
-const assetFormSchema = insertAssetSchema.extend({
-  assetId: z.string().optional(), // Made optional to allow auto-generation
+// Simplified schema that matches the actual asset structure
+const assetFormSchema = z.object({
+  assetId: z.string().optional(),
   name: z.string().min(1, "Asset name is required"),
   type: z.enum([
     "data", "application", "device", "system", "network", "facility", "personnel", "other",
-    // Only L4 and L5 enterprise architecture types
     "application_service", "technical_component"
-  ], {
-    required_error: "Asset type is required",
-  }),
-  // Add required fields from database schema
-  hierarchy_level: z.enum(['strategic_capability', 'value_capability', 'business_service', 'application_service', 'technical_component']).optional(),
-  business_unit: z.string().optional(),
-  architecture_domain: z.string().optional(),
-  status: z.enum(["Active", "Decommissioned", "To Adopt"], {
-    required_error: "Asset status is required",
-  }).default("Active"),
-  owner: z.string().min(1, "Owner is required"),
-  confidentiality: z.enum(["low", "medium", "high"], {
-    required_error: "Confidentiality rating is required",
-  }),
-  integrity: z.enum(["low", "medium", "high"], {
-    required_error: "Integrity rating is required",
-  }),
-  availability: z.enum(["low", "medium", "high"], {
-    required_error: "Availability rating is required",
-  }),
-  assetValue: z.union([
-    z.number().min(0, "Asset value must be a positive number"),
-    z.string().transform(val => {
-      // Remove commas, currency symbols, etc.
-      const cleanVal = val.replace(/[^0-9.-]/g, '');
-      const numValue = parseFloat(cleanVal);
-      return isNaN(numValue) ? 0 : numValue;
-    })
   ]),
-  currency: z.enum(["USD", "EUR"], {
-    required_error: "Currency is required",
-  }),
+  status: z.enum(["Active", "Decommissioned", "To Adopt"]).default("Active"),
+  owner: z.string().min(1, "Owner is required"),
+  confidentiality: z.enum(["low", "medium", "high"]),
+  integrity: z.enum(["low", "medium", "high"]),
+  availability: z.enum(["low", "medium", "high"]),
+  assetValue: z.number().min(0, "Asset value must be a positive number"),
+  currency: z.enum(["USD", "EUR"]),
   regulatoryImpact: z.array(z.string()).optional(),
-  externalInternal: z.enum(["external", "internal"], {
-    required_error: "Location is required",
-  }),
+  externalInternal: z.enum(["external", "internal"]),
   dependencies: z.array(z.string()).optional(),
-  description: z.union([
-    z.string(),
-    z.number().transform(val => String(val)),
-    z.any().transform(() => '')
-  ]).default(''),
-  // Enterprise architecture fields - only keeping parentId for hierarchy
+  description: z.string().default(''),
   parentId: z.number().optional().nullable(),
+  agentCount: z.number().optional(),
+  legalEntity: z.string().optional().nullable(),
 });
 
 // Regulatory frameworks list
@@ -183,7 +153,28 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
   const form = useForm<z.infer<typeof assetFormSchema>>({
     resolver: zodResolver(assetFormSchema),
     defaultValues: asset
-      ? { ...asset }
+      ? {
+          assetId: asset.assetId || "",
+          name: asset.name || "",
+          type: asset.type || "technical_component",
+          status: asset.status || "Active",
+          owner: asset.owner || "",
+          confidentiality: asset.confidentiality || "medium",
+          integrity: asset.integrity || "medium",
+          availability: asset.availability || "medium",
+          assetValue: typeof asset.assetValue === 'string' ? parseFloat(asset.assetValue) || 0 : asset.assetValue || 0,
+          currency: asset.currency || "USD",
+          regulatoryImpact: asset.regulatoryImpact || [],
+          externalInternal: asset.externalInternal || "internal",
+          dependencies: asset.dependencies || [],
+          agentCount: asset.agentCount || 1,
+          description: asset.description || "",
+          parentId: asset.parentId || null,
+
+          business_unit: asset.business_unit || "Information Technology",
+          hierarchy_level: asset.hierarchy_level || "technical_component",
+          architecture_domain: asset.architecture_domain || "Application",
+        }
       : {
           assetId: "",
           name: "",
@@ -272,15 +263,23 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
   const onSubmit = (values: z.infer<typeof assetFormSchema>) => {
     // Create a completely new object with only the exact fields needed by the API
     // This avoids sending any unexpected or removed fields
-    // Create a sequential asset ID following the existing pattern in the database
-    // Looking at existing assets, they use AST-XXX format (e.g., AST-001, AST-002)
-    // Create a higher number to avoid conflicts
-    const uniqueAssetId = `AST-${(Math.floor(Math.random() * 900) + 100).toString().padStart(3, '0')}`;
+    
+    // Only generate new asset ID for creation, not updates
+    let assetId = values.assetId;
+    if (!asset && !assetId) {
+      // Create a sequential asset ID following the existing pattern in the database
+      // Looking at existing assets, they use AST-XXX format (e.g., AST-001, AST-002)
+      // Create a higher number to avoid conflicts
+      assetId = `AST-${(Math.floor(Math.random() * 900) + 100).toString().padStart(3, '0')}`;
+    } else if (asset) {
+      // For updates, preserve the existing asset ID
+      assetId = asset.assetId;
+    }
     
     // Create payload that exactly matches the server-side validation schema
     const payload = {
-      // Use provided ID or the unique one we generated
-      assetId: values.assetId || uniqueAssetId,
+      // Use the determined asset ID
+      assetId: assetId,
       name: values.name,
       // Must match server's enum exactly - using 'application' for both our new types
       type: values.type === 'application_service' || values.type === 'technical_component' 
@@ -309,13 +308,6 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
       businessUnit: "Information Technology",
       criticality: "medium",
       // PARENT RELATIONSHIP HANDLING
-      // For Application Services using the business service parent
-      ...(values.type === 'application_service' && {
-        parentId: typeof values.parentBusinessServiceId === "string" 
-          ? (values.parentBusinessServiceId === "none" ? null : parseInt(values.parentBusinessServiceId)) 
-          : values.parentBusinessServiceId
-      }),
-      
       // For Technical Components using the application service parent
       ...(values.type === 'technical_component' && {
         parentId: typeof values.parentId === "string" 
