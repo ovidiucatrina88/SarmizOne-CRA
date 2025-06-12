@@ -186,11 +186,12 @@ export default function LegalEntityPage() {
     console.log("Legal entity form submission:", data);
     console.log("Form errors:", form.formState.errors);
     
-    // Clean up the data to ensure proper types
+    // Ensure all fields are properly typed as strings
     const cleanedData = {
-      ...data,
-      description: data.description || "",
-      parentEntityId: data.parentEntityId || "",
+      entityId: String(data.entityId || ""),
+      name: String(data.name || ""),
+      description: String(data.description || ""),
+      parentEntityId: String(data.parentEntityId || ""),
     };
     
     console.log("API Request to /api/legal-entities with data:", cleanedData);
