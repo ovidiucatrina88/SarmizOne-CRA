@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { executeQueryWithRetry } from '../../db';
+import { pool } from '../../db';
 
 const router = Router();
 
@@ -56,30 +56,32 @@ router.get('/iris-benchmarks', async (req, res) => {
       ORDER BY CAST(r.residual_risk AS NUMERIC) DESC
     `;
     
-    const risksResult = await executeQueryWithRetry(risksQuery, []);
-    const risks = (risksResult as any).rows;
+    const client = await pool.connect();
+    try {
+      const risksResult = await client.query(risksQuery);
+      const risks = risksResult.rows;
     
-    if (risks.length === 0) {
-      return res.json({
-        success: true,
-        data: {
-          currentRisk: 0,
-          totalPortfolioRisk: 0,
-          smbBenchmark: IRIS_BENCHMARKS.SMB.geometricMean,
-          enterpriseBenchmark: IRIS_BENCHMARKS.ENTERPRISE.geometricMean,
-          industryPosition: 'below_enterprise' as const,
-          maturityScore: 0,
-          recommendations: ['No risks found. Consider conducting a risk assessment.'],
-          riskCount: 0,
-          avgRiskSize: 0,
-          portfolioComparison: {
-            smbMultiple: 0,
-            enterpriseMultiple: 0,
-            positioning: 'No data available'
+      if (risks.length === 0) {
+        return res.json({
+          success: true,
+          data: {
+            currentRisk: 0,
+            totalPortfolioRisk: 0,
+            smbBenchmark: IRIS_BENCHMARKS.SMB.geometricMean,
+            enterpriseBenchmark: IRIS_BENCHMARKS.ENTERPRISE.geometricMean,
+            industryPosition: 'below_enterprise' as const,
+            maturityScore: 0,
+            recommendations: ['No risks found. Consider conducting a risk assessment.'],
+            riskCount: 0,
+            avgRiskSize: 0,
+            portfolioComparison: {
+              smbMultiple: 0,
+              enterpriseMultiple: 0,
+              positioning: 'No data available'
+            }
           }
-        }
-      });
-    }
+        });
+      }
 
     // Calculate portfolio metrics
     const totalPortfolioRisk = risks.reduce((sum, risk) => sum + parseFloat(risk.residual_risk), 0);
@@ -152,18 +154,20 @@ router.get('/iris-benchmarks', async (req, res) => {
       }
     };
 
-    res.json({
-      success: true,
-      data: benchmarkData
-    });
+      res.json({
+        success: true,
+        data: benchmarkData
+      });
 
-  } catch (error) {
-    console.error('Error fetching IRIS benchmarks:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch IRIS benchmarks'
-    });
-  }
+    } catch (error) {
+      console.error('Error fetching IRIS benchmarks:', error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch IRIS benchmarks'
+      });
+    } finally {
+      client.release();
+    }
 });
 
 export default router;

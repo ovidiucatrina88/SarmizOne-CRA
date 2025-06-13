@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
+import IRISBenchmarkCard from "@/components/dashboard/iris-benchmark-card";
 
 function DashboardSkeleton() {
   return (
@@ -410,8 +411,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Risk Breakdown and Top Risks */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      {/* IRIS Benchmarks and Risk Breakdown */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+        <IRISBenchmarkCard />
+        
         <RiskBreakdown 
           title="Risk by Severity"
           items={riskBySeverity}
