@@ -31,7 +31,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 
-// Extended schema with validation
+// Extended schema with validation - aligned with database schema
 const controlFormSchema = insertControlSchema.extend({
   controlId: z.string().min(1, "Control ID is required"),
   name: z.string().min(1, "Control name is required"),
@@ -43,7 +43,7 @@ const controlFormSchema = insertControlSchema.extend({
   controlCategory: z.enum(["technical", "administrative", "physical"], {
     required_error: "Control category is required",
   }),
-  implementationStatus: z.enum(["not_implemented", "in_progress", "fully_implemented"], {
+  implementationStatus: z.enum(["not_implemented", "planned", "partially_implemented", "in_progress", "fully_implemented"], {
     required_error: "Implementation status is required",
   }),
   controlEffectiveness: z.number().min(0).max(10, "Effectiveness must be between 0 and 10"),
@@ -52,7 +52,12 @@ const controlFormSchema = insertControlSchema.extend({
   isPerAgentPricing: z.boolean().default(false),
   deployedAgentCount: z.number().min(0, "Deployed agent count must be a positive number").optional(),
   notes: z.string().optional(),
+  // Missing database fields
+  libraryItemId: z.number().optional(),
   itemType: z.enum(["template", "instance"]).default("instance"),
+  assetId: z.string().optional(),
+  riskId: z.number().optional(),
+  legalEntityId: z.string().optional(),
 });
 
 type ControlFormProps = {
@@ -145,7 +150,13 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
           costPerAgent: Number(control.costPerAgent || 0),
           deployedAgentCount: Number(control.deployedAgentCount || 0),
           isPerAgentPricing: Boolean(control.isPerAgentPricing),
-          associatedRisks: control.associatedRisks || []
+          associatedRisks: control.associatedRisks || [],
+          // Handle itemType properly - convert null to "instance"
+          itemType: (control.itemType || "instance") as "template" | "instance",
+          libraryItemId: control.libraryItemId || undefined,
+          assetId: control.assetId || undefined,
+          riskId: control.riskId || undefined,
+          legalEntityId: control.legalEntityId || undefined,
         }
       : {
           controlId: "",
@@ -161,6 +172,11 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
           isPerAgentPricing: false,
           deployedAgentCount: 0,
           notes: "",
+          itemType: "instance",
+          libraryItemId: undefined,
+          assetId: undefined,
+          riskId: undefined,
+          legalEntityId: undefined,
         },
   });
 
