@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Control, Risk, ControlLibraryItem, controlTypeEnum, controlCategoryEnum, implementationStatusEnum } from "@shared/schema";
+import { Control, Risk, ControlLibraryItem, controlTypeEnum, controlCategoryEnum, implementationStatusEnum, complianceFrameworkEnum } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -62,6 +62,9 @@ const controlLibraryFormSchema = z.object({
   controlCategory: z.enum(controlCategoryEnum.enumValues, {
     required_error: "Control category is required",
   }),
+  complianceFramework: z.enum(complianceFrameworkEnum.enumValues, {
+    required_error: "Compliance framework is required",
+  }),
   implementationStatus: z.enum(implementationStatusEnum.enumValues, {
     required_error: "Implementation status is required",
   }),
@@ -106,6 +109,7 @@ export default function ControlLibrary() {
       description: "",
       controlType: "preventive",
       controlCategory: "technical",
+      complianceFramework: "CIS",
       implementationStatus: "not_implemented",
       controlEffectiveness: 5,
       implementationCost: 0,
