@@ -602,6 +602,7 @@ export default function ControlLibrary() {
                 <TableHead>Name</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Category</TableHead>
+                <TableHead>Framework</TableHead>
                 <TableHead>Effectiveness</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -641,6 +642,11 @@ export default function ControlLibrary() {
                       {control.controlCategory}
                     </TableCell>
                     <TableCell>
+                      <Badge variant="outline" className="text-xs">
+                        {control.complianceFramework || 'Custom'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
                       {control.controlEffectiveness ? `${control.controlEffectiveness}/10` : 'N/A'}
                     </TableCell>
                     <TableCell>
@@ -666,7 +672,7 @@ export default function ControlLibrary() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
+                  <TableCell colSpan={8} className="h-24 text-center">
                     {searchQuery || filterType !== "all" || filterCategory !== "all" || filterStatus !== "all" 
                       ? "No controls match your current filters" 
                       : "No control templates found"}
