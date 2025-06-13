@@ -25,6 +25,12 @@ export interface MonteCarloInput {
   eResist: number;
   eDetect: number;
   iterations?: number;
+  // IRIS 2025 actuarial parameters
+  tefMin?: number;
+  tefMode?: number;
+  tefMax?: number;
+  plMu?: number;
+  plSigma?: number;
   // This property is used to access the actual associated asset objects with their values
   associatedAssets?: Array<{
     id: number;

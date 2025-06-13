@@ -1,6 +1,19 @@
 import { MonteCarloInput, MonteCarloFullResult } from "../models/riskParams";
 import { runFairCamFullMonteCarlo } from "./monteCarlo";
 
+// ---- IRIS 2025 actuarial baselines --------------------------
+const IRIS_TEF_ALL = { min: 0.025, mode: 0.093, max: 0.12 };       // Fig 6, all orgs
+const WEBAPP_WEIGHT = 0.38;                                        // Fig 8, < $100 M
+
+const IRIS_TEF_WEBAPP = {
+  min: IRIS_TEF_ALL.min * WEBAPP_WEIGHT,
+  mode: IRIS_TEF_ALL.mode * WEBAPP_WEIGHT,
+  max: IRIS_TEF_ALL.max * WEBAPP_WEIGHT,
+};
+
+const IRIS_LM_ALL = { mu: Math.log(2_900_000), sigma: 1.95 };      // Fig 10, global
+const IRIS_LM_SMB = { mu: Math.log(357_000),  sigma: 1.77 };       // Fig 10, < $100 M
+
 /**
  * Adapter to run Monte Carlo simulation for risk calculation
  * This function adapts risk form data to the format expected by the Monte Carlo simulator
@@ -55,7 +68,16 @@ export function calculateRiskWithMonteCarlo(riskData: any): {
     eDetect: Number(riskData.eDetect) || 0,
     
     // Iterations
-    iterations: Number(riskData.iterations) || 10000
+    iterations: Number(riskData.iterations) || 10000,
+    
+    // IRIS 2025 actuarial parameters - apply if not overridden by UI
+    tefMin: IRIS_TEF_WEBAPP.min,
+    tefMode: IRIS_TEF_WEBAPP.mode,
+    tefMax: IRIS_TEF_WEBAPP.max,
+    
+    // Choose loss magnitude parameters based on organization size
+    plMu: riskData.orgSize === 'SMB' ? IRIS_LM_SMB.mu : IRIS_LM_ALL.mu,
+    plSigma: riskData.orgSize === 'SMB' ? IRIS_LM_SMB.sigma : IRIS_LM_ALL.sigma
   };
   
   // Run Monte Carlo simulation for residual risk

@@ -430,8 +430,14 @@ export function runFairCamFullMonteCarlo(
   }
 
   for (let i = 0; i < N; i++) {
-    const cf = triangular(params.cfMin, params.cfMode, params.cfMax);
-    const poa = triangular(params.poaMin, params.poaMode, params.poaMax);
+    // Frequency handling - use IRIS TEF if provided, otherwise use traditional CF/POA
+    let cf = triangular(params.cfMin, params.cfMode, params.cfMax);
+    let poa = triangular(params.poaMin, params.poaMode, params.poaMax);
+
+    if (params.tefMin !== undefined) {
+      cf = 1;  // exactly one annual opportunity
+      poa = betaPert(params.tefMin, params.tefMode!, params.tefMax!);
+    }
     const tc = triangular(params.tcMin, params.tcMode, params.tcMax);
     const rs = triangular(params.rsMin, params.rsMode, params.rsMax);
     const sus = 1 / (1 + Math.exp(-(tc - rs) / 2));
@@ -497,8 +503,12 @@ export function runFairCamFullMonteCarlo(
     plMode = Math.min(plMode, MAX_LOSS);
     plMax = Math.min(plMax, MAX_LOSS);
 
-    // Use triangular distribution to get a random value within this range
-    const pl = triangular(plMin, plMode, plMax);
+    // Loss magnitude handling - use log-normal if IRIS parameters provided, otherwise triangular
+    const primaryLoss = params.plMu !== undefined
+      ? logNormal(params.plMu, params.plSigma!)
+      : triangular(plMin, plMode, plMax);
+    
+    const pl = primaryLoss;
 
     // Secondary loss event frequency isn't typically affected by asset value
     const slef = triangular(params.slefMin, params.slefMode, params.slefMax);
@@ -602,4 +612,21 @@ export function runFairCamFullMonteCarlo(
   monteCarloCache.set(cacheKey, result);
   
   return result;
+}
+
+// IRIS 2025 Utility Samplers
+export function logNormal(mu: number, sigma: number): number {
+  const u1 = Math.random();
+  const u2 = Math.random();
+  const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+  return Math.exp(mu + sigma * z);
+}
+
+export function betaPert(min: number, mode: number, max: number): number {
+  const alpha = 1 + 4 * (mode - min) / (max - min);
+  const beta = 1 + 4 * (max - mode) / (max - min);
+  const u1 = Math.random();
+  const u2 = Math.random();
+  const y = Math.pow(u1, 1 / alpha) / (Math.pow(u1, 1 / alpha) + Math.pow(u2, 1 / beta));
+  return min + y * (max - min);
 }
