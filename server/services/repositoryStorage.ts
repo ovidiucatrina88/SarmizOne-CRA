@@ -285,7 +285,36 @@ export class DatabaseStorage {
   }
 
   async createControl(control: InsertControl): Promise<Control> {
-    const [createdControl] = await db.insert(controls).values(control).returning();
+    // Map camelCase fields from frontend to underscore fields for database
+    const mappedControl: any = { ...control };
+    
+    // Handle FAIR methodology effectiveness fields mapping
+    if ((control as any).eAvoid !== undefined) {
+      mappedControl.e_avoid = (control as any).eAvoid;
+      delete mappedControl.eAvoid;
+    }
+    if ((control as any).eDeter !== undefined) {
+      mappedControl.e_deter = (control as any).eDeter;
+      delete mappedControl.eDeter;
+    }
+    if ((control as any).eDetect !== undefined) {
+      mappedControl.e_detect = (control as any).eDetect;
+      delete mappedControl.eDetect;
+    }
+    if ((control as any).eResist !== undefined) {
+      mappedControl.e_resist = (control as any).eResist;
+      delete mappedControl.eResist;
+    }
+    if ((control as any).varFreq !== undefined) {
+      mappedControl.var_freq = (control as any).varFreq;
+      delete mappedControl.varFreq;
+    }
+    if ((control as any).varDuration !== undefined) {
+      mappedControl.var_duration = (control as any).varDuration;
+      delete mappedControl.varDuration;
+    }
+    
+    const [createdControl] = await db.insert(controls).values(mappedControl).returning();
     return createdControl;
   }
 
@@ -297,10 +326,20 @@ export class DatabaseStorage {
     
     // Map fields to their database column names
     if (data.controlEffectiveness !== undefined) validData.controlEffectiveness = data.controlEffectiveness;
+    
+    // Handle underscore naming from database
     if (data.e_avoid !== undefined) validData.e_avoid = data.e_avoid;
     if (data.e_deter !== undefined) validData.e_deter = data.e_deter; 
     if (data.e_detect !== undefined) validData.e_detect = data.e_detect;
     if (data.e_resist !== undefined) validData.e_resist = data.e_resist;
+    
+    // Handle camelCase naming from frontend
+    if ((data as any).eAvoid !== undefined) validData.e_avoid = (data as any).eAvoid;
+    if ((data as any).eDeter !== undefined) validData.e_deter = (data as any).eDeter;
+    if ((data as any).eDetect !== undefined) validData.e_detect = (data as any).eDetect;
+    if ((data as any).eResist !== undefined) validData.e_resist = (data as any).eResist;
+    if ((data as any).varFreq !== undefined) validData.var_freq = (data as any).varFreq;
+    if ((data as any).varDuration !== undefined) validData.var_duration = (data as any).varDuration;
     
     // Other fields that might be updated
     if (data.name !== undefined) validData.name = data.name;
