@@ -343,6 +343,14 @@ export const controls = pgTable('controls', {
   riskId: integer('risk_id'), // Link to associated risk (if applicable)
   legalEntityId: text('legal_entity_id'), // Link to associated legal entity (if applicable)
   
+  // FAIR methodology control effectiveness fields
+  eAvoid: numeric('e_avoid', { precision: 5, scale: 2 }).default('0.00'), // Avoidance effectiveness (0-1)
+  eDeter: numeric('e_deter', { precision: 5, scale: 2 }).default('0.00'), // Deterrence effectiveness (0-1)
+  eDetect: numeric('e_detect', { precision: 5, scale: 2 }).default('0.00'), // Detection effectiveness (0-1)
+  eResist: numeric('e_resist', { precision: 5, scale: 2 }).default('0.00'), // Resistance effectiveness (0-1)
+  varFreq: integer('var_freq').default(0), // Frequency variance
+  varDuration: integer('var_duration').default(0), // Duration variance
+  
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
