@@ -31,12 +31,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 
-// Extended schema with validation - aligned with database schema
+// Extended schema with validation - simplified without entity associations
 const controlFormSchema = insertControlSchema.extend({
   controlId: z.string().min(1, "Control ID is required"),
   name: z.string().min(1, "Control name is required"),
   description: z.string().optional(),
-  associatedRisks: z.array(z.string()).min(0),
   controlType: z.enum(["preventive", "detective", "corrective"], {
     required_error: "Control type is required",
   }),
@@ -52,20 +51,9 @@ const controlFormSchema = insertControlSchema.extend({
   isPerAgentPricing: z.boolean().default(false),
   deployedAgentCount: z.number().min(0, "Deployed agent count must be a positive number").optional(),
   notes: z.string().optional(),
-  // Missing database fields
+  // Template/instance classification
   libraryItemId: z.number().optional(),
   itemType: z.enum(["template", "instance"]).default("instance"),
-  assetId: z.string().optional(),
-  riskId: z.number().optional(),
-  legalEntityId: z.string().optional(),
-  // Control effectiveness components (FAIR methodology)
-  eAvoid: z.number().min(0).max(1, "Avoidance effectiveness must be between 0 and 1").optional(),
-  eDeter: z.number().min(0).max(1, "Deterrence effectiveness must be between 0 and 1").optional(),
-  eDetect: z.number().min(0).max(1, "Detection effectiveness must be between 0 and 1").optional(),
-  eResist: z.number().min(0).max(1, "Resistance effectiveness must be between 0 and 1").optional(),
-  // Variance fields
-  varFreq: z.number().min(0, "Frequency variance must be positive").optional(),
-  varDuration: z.number().min(0, "Duration variance must be positive").optional(),
 });
 
 type ControlFormProps = {
@@ -77,54 +65,35 @@ type ControlFormProps = {
 export function ControlForm({ control, onClose, isTemplate = false }: ControlFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedRisks, setSelectedRisks] = useState<string[]>([]);
   
   // State for pricing type
   const [pricingType, setPricingType] = useState<string>(
     control?.isPerAgentPricing ? "agent" : "total"
   );
 
-  // Fetch risks for selection
+  // Fetch risks for read-only display
   const { data: risks } = useQuery({
     queryKey: ["/api/risks"],
   });
-
-  // Initialize selected risks when control and risks data are available
-  useEffect(() => {
-    if (control && risks?.data && Array.isArray(risks.data)) {
-      // Convert database IDs in associatedRisks to risk IDs for display
-      const riskIds = (control.associatedRisks || []).map(dbId => {
-        const risk = risks.data.find((r: any) => r.id.toString() === dbId.toString());
-        return risk ? risk.riskId : null;
-      }).filter(Boolean);
-      
-      setSelectedRisks(riskIds);
-    }
-  }, [control, risks]);
 
   // Fetch assets for agent count validation
   const { data: assets } = useQuery({
     queryKey: ["/api/assets"],
   });
 
-  // Calculate total available agent capacity for selected risks (including asset hierarchy)
+  // Calculate total available agent capacity for control deployment
   const calculateAvailableAgentCapacity = () => {
-    if (!risks?.data || !assets?.data || selectedRisks.length === 0) return 0;
+    if (!assets?.data) return 0;
     
+    // For simplified controls, calculate capacity based on all assets
     let totalCapacity = 0;
-    const processedAssets = new Set(); // Avoid double-counting assets
+    const processedAssets = new Set();
     
-    selectedRisks.forEach(riskId => {
-      // Find risk by ID (convert string to number if needed)
-      const risk = risks.data.find(r => r.id.toString() === riskId || r.riskId === riskId);
-      if (risk && risk.associatedAssets) {
-        risk.associatedAssets.forEach(assetId => {
-          if (!processedAssets.has(assetId)) {
-            const hierarchyCapacity = calculateAssetHierarchyCapacity(assetId, assets.data);
-            totalCapacity += hierarchyCapacity;
-            processedAssets.add(assetId);
-          }
-        });
+    assets.data.forEach((asset: any) => {
+      if (!processedAssets.has(asset.assetId)) {
+        const hierarchyCapacity = calculateAssetHierarchyCapacity(asset.assetId, assets.data);
+        totalCapacity += hierarchyCapacity;
+        processedAssets.add(asset.assetId);
       }
     });
     
@@ -162,33 +131,25 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
     resolver: zodResolver(controlFormSchema),
     defaultValues: control
       ? {
-          ...control,
-          // Ensure numeric values are parsed as numbers
+          controlId: control.controlId,
+          name: control.name,
+          description: control.description || "",
+          controlType: control.controlType,
+          controlCategory: control.controlCategory,
+          implementationStatus: control.implementationStatus,
           controlEffectiveness: Number(control.controlEffectiveness || 0),
           implementationCost: Number(control.implementationCost || 0),
           costPerAgent: Number(control.costPerAgent || 0),
           deployedAgentCount: Number(control.deployedAgentCount || 0),
           isPerAgentPricing: Boolean(control.isPerAgentPricing),
-          associatedRisks: control.associatedRisks || [],
-          // Handle itemType properly - convert null to "instance"
+          notes: control.notes || "",
           itemType: (control.itemType || "instance") as "template" | "instance",
           libraryItemId: control.libraryItemId || undefined,
-          assetId: control.assetId || undefined,
-          riskId: control.riskId || undefined,
-          legalEntityId: control.legalEntityId || undefined,
-          // Control effectiveness components
-          eAvoid: Number((control as any).eAvoid || 0),
-          eDeter: Number((control as any).eDeter || 0),
-          eDetect: Number((control as any).eDetect || 0),
-          eResist: Number((control as any).eResist || 0),
-          varFreq: Number((control as any).varFreq || 0),
-          varDuration: Number((control as any).varDuration || 0),
         }
       : {
           controlId: "",
           name: "",
           description: "",
-          associatedRisks: [],
           controlType: "preventive",
           controlCategory: "technical",
           implementationStatus: "not_implemented",
@@ -200,32 +161,12 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
           notes: "",
           itemType: "instance",
           libraryItemId: undefined,
-          assetId: undefined,
-          riskId: undefined,
-          legalEntityId: undefined,
-          // Control effectiveness components defaults
-          eAvoid: 0,
-          eDeter: 0,
-          eDetect: 0,
-          eResist: 0,
-          varFreq: 0,
-          varDuration: 0,
         },
   });
 
   // Create mutation for adding/updating control
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof controlFormSchema>) => {
-      // Convert risk IDs back to database IDs for storage
-      if (risks?.data && Array.isArray(risks.data)) {
-        values.associatedRisks = selectedRisks.map(riskId => {
-          const risk = risks.data.find((r: any) => r.riskId === riskId);
-          return risk ? risk.id.toString() : null;
-        }).filter(Boolean);
-      } else {
-        values.associatedRisks = [];
-      }
-      
       // Add itemType based on whether this is a template or instance
       values.itemType = isTemplate ? "template" : "instance";
 
@@ -253,13 +194,11 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
       } else {
         queryClient.invalidateQueries({ queryKey: ["/api/controls"] });
         
-        // If control is associated with risks, recalculate risk values
-        if (selectedRisks.length > 0) {
-          queryClient.invalidateQueries({ queryKey: ["/api/risks"] });
-          queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
-          // Invalidate risk summary for Loss Exceedance Curve
-          queryClient.invalidateQueries({ queryKey: ["/api/risk-summary/latest"] });
-        }
+        // Invalidate related queries
+        queryClient.invalidateQueries({ queryKey: ["/api/risks"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
+        // Invalidate risk summary for Loss Exceedance Curve
+        queryClient.invalidateQueries({ queryKey: ["/api/risk-summary/latest"] });
       }
       
       // Update form with the server response to show correct values
@@ -344,13 +283,14 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
     mutation.mutate(submissionData);
   };
 
-  // Handle risk selection change
-  const handleRiskChange = (checked: boolean, riskId: string) => {
-    setSelectedRisks(
-      checked
-        ? [...selectedRisks, riskId]
-        : selectedRisks.filter((r) => r !== riskId)
-    );
+  // Get associated risks for read-only display
+  const getAssociatedRisks = () => {
+    if (!control?.associatedRisks || !risks?.data) return [];
+    
+    return control.associatedRisks.map(dbId => {
+      const risk = risks.data.find((r: any) => r.id.toString() === dbId.toString());
+      return risk ? { id: risk.id, riskId: risk.riskId, name: risk.name, severity: risk.severity } : null;
+    }).filter(Boolean);
   };
 
   // Format currency for display
