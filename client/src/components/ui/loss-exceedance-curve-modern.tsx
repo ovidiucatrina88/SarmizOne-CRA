@@ -834,7 +834,9 @@ export function LossExceedanceCurveModern({
         probability,
         previousProbability,
         toleranceProbability,
-        unacceptableRisk: probability > toleranceProbability ? (probability - toleranceProbability) : 0,
+        unacceptableRisk: (probability !== null && toleranceProbability !== null && probability > toleranceProbability) 
+          ? (probability - toleranceProbability) 
+          : 0,
         acceptableRiskBuffer,
         smbBenchmarkProbability,
         enterpriseBenchmarkProbability,
@@ -1084,6 +1086,7 @@ export function LossExceedanceCurveModern({
                     fill="url(#riskAreaGradient)"
                     fillOpacity={0.5}
                     stackId="risk"
+                    connectNulls={true}
                   />
                 )}
 
