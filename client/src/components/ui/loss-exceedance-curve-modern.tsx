@@ -678,50 +678,84 @@ export function LossExceedanceCurveModern({
       let enterpriseBenchmarkProbability = null;
       
       if (irisBenchmarks) {
-        // SMB benchmark probability calculation
+        // SMB benchmark probability calculation with improved extrapolation
         if (irisBenchmarks.smb && irisBenchmarks.smb.length > 0) {
-          const smbMatch = irisBenchmarks.smb.find(point => 
-            Math.abs(point.impact - lossExposure) < lossExposure * 0.1
+          const smbSorted = irisBenchmarks.smb.sort((a, b) => a.impact - b.impact);
+          
+          // Direct match check
+          const smbMatch = smbSorted.find(point => 
+            Math.abs(point.impact - lossExposure) < lossExposure * 0.05
           );
+          
           if (smbMatch) {
-            smbBenchmarkProbability = smbMatch.probability * 100; // Convert to percentage
+            smbBenchmarkProbability = smbMatch.probability * 100;
           } else {
-            // Interpolate between SMB benchmark points
-            const smbSorted = irisBenchmarks.smb.sort((a, b) => a.impact - b.impact);
-            for (let j = 0; j < smbSorted.length - 1; j++) {
-              const lower = smbSorted[j];
-              const upper = smbSorted[j + 1];
-              if (lossExposure >= lower.impact && lossExposure <= upper.impact) {
-                const range = upper.impact - lower.impact;
-                const position = lossExposure - lower.impact;
-                const ratio = range > 0 ? position / range : 0;
-                smbBenchmarkProbability = (lower.probability - (lower.probability - upper.probability) * ratio) * 100; // Convert to percentage
-                break;
+            // Check if we're within the range for interpolation
+            const minImpact = smbSorted[0].impact;
+            const maxImpact = smbSorted[smbSorted.length - 1].impact;
+            
+            if (lossExposure >= minImpact && lossExposure <= maxImpact) {
+              // Interpolate between points
+              for (let j = 0; j < smbSorted.length - 1; j++) {
+                const lower = smbSorted[j];
+                const upper = smbSorted[j + 1];
+                if (lossExposure >= lower.impact && lossExposure <= upper.impact) {
+                  const range = upper.impact - lower.impact;
+                  const position = lossExposure - lower.impact;
+                  const ratio = range > 0 ? position / range : 0;
+                  smbBenchmarkProbability = (lower.probability - (lower.probability - upper.probability) * ratio) * 100;
+                  break;
+                }
               }
+            } else if (lossExposure < minImpact) {
+              // Extrapolate below minimum - use first point probability with slight increase
+              smbBenchmarkProbability = Math.min(100, smbSorted[0].probability * 100 * 1.2);
+            } else if (lossExposure > maxImpact) {
+              // Extrapolate above maximum - exponential decay from last point
+              const lastPoint = smbSorted[smbSorted.length - 1];
+              const scaleFactor = lossExposure / lastPoint.impact;
+              smbBenchmarkProbability = Math.max(0.1, lastPoint.probability * 100 / (scaleFactor * scaleFactor));
             }
           }
         }
         
-        // Enterprise benchmark probability calculation
+        // Enterprise benchmark probability calculation with improved extrapolation
         if (irisBenchmarks.enterprise && irisBenchmarks.enterprise.length > 0) {
-          const enterpriseMatch = irisBenchmarks.enterprise.find(point => 
-            Math.abs(point.impact - lossExposure) < lossExposure * 0.1
+          const enterpriseSorted = irisBenchmarks.enterprise.sort((a, b) => a.impact - b.impact);
+          
+          // Direct match check
+          const enterpriseMatch = enterpriseSorted.find(point => 
+            Math.abs(point.impact - lossExposure) < lossExposure * 0.05
           );
+          
           if (enterpriseMatch) {
-            enterpriseBenchmarkProbability = enterpriseMatch.probability * 100; // Convert to percentage
+            enterpriseBenchmarkProbability = enterpriseMatch.probability * 100;
           } else {
-            // Interpolate between Enterprise benchmark points
-            const enterpriseSorted = irisBenchmarks.enterprise.sort((a, b) => a.impact - b.impact);
-            for (let j = 0; j < enterpriseSorted.length - 1; j++) {
-              const lower = enterpriseSorted[j];
-              const upper = enterpriseSorted[j + 1];
-              if (lossExposure >= lower.impact && lossExposure <= upper.impact) {
-                const range = upper.impact - lower.impact;
-                const position = lossExposure - lower.impact;
-                const ratio = range > 0 ? position / range : 0;
-                enterpriseBenchmarkProbability = (lower.probability - (lower.probability - upper.probability) * ratio) * 100; // Convert to percentage
-                break;
+            // Check if we're within the range for interpolation
+            const minImpact = enterpriseSorted[0].impact;
+            const maxImpact = enterpriseSorted[enterpriseSorted.length - 1].impact;
+            
+            if (lossExposure >= minImpact && lossExposure <= maxImpact) {
+              // Interpolate between points
+              for (let j = 0; j < enterpriseSorted.length - 1; j++) {
+                const lower = enterpriseSorted[j];
+                const upper = enterpriseSorted[j + 1];
+                if (lossExposure >= lower.impact && lossExposure <= upper.impact) {
+                  const range = upper.impact - lower.impact;
+                  const position = lossExposure - lower.impact;
+                  const ratio = range > 0 ? position / range : 0;
+                  enterpriseBenchmarkProbability = (lower.probability - (lower.probability - upper.probability) * ratio) * 100;
+                  break;
+                }
               }
+            } else if (lossExposure < minImpact) {
+              // Extrapolate below minimum - use first point probability with slight increase
+              enterpriseBenchmarkProbability = Math.min(100, enterpriseSorted[0].probability * 100 * 1.2);
+            } else if (lossExposure > maxImpact) {
+              // Extrapolate above maximum - exponential decay from last point
+              const lastPoint = enterpriseSorted[enterpriseSorted.length - 1];
+              const scaleFactor = lossExposure / lastPoint.impact;
+              enterpriseBenchmarkProbability = Math.max(0.1, lastPoint.probability * 100 / (scaleFactor * scaleFactor));
             }
           }
         }

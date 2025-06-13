@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 import IRISBenchmarkCard from "@/components/dashboard/iris-benchmark-card";
+import { RiskScenarioModeler } from "@/components/dashboard/risk-scenario-modeler";
 
 function DashboardSkeleton() {
   return (
@@ -432,6 +433,14 @@ export default function Dashboard() {
         <TopRisks 
           risks={risksData?.data || []}
           maxItems={5}
+        />
+      </div>
+
+      {/* Risk Scenario Modeler */}
+      <div className="mb-8">
+        <RiskScenarioModeler 
+          risks={risksData?.data || []}
+          currentExposure={apiData?.riskSummary?.totalResidualRisk || 0}
         />
       </div>
 
