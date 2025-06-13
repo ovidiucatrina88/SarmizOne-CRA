@@ -23,6 +23,12 @@ router.get('/summary', async (req, res) => {
     const mediumRisks = risks.filter(r => r.severity === 'medium').length;
     const lowRisks = risks.filter(r => r.severity === 'low').length;
     
+    // Calculate risk category metrics
+    const operationalRisks = risks.filter(r => r.riskCategory === 'operational').length;
+    const strategicRisks = risks.filter(r => r.riskCategory === 'strategic').length;
+    const complianceRisks = risks.filter(r => r.riskCategory === 'compliance').length;
+    const financialRisks = risks.filter(r => r.riskCategory === 'financial').length;
+    
     // Calculate total risk exposure with detailed logging
     let totalInherentRisk = 0;
     let totalResidualRisk = 0;
@@ -107,6 +113,12 @@ router.get('/summary', async (req, res) => {
         medianExposure,
         percentile95Exposure,
         percentile99Exposure
+      },
+      riskByCategory: {
+        operational: operationalRisks,
+        strategic: strategicRisks,
+        compliance: complianceRisks,
+        financial: financialRisks
       },
       controlSummary: {
         totalControls: controls.length,

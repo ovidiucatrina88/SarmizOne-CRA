@@ -13,6 +13,7 @@ import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 import IRISBenchmarkCard from "@/components/dashboard/iris-benchmark-card";
 import { RiskScenarioModeler } from "@/components/dashboard/risk-scenario-modeler";
+import { RiskCategorySeverityCard } from "@/components/dashboard/risk-category-severity-card";
 
 function DashboardSkeleton() {
   return (
@@ -220,6 +221,14 @@ export default function Dashboard() {
         : 0,
       color: "bg-green-500",
     },
+  };
+
+  // Process risk category data from API
+  const riskByCategory = apiData?.riskByCategory || {
+    operational: 0,
+    strategic: 0,
+    compliance: 0,
+    financial: 0
   };
   
   // Risk response status data (from API or fallback)
