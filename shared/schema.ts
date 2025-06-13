@@ -123,6 +123,7 @@ export const complianceFrameworkEnum = pgEnum('compliance_framework', [
   'PCI_DSS',   // PCI Data Security Standard
   'HIPAA',     // Health Insurance Portability and Accountability Act
   'GDPR',      // General Data Protection Regulation
+  'CCM',       // Cloud Security Alliance Cloud Controls Matrix
   'Custom'     // Custom or organization-specific controls
 ]);
 
@@ -363,6 +364,19 @@ export const controlLibrary = pgTable('control_library', {
   complianceFramework: complianceFrameworkEnum('compliance_framework').notNull().default('Custom'), // Primary compliance framework
   nistCsf: text('nist_csf').array().notNull().default([]), // NIST Cybersecurity Framework mappings
   iso27001: text('iso27001').array().notNull().default([]), // ISO 27001 control mappings
+  
+  // CCM-specific fields
+  cloudDomain: text('cloud_domain'), // CCM domain classification (A&A, AIS, etc.)
+  nistMappings: text('nist_mappings').array().notNull().default([]), // NIST 800-53 references
+  pciMappings: text('pci_mappings').array().notNull().default([]), // PCI DSS references
+  cisMappings: text('cis_mappings').array().notNull().default([]), // CIS Controls mappings
+  gapLevel: text('gap_level'), // No Gap, Partial Gap, Full Gap
+  implementationGuidance: text('implementation_guidance'), // Implementation addendum
+  architecturalRelevance: json('architectural_relevance'), // Cloud stack applicability
+  organizationalRelevance: json('organizational_relevance'), // Department applicability
+  ownershipModel: text('ownership_model'), // CSP-Owned, CSC-Owned, Shared
+  cloudServiceModel: text('cloud_service_model').array().notNull().default([]), // IaaS, PaaS, SaaS
+  
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
