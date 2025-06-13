@@ -92,6 +92,12 @@ export default function Risks() {
     setSelectedRisk(null);
   };
 
+  const handleDelete = (risk: Risk) => {
+    // This function is passed to child components for risk deletion
+    // The actual deletion logic is handled within the risk list components
+    console.log('Risk deletion initiated for:', risk.name);
+  };
+
   // Page actions for top bar
   const pageActions = (
     <div className="flex space-x-2">
