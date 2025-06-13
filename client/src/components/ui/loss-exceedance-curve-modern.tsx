@@ -175,6 +175,7 @@ export function LossExceedanceCurveModern({
   risks = [], 
   currentExposure,
   previousExposure,
+  irisBenchmarks,
   filterType = 'all',
   selectedEntityId = null,
   selectedAssetId = null,
@@ -211,6 +212,9 @@ export function LossExceedanceCurveModern({
   const [showHistory, setShowHistory] = useState(!!previousExposure);
   const [showTolerance, setShowTolerance] = useState(true);
   const [showToleranceConfig, setShowToleranceConfig] = useState(false);
+  const [showIrisBenchmarks, setShowIrisBenchmarks] = useState(!!irisBenchmarks);
+  const [showSmbBenchmark, setShowSmbBenchmark] = useState(true);
+  const [showEnterpriseBenchmark, setShowEnterpriseBenchmark] = useState(true);
   
   // State for editable tolerance thresholds
   const [toleranceThresholds, setToleranceThresholds] = useState({
@@ -719,6 +723,38 @@ export function LossExceedanceCurveModern({
             />
             <Label htmlFor="show-tolerance-config" className="text-gray-300">Configure Thresholds</Label>
           </div>
+          {irisBenchmarks && (
+            <>
+              <div className="flex items-center space-x-2">
+                <Switch 
+                  id="show-iris-benchmarks" 
+                  checked={showIrisBenchmarks} 
+                  onCheckedChange={setShowIrisBenchmarks} 
+                />
+                <Label htmlFor="show-iris-benchmarks" className="text-gray-300">Industry Benchmarks</Label>
+              </div>
+              {showIrisBenchmarks && (
+                <>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="show-smb-benchmark" 
+                      checked={showSmbBenchmark} 
+                      onCheckedChange={setShowSmbBenchmark} 
+                    />
+                    <Label htmlFor="show-smb-benchmark" className="text-green-300">SMB</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      id="show-enterprise-benchmark" 
+                      checked={showEnterpriseBenchmark} 
+                      onCheckedChange={setShowEnterpriseBenchmark} 
+                    />
+                    <Label htmlFor="show-enterprise-benchmark" className="text-orange-300">Enterprise</Label>
+                  </div>
+                </>
+              )}
+            </>
+          )}
         </div>
       </CardHeader>
 
@@ -1021,6 +1057,38 @@ export function LossExceedanceCurveModern({
                   animationDuration={1200}
                   isAnimationActive={true}
                 />
+                
+                {/* IRIS SMB Benchmark Curve */}
+                {showIrisBenchmarks && showSmbBenchmark && irisBenchmarks?.smb && (
+                  <Line
+                    type="monotone"
+                    dataKey="smbBenchmarkProbability"
+                    name="SMB Industry Benchmark"
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={false}
+                    activeDot={{ r: 4, stroke: 'white', strokeWidth: 1, fill: '#10b981' }}
+                    animationDuration={1000}
+                    isAnimationActive={true}
+                  />
+                )}
+                
+                {/* IRIS Enterprise Benchmark Curve */}
+                {showIrisBenchmarks && showEnterpriseBenchmark && irisBenchmarks?.enterprise && (
+                  <Line
+                    type="monotone"
+                    dataKey="enterpriseBenchmarkProbability"
+                    name="Enterprise Industry Benchmark"
+                    stroke="#f97316"
+                    strokeWidth={2}
+                    strokeDasharray="8 3"
+                    dot={false}
+                    activeDot={{ r: 4, stroke: 'white', strokeWidth: 1, fill: '#f97316' }}
+                    animationDuration={1000}
+                    isAnimationActive={true}
+                  />
+                )}
               </ComposedChart>
             </ResponsiveContainer>
           ) : (
