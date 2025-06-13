@@ -168,6 +168,6 @@ router.post('/risk-summary/force-update', async (req, res) => {
 });
 
 // Mount IRIS benchmarks router
-router.use('/', irisBenchmarksRouter);
+router.use('/iris-benchmarks', irisBenchmarksRouter);
 
 export default router;
