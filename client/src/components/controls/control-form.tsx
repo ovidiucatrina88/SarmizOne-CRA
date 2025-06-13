@@ -665,9 +665,9 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
         {/* Associated Risks field */}
         <div>
           <FormLabel>Associated Risks</FormLabel>
-          {risks && Array.isArray(risks) && risks.length > 0 ? (
+          {risks?.data && Array.isArray(risks.data) && risks.data.length > 0 ? (
             <div className="grid grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto border rounded-md p-2">
-              {risks.map((risk: any) => (
+              {risks.data.map((risk: any) => (
                 <div className="flex items-center space-x-2" key={risk.id}>
                   <Checkbox
                     id={`risk-${risk.id}`}
