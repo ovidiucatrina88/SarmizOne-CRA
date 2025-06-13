@@ -211,6 +211,37 @@ export function EnhancedControlTable({
                     </Badge>
                   </TableCell>
                   <TableCell>
+                    {(control as any).cloudDomain ? (
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                        {(control as any).cloudDomain}
+                      </Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      {(control as any).nistMappings && (control as any).nistMappings.length > 0 && (
+                        <Badge variant="outline" className="text-xs bg-green-50 text-green-700">
+                          NIST ({(control as any).nistMappings.length})
+                        </Badge>
+                      )}
+                      {(control as any).pciMappings && (control as any).pciMappings.length > 0 && (
+                        <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700">
+                          PCI ({(control as any).pciMappings.length})
+                        </Badge>
+                      )}
+                      {(control as any).cisMappings && (control as any).cisMappings.length > 0 && (
+                        <Badge variant="outline" className="text-xs bg-orange-50 text-orange-700">
+                          CIS ({(control as any).cisMappings.length})
+                        </Badge>
+                      )}
+                      {!(control as any).nistMappings?.length && !(control as any).pciMappings?.length && !(control as any).cisMappings?.length && (
+                        <span className="text-muted-foreground text-sm">None</span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
                     {control.associatedRisks && control.associatedRisks.length > 0 ? (
                       <div className="flex flex-wrap gap-1">
                         {control.associatedRisks.slice(0, 2).map(riskId => (

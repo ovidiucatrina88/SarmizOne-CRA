@@ -95,6 +95,8 @@ export default function ControlLibrary() {
   const [filterType, setFilterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterFramework, setFilterFramework] = useState("all");
+  const [filterCloudDomain, setFilterCloudDomain] = useState("all");
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -217,8 +219,18 @@ export default function ControlLibrary() {
       filtered = filtered.filter(control => control.implementationStatus === filterStatus);
     }
 
+    // Apply framework filter
+    if (filterFramework !== "all") {
+      filtered = filtered.filter(control => (control as any).complianceFramework === filterFramework);
+    }
+
+    // Apply cloud domain filter
+    if (filterCloudDomain !== "all") {
+      filtered = filtered.filter(control => (control as any).cloudDomain === filterCloudDomain);
+    }
+
     return filtered;
-  }, [controlLibrary, searchQuery, filterType, filterCategory, filterStatus]);
+  }, [controlLibrary, searchQuery, filterType, filterCategory, filterStatus, filterFramework, filterCloudDomain]);
 
   // Pagination logic
   const totalPages = Math.ceil(filteredControls.length / itemsPerPage);
@@ -230,7 +242,7 @@ export default function ControlLibrary() {
   // Reset pagination when filters change
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, filterType, filterCategory, filterStatus]);
+  }, [searchQuery, filterType, filterCategory, filterStatus, filterFramework, filterCloudDomain]);
   
   // Fetch all risks (for the risk selection dialog)
   const { data: risksResponse, isLoading: isLoadingRisks, error: risksError } = useQuery({
@@ -574,6 +586,55 @@ export default function ControlLibrary() {
                   <SelectItem value="in_progress" className="text-white hover:bg-gray-600">In Progress</SelectItem>
                   <SelectItem value="planned" className="text-white hover:bg-gray-600">Planned</SelectItem>
                   <SelectItem value="not_implemented" className="text-white hover:bg-gray-600">Not Implemented</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={filterFramework}
+                onValueChange={(value) => {
+                  setFilterFramework(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="w-40 bg-gray-600 border-gray-500 text-white">
+                  <SelectValue placeholder="Framework" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-700 border-gray-600">
+                  <SelectItem value="all" className="text-white hover:bg-gray-600">All Frameworks</SelectItem>
+                  <SelectItem value="CIS" className="text-white hover:bg-gray-600">CIS</SelectItem>
+                  <SelectItem value="CCM" className="text-white hover:bg-gray-600">CCM</SelectItem>
+                  <SelectItem value="NIST" className="text-white hover:bg-gray-600">NIST</SelectItem>
+                  <SelectItem value="ISO27001" className="text-white hover:bg-gray-600">ISO27001</SelectItem>
+                  <SelectItem value="SOC2" className="text-white hover:bg-gray-600">SOC2</SelectItem>
+                  <SelectItem value="PCI_DSS" className="text-white hover:bg-gray-600">PCI DSS</SelectItem>
+                  <SelectItem value="Custom" className="text-white hover:bg-gray-600">Custom</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={filterCloudDomain}
+                onValueChange={(value) => {
+                  setFilterCloudDomain(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="w-40 bg-gray-600 border-gray-500 text-white">
+                  <SelectValue placeholder="Cloud Domain" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-700 border-gray-600">
+                  <SelectItem value="all" className="text-white hover:bg-gray-600">All Domains</SelectItem>
+                  <SelectItem value="A&A" className="text-white hover:bg-gray-600">A&A</SelectItem>
+                  <SelectItem value="AIS" className="text-white hover:bg-gray-600">AIS</SelectItem>
+                  <SelectItem value="BCR" className="text-white hover:bg-gray-600">BCR</SelectItem>
+                  <SelectItem value="CCC" className="text-white hover:bg-gray-600">CCC</SelectItem>
+                  <SelectItem value="CEK" className="text-white hover:bg-gray-600">CEK</SelectItem>
+                  <SelectItem value="DCS" className="text-white hover:bg-gray-600">DCS</SelectItem>
+                  <SelectItem value="DSP" className="text-white hover:bg-gray-600">DSP</SelectItem>
+                  <SelectItem value="GRC" className="text-white hover:bg-gray-600">GRC</SelectItem>
+                  <SelectItem value="HRS" className="text-white hover:bg-gray-600">HRS</SelectItem>
+                  <SelectItem value="IAM" className="text-white hover:bg-gray-600">IAM</SelectItem>
+                  <SelectItem value="IVS" className="text-white hover:bg-gray-600">IVS</SelectItem>
+                  <SelectItem value="LOG" className="text-white hover:bg-gray-600">LOG</SelectItem>
+                  <SelectItem value="SEF" className="text-white hover:bg-gray-600">SEF</SelectItem>
+                  <SelectItem value="TVM" className="text-white hover:bg-gray-600">TVM</SelectItem>
                 </SelectContent>
               </Select>
             </div>
