@@ -818,6 +818,14 @@ export function LossExceedanceCurveModern({
               enterpriseBenchmarkProbability = closest.probability * 100;
             }
           }
+          
+          // Ensure we always have a valid Enterprise benchmark value
+          if (enterpriseBenchmarkProbability === null || enterpriseBenchmarkProbability === undefined) {
+            const closest = enterpriseSorted.reduce((prev, curr) => 
+              Math.abs(curr.impact - lossExposure) < Math.abs(prev.impact - lossExposure) ? curr : prev
+            );
+            enterpriseBenchmarkProbability = closest.probability * 100;
+          }
         }
       }
       
