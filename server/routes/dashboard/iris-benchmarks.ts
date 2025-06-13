@@ -18,6 +18,63 @@ const IRIS_BENCHMARKS = {
   }
 };
 
+/**
+ * Generate loss exceedance curve data from lognormal distribution
+ * @param geometricMean - median of the distribution
+ * @param standardDeviation - standard deviation of ln(values)
+ * @param points - number of points to generate
+ * @returns Array of {probability, impact} points for the curve
+ */
+function generateExceedanceCurve(geometricMean: number, standardDeviation: number, points: number = 50): Array<{probability: number, impact: number}> {
+  const curve: Array<{probability: number, impact: number}> = [];
+  
+  // Generate points from 0.01% to 99.99% exceedance probability
+  for (let i = 0; i < points; i++) {
+    const probability = 0.0001 + (0.9999 - 0.0001) * (i / (points - 1));
+    
+    // Convert probability to z-score for normal distribution
+    const zScore = inverseNormalCDF(1 - probability);
+    
+    // Calculate impact using lognormal distribution
+    const lnGeometricMean = Math.log(geometricMean);
+    const lnImpact = lnGeometricMean + standardDeviation * zScore;
+    const impact = Math.exp(lnImpact);
+    
+    curve.push({ probability, impact });
+  }
+  
+  // Sort by probability descending (exceedance probability)
+  return curve.sort((a, b) => b.probability - a.probability);
+}
+
+/**
+ * Approximate inverse normal CDF using Beasley-Springer-Moro algorithm
+ */
+function inverseNormalCDF(p: number): number {
+  if (p <= 0 || p >= 1) return 0;
+  
+  // Constants for the approximation
+  const a = [0, -3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+  const b = [0, -5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01];
+  const c = [0, -7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
+  const d = [0, 7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00];
+  
+  let x = 0;
+  let t = 0;
+  
+  if (p < 0.5) {
+    t = Math.sqrt(-2 * Math.log(p));
+    x = (((((c[1] * t + c[2]) * t + c[3]) * t + c[4]) * t + c[5]) * t + c[6]) / 
+        ((((d[1] * t + d[2]) * t + d[3]) * t + d[4]) * t + 1);
+  } else {
+    t = Math.sqrt(-2 * Math.log(1 - p));
+    x = -(((((c[1] * t + c[2]) * t + c[3]) * t + c[4]) * t + c[5]) * t + c[6]) / 
+         ((((d[1] * t + d[2]) * t + d[3]) * t + d[4]) * t + 1);
+  }
+  
+  return x;
+}
+
 interface IRISBenchmarkData {
   currentRisk: number;
   totalPortfolioRisk: number;
@@ -32,6 +89,10 @@ interface IRISBenchmarkData {
     smbMultiple: number;
     enterpriseMultiple: number;
     positioning: string;
+  };
+  exceedanceCurves: {
+    smb: Array<{probability: number, impact: number}>;
+    enterprise: Array<{probability: number, impact: number}>;
   };
 }
 
@@ -113,6 +174,16 @@ router.get('/', async (req, res) => {
         recommendations.push('Maintain current security posture and monitor for emerging threats');
       }
 
+      // Generate exceedance curves for industry benchmarks
+      const smbCurve = generateExceedanceCurve(
+        IRIS_BENCHMARKS.SMB.geometricMean, 
+        IRIS_BENCHMARKS.SMB.standardDeviation
+      );
+      const enterpriseCurve = generateExceedanceCurve(
+        IRIS_BENCHMARKS.ENTERPRISE.geometricMean, 
+        IRIS_BENCHMARKS.ENTERPRISE.standardDeviation
+      );
+
       const benchmarkData: IRISBenchmarkData = {
         currentRisk: totalPortfolioRisk,
         totalPortfolioRisk,
@@ -129,6 +200,10 @@ router.get('/', async (req, res) => {
           positioning: industryPosition === 'above_enterprise' ? 'Above Enterprise Average' :
                       industryPosition === 'between' ? 'Between SMB and Enterprise' :
                       industryPosition === 'above_smb' ? 'Above SMB Average' : 'Below Industry Average'
+        },
+        exceedanceCurves: {
+          smb: smbCurve,
+          enterprise: enterpriseCurve
         }
       };
 

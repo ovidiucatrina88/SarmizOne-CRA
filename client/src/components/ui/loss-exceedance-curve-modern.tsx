@@ -69,6 +69,11 @@ interface LossExceedanceCurveModernProps {
     // Exposure curve data from risk_summaries
     exposureCurveData?: Array<{ impact: number; probability: number }>;
   };
+  // IRIS 2025 benchmark data for industry comparison
+  irisBenchmarks?: {
+    smb: Array<{probability: number, impact: number}>;
+    enterprise: Array<{probability: number, impact: number}>;
+  };
   // Filtering properties
   filterType?: 'all' | 'entity' | 'asset' | 'l1' | 'l2' | 'l3' | 'l4';
   selectedEntityId?: string | null;
