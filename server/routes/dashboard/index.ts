@@ -5,6 +5,7 @@ import { riskSummaryService } from '../../services/riskSummaryService';
 import { optimizedRiskCalculation } from '../../services/optimizedRiskCalculation';
 import { DatabaseStorage } from '../../services/repositoryStorage';
 import { sendError, sendSuccess } from '../common/responses/apiResponse';
+import irisBenchmarksRouter from './iris-benchmarks';
 
 const router = express.Router();
 const repository = new DatabaseStorage();
@@ -165,5 +166,8 @@ router.post('/risk-summary/force-update', async (req, res) => {
     return sendError(res, error);
   }
 });
+
+// Mount IRIS benchmarks router
+router.use('/', irisBenchmarksRouter);
 
 export default router;
