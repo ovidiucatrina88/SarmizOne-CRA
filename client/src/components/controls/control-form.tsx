@@ -77,9 +77,7 @@ type ControlFormProps = {
 export function ControlForm({ control, onClose, isTemplate = false }: ControlFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedRisks, setSelectedRisks] = useState<string[]>(
-    control?.associatedRisks || []
-  );
+  const [selectedRisks, setSelectedRisks] = useState<string[]>([]);
   
   // State for pricing type
   const [pricingType, setPricingType] = useState<string>(
