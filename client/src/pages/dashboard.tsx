@@ -133,6 +133,11 @@ export default function Dashboard() {
     queryKey: ["/api/risks"],
   });
 
+  // Query for IRIS benchmark data
+  const { data: irisData } = useQuery({
+    queryKey: ["/api/dashboard/iris-benchmarks"],
+  });
+
   if (isLoading) {
     return (
       <Layout
