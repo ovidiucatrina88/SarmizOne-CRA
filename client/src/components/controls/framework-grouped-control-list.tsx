@@ -152,23 +152,6 @@ export function FrameworkGroupedControlList({
       });
   }, [controls]);
 
-
-
-  const calculateControlCost = (control: Control) => {
-    if (control.implementationStatus === "fully_implemented") {
-      if (control.isPerAgentPricing) {
-        return Number(control.costPerAgent) || 0;
-      } else {
-        return Number(control.implementationCost) || 0;
-      }
-    } else if (control.implementationStatus === "in_progress") {
-      const deployed = Number(control.deployedAgentCount) || 0;
-      const costPerAgent = Number(control.costPerAgent) || 0;
-      return deployed * costPerAgent;
-    }
-    return 0;
-  };
-
   const toggleFrameworkExpansion = (framework: string) => {
     const newExpanded = new Set(expandedFrameworks);
     if (newExpanded.has(framework)) {

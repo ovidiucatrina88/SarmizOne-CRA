@@ -188,9 +188,9 @@ ON risks (residual_p10, residual_p25, residual_p50, residual_p75, residual_p90, 
 -- Update any existing risk summaries to populate new percentile columns from existing data
 UPDATE risk_summaries SET
     percentile_10_exposure = COALESCE(tenth_percentile_exposure, 0),
-    percentile_25_exposure = COALESCE(twenty_fifth_percentile_exposure, 0),
-    percentile_50_exposure = COALESCE(most_likely_exposure, median_exposure, fiftieth_percentile_exposure, 0),
-    percentile_75_exposure = COALESCE(seventy_fifth_percentile_exposure, 0),
+    percentile_25_exposure = 0, -- Will be calculated by application
+    percentile_50_exposure = COALESCE(most_likely_exposure, median_exposure, 0),
+    percentile_75_exposure = 0, -- Will be calculated by application
     percentile_90_exposure = COALESCE(ninetieth_percentile_exposure, 0),
     percentile_95_exposure = COALESCE(percentile_95_exposure, 0),
     percentile_99_exposure = COALESCE(percentile_99_exposure, 0)
