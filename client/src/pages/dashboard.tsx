@@ -401,6 +401,10 @@ export default function Dashboard() {
                   ninetiethPercentile: riskSummaryData.previous.ninetiethPercentileExposure,
                   exposureCurveData: riskSummaryData.previous.exposureCurveData
                 } : undefined}
+                irisBenchmarks={irisData?.data ? {
+                  smb: irisData.data.exceedanceCurves?.smb || [],
+                  enterprise: irisData.data.exceedanceCurves?.enterprise || []
+                } : undefined}
                 filterType={filterType}
                 selectedEntityId={selectedLegalEntity}
                 selectedAssetId={selectedAsset}

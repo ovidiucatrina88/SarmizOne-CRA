@@ -26,6 +26,8 @@ interface DataPoint {
   toleranceProbability?: number | null;
   unacceptableRisk?: number;
   acceptableRiskBuffer?: number | null;
+  smbBenchmarkProbability?: number | null;
+  enterpriseBenchmarkProbability?: number | null;
   formattedLoss: string;
   isThresholdPoint?: boolean;
   exposureData?: {
@@ -671,6 +673,60 @@ export function LossExceedanceCurveModern({
       // Calculate acceptable risk buffer: difference between tolerance and actual risk
       const acceptableRiskBuffer = toleranceProbability > probability ? (toleranceProbability - probability) : null;
       
+      // Calculate IRIS benchmark probabilities if benchmark data is available
+      let smbBenchmarkProbability = null;
+      let enterpriseBenchmarkProbability = null;
+      
+      if (irisBenchmarks) {
+        // SMB benchmark probability calculation
+        if (irisBenchmarks.smb && irisBenchmarks.smb.length > 0) {
+          const smbMatch = irisBenchmarks.smb.find(point => 
+            Math.abs(point.impact - lossExposure) < lossExposure * 0.1
+          );
+          if (smbMatch) {
+            smbBenchmarkProbability = smbMatch.probability;
+          } else {
+            // Interpolate between SMB benchmark points
+            const smbSorted = irisBenchmarks.smb.sort((a, b) => a.impact - b.impact);
+            for (let j = 0; j < smbSorted.length - 1; j++) {
+              const lower = smbSorted[j];
+              const upper = smbSorted[j + 1];
+              if (lossExposure >= lower.impact && lossExposure <= upper.impact) {
+                const range = upper.impact - lower.impact;
+                const position = lossExposure - lower.impact;
+                const ratio = range > 0 ? position / range : 0;
+                smbBenchmarkProbability = lower.probability - (lower.probability - upper.probability) * ratio;
+                break;
+              }
+            }
+          }
+        }
+        
+        // Enterprise benchmark probability calculation
+        if (irisBenchmarks.enterprise && irisBenchmarks.enterprise.length > 0) {
+          const enterpriseMatch = irisBenchmarks.enterprise.find(point => 
+            Math.abs(point.impact - lossExposure) < lossExposure * 0.1
+          );
+          if (enterpriseMatch) {
+            enterpriseBenchmarkProbability = enterpriseMatch.probability;
+          } else {
+            // Interpolate between Enterprise benchmark points
+            const enterpriseSorted = irisBenchmarks.enterprise.sort((a, b) => a.impact - b.impact);
+            for (let j = 0; j < enterpriseSorted.length - 1; j++) {
+              const lower = enterpriseSorted[j];
+              const upper = enterpriseSorted[j + 1];
+              if (lossExposure >= lower.impact && lossExposure <= upper.impact) {
+                const range = upper.impact - lower.impact;
+                const position = lossExposure - lower.impact;
+                const ratio = range > 0 ? position / range : 0;
+                enterpriseBenchmarkProbability = lower.probability - (lower.probability - upper.probability) * ratio;
+                break;
+              }
+            }
+          }
+        }
+      }
+      
       data.push({
         lossExposure,
         probability,
@@ -678,6 +734,8 @@ export function LossExceedanceCurveModern({
         toleranceProbability,
         unacceptableRisk: probability > toleranceProbability ? (probability - toleranceProbability) : 0,
         acceptableRiskBuffer,
+        smbBenchmarkProbability,
+        enterpriseBenchmarkProbability,
         formattedLoss: formatExposure(lossExposure),
         exposureData: {
           minimum: minExposure,
@@ -1113,6 +1171,18 @@ export function LossExceedanceCurveModern({
             <div className="flex items-center">
               <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
               <span className="text-gray-300">Risk Tolerance Profile</span>
+            </div>
+          )}
+          {showIrisBenchmarks && showSmbBenchmark && irisBenchmarks?.smb && (
+            <div className="flex items-center">
+              <div className="w-3 h-1 bg-green-400 mr-2" style={{borderStyle: 'dashed', borderWidth: '1px'}}></div>
+              <span className="text-gray-300">SMB Benchmark</span>
+            </div>
+          )}
+          {showIrisBenchmarks && showEnterpriseBenchmark && irisBenchmarks?.enterprise && (
+            <div className="flex items-center">
+              <div className="w-3 h-1 bg-orange-400 mr-2" style={{borderStyle: 'dashed', borderWidth: '1px'}}></div>
+              <span className="text-gray-300">Enterprise Benchmark</span>
             </div>
           )}
           <div className="flex items-center">
