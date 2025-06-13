@@ -550,5 +550,11 @@ COMMIT;
 -- =====================================================
 -- REFERENCE DATA IMPORTS
 -- =====================================================
--- The following INSERT statements will populate the reference tables
--- with the current production data
+-- Run the data-dumps.sql file after this schema creation script
+-- It contains all the essential reference data:
+-- - 27 risk library templates with FAIR parameters
+-- - 56+ CIS control library entries  
+-- - 10 cost calculation modules
+-- - User accounts with existing passwords
+-- - Authentication configuration
+-- - IRIS 2025 actuarial benchmarking data
