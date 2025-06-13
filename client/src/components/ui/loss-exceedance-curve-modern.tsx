@@ -673,7 +673,7 @@ export function LossExceedanceCurveModern({
       // Calculate acceptable risk buffer: difference between tolerance and actual risk
       const acceptableRiskBuffer = toleranceProbability > probability ? (toleranceProbability - probability) : null;
       
-      // Calculate IRIS benchmark probabilities with comprehensive interpolation/extrapolation
+      // Calculate IRIS benchmark probabilities - ensure values for every exposure point
       let smbBenchmarkProbability = null;
       let enterpriseBenchmarkProbability = null;
       
@@ -742,6 +742,14 @@ export function LossExceedanceCurveModern({
               );
               smbBenchmarkProbability = closest.probability * 100;
             }
+          }
+          
+          // Ensure we always have a valid SMB benchmark value
+          if (smbBenchmarkProbability === null || smbBenchmarkProbability === undefined) {
+            const closest = smbSorted.reduce((prev, curr) => 
+              Math.abs(curr.impact - lossExposure) < Math.abs(prev.impact - lossExposure) ? curr : prev
+            );
+            smbBenchmarkProbability = closest.probability * 100;
           }
         }
         
@@ -1171,6 +1179,7 @@ export function LossExceedanceCurveModern({
                     activeDot={{ r: 6, fill: "#10b981", stroke: "#fff", strokeWidth: 2 }}
                     animationDuration={1000}
                     isAnimationActive={true}
+                    connectNulls={true}
                   />
                 )}
                 
@@ -1215,6 +1224,7 @@ export function LossExceedanceCurveModern({
                     activeDot={{ r: 4, stroke: 'white', strokeWidth: 1, fill: '#10b981' }}
                     animationDuration={1000}
                     isAnimationActive={true}
+                    connectNulls={true}
                   />
                 )}
                 
@@ -1231,6 +1241,7 @@ export function LossExceedanceCurveModern({
                     activeDot={{ r: 4, stroke: 'white', strokeWidth: 1, fill: '#f97316' }}
                     animationDuration={1000}
                     isAnimationActive={true}
+                    connectNulls={true}
                   />
                 )}
               </ComposedChart>
