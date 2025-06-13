@@ -172,6 +172,7 @@ export function EnhancedControlTable({
                 <TableHead>Type</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Framework</TableHead>
+                <TableHead>Associated Risks</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Effectiveness</TableHead>
                 <TableHead>Cost</TableHead>
@@ -206,6 +207,24 @@ export function EnhancedControlTable({
                     <Badge variant="outline">
                       {(control as any).complianceFramework || 'Custom'}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {control.associatedRisks && control.associatedRisks.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {control.associatedRisks.slice(0, 2).map(riskId => (
+                          <Badge key={riskId} variant="secondary" className="text-xs">
+                            {riskId}
+                          </Badge>
+                        ))}
+                        {control.associatedRisks.length > 2 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{control.associatedRisks.length - 2}
+                          </Badge>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground text-sm">None</span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(control.implementationStatus)}>
@@ -296,6 +315,20 @@ export function EnhancedControlTable({
                   <p className="text-muted-foreground">{selectedControl.description}</p>
                 </div>
               )}
+              <div>
+                <h4 className="font-semibold mb-2">Associated Risks</h4>
+                {selectedControl.associatedRisks && selectedControl.associatedRisks.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedControl.associatedRisks.map(riskId => (
+                      <Badge key={riskId} variant="outline">
+                        Risk ID: {riskId}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-sm">No risks associated</p>
+                )}
+              </div>
             </div>
           </DialogContent>
         </Dialog>
