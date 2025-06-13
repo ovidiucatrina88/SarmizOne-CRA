@@ -172,6 +172,8 @@ export function EnhancedControlTable({
                 <TableHead>Type</TableHead>
                 <TableHead>Category</TableHead>
                 <TableHead>Framework</TableHead>
+                <TableHead>Cloud Domain</TableHead>
+                <TableHead>Compliance Mappings</TableHead>
                 <TableHead>Associated Risks</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Effectiveness</TableHead>
