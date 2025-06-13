@@ -115,6 +115,17 @@ export const itemTypeEnum = pgEnum('item_type', [
   'instance'   // Instance created for a specific risk/asset
 ]);
 
+export const complianceFrameworkEnum = pgEnum('compliance_framework', [
+  'CIS',       // CIS Controls v8
+  'NIST',      // NIST Cybersecurity Framework
+  'ISO27001',  // ISO/IEC 27001
+  'SOC2',      // SOC 2 Type II
+  'PCI_DSS',   // PCI Data Security Standard
+  'HIPAA',     // Health Insurance Portability and Accountability Act
+  'GDPR',      // General Data Protection Regulation
+  'Custom'     // Custom or organization-specific controls
+]);
+
 // Asset Inventory Module
 export const assets = pgTable('assets', {
   id: serial('id').primaryKey(),
@@ -349,6 +360,7 @@ export const controlLibrary = pgTable('control_library', {
   costPerAgent: numeric('cost_per_agent', { precision: 38, scale: 2 }).notNull().default('0'),
   isPerAgentPricing: boolean('is_per_agent_pricing').notNull().default(false),
   notes: text('notes').notNull().default(''),
+  complianceFramework: complianceFrameworkEnum('compliance_framework').notNull().default('Custom'), // Primary compliance framework
   nistCsf: text('nist_csf').array().notNull().default([]), // NIST Cybersecurity Framework mappings
   iso27001: text('iso27001').array().notNull().default([]), // ISO 27001 control mappings
   createdAt: timestamp('created_at').notNull().defaultNow(),

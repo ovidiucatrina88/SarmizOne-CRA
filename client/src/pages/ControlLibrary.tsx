@@ -876,7 +876,7 @@ export default function ControlLibrary() {
                 )}
               />
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="controlType"
@@ -926,6 +926,37 @@ export default function ControlLibrary() {
                               {category.charAt(0).toUpperCase() + category.slice(1).replace(/_/g, ' ')}
                             </SelectItem>
                           ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="complianceFramework"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Compliance Framework</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select framework" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="CIS">CIS Controls v8</SelectItem>
+                          <SelectItem value="NIST">NIST Cybersecurity Framework</SelectItem>
+                          <SelectItem value="ISO27001">ISO/IEC 27001</SelectItem>
+                          <SelectItem value="SOC2">SOC 2 Type II</SelectItem>
+                          <SelectItem value="PCI_DSS">PCI Data Security Standard</SelectItem>
+                          <SelectItem value="HIPAA">HIPAA</SelectItem>
+                          <SelectItem value="GDPR">GDPR</SelectItem>
+                          <SelectItem value="Custom">Custom/Other</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
