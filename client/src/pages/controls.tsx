@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Control, Risk } from "@shared/schema";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { PlusCircle, RefreshCw } from "lucide-react";
 import { ControlList } from "@/components/controls/control-list";
 import { EnhancedControlTable } from "@/components/controls/enhanced-control-table";
@@ -234,6 +234,12 @@ export default function Controls() {
               <DialogTitle>
                 {selectedControl ? "Edit Control" : "Add New Control"}
               </DialogTitle>
+              <DialogDescription>
+                {selectedControl 
+                  ? "Update the control details and configuration below."
+                  : "Create a new control instance with specific configuration for your environment."
+                }
+              </DialogDescription>
             </DialogHeader>
             <ControlForm control={selectedControl} onClose={handleCloseControl} />
           </DialogContent>

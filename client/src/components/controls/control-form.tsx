@@ -430,6 +430,8 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
                   </FormControl>
                   <SelectContent>
                     <SelectItem value="not_implemented">Not Implemented</SelectItem>
+                    <SelectItem value="planned">Planned</SelectItem>
+                    <SelectItem value="partially_implemented">Partially Implemented</SelectItem>
                     <SelectItem value="in_progress">In Progress</SelectItem>
                     <SelectItem value="fully_implemented">Fully Implemented</SelectItem>
                   </SelectContent>
@@ -689,6 +691,67 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
             </FormItem>
           )}
         />
+
+        {/* Asset and Legal Entity Linking Section */}
+        <div className="space-y-4 border-t pt-4">
+          <h3 className="text-lg font-medium">Entity Associations</h3>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Asset Selection */}
+            <FormField
+              control={form.control}
+              name="assetId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Associated Asset (Optional)</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value || ""}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select an asset" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="">No Asset</SelectItem>
+                      {assets?.data?.map((asset: any) => (
+                        <SelectItem key={asset.assetId} value={asset.assetId}>
+                          {asset.name} ({asset.assetId})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Link this control to a specific asset for targeted protection
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Legal Entity Selection */}
+            <FormField
+              control={form.control}
+              name="legalEntityId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Legal Entity (Optional)</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Legal entity ID" 
+                      {...field} 
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Associate this control with a specific legal entity
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
 
         {/* Form actions */}
         <div className="flex justify-end space-x-2">
