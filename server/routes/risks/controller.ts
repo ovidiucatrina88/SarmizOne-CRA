@@ -3,6 +3,7 @@ import { sendError, sendSuccess } from '../common/responses/apiResponse';
 import { riskService } from '../../services';
 import { RiskFilterDto, CreateRiskDto, UpdateRiskDto } from './dto';
 import { calculateThreatEventFrequency, calculateSusceptibility, calculateInherentRisk } from '../../../shared/utils/calculations';
+import { AutomatedRiskSummaryService } from '../../services/automatedRiskSummary';
 
 /**
  * Controller for risk-related API endpoints
@@ -297,6 +298,13 @@ export class RiskController {
       if (!result) {
         return sendError(res, { message: 'Risk calculation failed' }, 500);
       }
+      
+      // Trigger automatic risk summary recalculation to update dashboard
+      const automatedSummaryService = AutomatedRiskSummaryService.getInstance();
+      automatedSummaryService.triggerRecalculation().catch(error => {
+        console.warn('Failed to trigger risk summary recalculation:', error);
+        // Don't fail the main operation if summary update fails
+      });
       
       return sendSuccess(res, result);
     } catch (error) {

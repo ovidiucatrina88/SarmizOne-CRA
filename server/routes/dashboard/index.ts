@@ -61,38 +61,33 @@ router.get('/summary', async (req, res) => {
     const allLogs = await repository.getAllActivityLogs();
     const recentLogs = allLogs.slice(0, 10);
     
-    // Return dashboard data
-    // Get latest risk summary from centralized service
-    const latestRiskSummary = await riskSummaryService.getLatestRiskSummary();
+    // Calculate exposure curve data from current risks
+    const exposureCurveData = [];
+    const sortedRisks = [...risks]
+      .filter(r => parseFloat(r.residualRisk) > 0)
+      .sort((a, b) => parseFloat(b.residualRisk) - parseFloat(a.residualRisk));
     
-    console.log(`[Dashboard] Latest risk summary from service:`, latestRiskSummary ? {
-      totalRisks: latestRiskSummary.totalRisks,
-      totalResidualRisk: latestRiskSummary.totalResidualRisk,
-      totalInherentRisk: latestRiskSummary.totalInherentRisk
-    } : 'null');
+    if (sortedRisks.length > 0) {
+      sortedRisks.forEach((risk, index) => {
+        const impact = parseFloat(risk.residualRisk);
+        const probability = (index + 1) / sortedRisks.length;
+        exposureCurveData.push({ impact, probability });
+      });
+    }
+    
+    // Calculate percentiles from current data
+    const residualValues = risks.map(r => parseFloat(r.residualRisk)).filter(v => v > 0).sort((a, b) => b - a);
+    const minimumExposure = residualValues.length > 0 ? Math.min(...residualValues) : 0;
+    const maximumExposure = residualValues.length > 0 ? Math.max(...residualValues) : 0;
+    const meanExposure = residualValues.length > 0 ? residualValues.reduce((a, b) => a + b, 0) / residualValues.length : 0;
+    const medianExposure = residualValues.length > 0 ? residualValues[Math.floor(residualValues.length / 2)] : 0;
+    const percentile95Exposure = residualValues.length > 0 ? residualValues[Math.floor(residualValues.length * 0.05)] || maximumExposure : 0;
+    const percentile99Exposure = residualValues.length > 0 ? residualValues[Math.floor(residualValues.length * 0.01)] || maximumExposure : 0;
+    
+    console.log(`[Dashboard] Calculated exposure metrics - Min: ${minimumExposure}, Max: ${maximumExposure}, Mean: ${meanExposure}`);
     
     return sendSuccess(res, {
-      riskSummary: latestRiskSummary ? {
-        totalRisks: totalRisks, // Use directly calculated value instead of stale service data
-        criticalRisks: criticalRisks, // Use directly calculated value
-        highRisks: highRisks, // Use directly calculated value
-        mediumRisks: mediumRisks, // Use directly calculated value
-        lowRisks: lowRisks, // Use directly calculated value
-        totalInherentRisk: latestRiskSummary.totalInherentRisk,
-        totalResidualRisk: latestRiskSummary.totalResidualRisk,
-        riskReduction: latestRiskSummary.totalInherentRisk > 0 
-          ? (1 - (latestRiskSummary.totalResidualRisk / latestRiskSummary.totalInherentRisk)) * 100 
-          : 0,
-        // Include exposure curve data
-        exposureCurveData: latestRiskSummary.exposureCurveData,
-        minimumExposure: latestRiskSummary.minimumExposure,
-        maximumExposure: latestRiskSummary.maximumExposure,
-        meanExposure: latestRiskSummary.meanExposure,
-        medianExposure: latestRiskSummary.medianExposure,
-        percentile95Exposure: latestRiskSummary.percentile95Exposure,
-        percentile99Exposure: latestRiskSummary.percentile99Exposure
-      } : {
-        // Fallback to calculated values if no summary exists
+      riskSummary: {
         totalRisks,
         criticalRisks,
         highRisks,
@@ -102,7 +97,15 @@ router.get('/summary', async (req, res) => {
         totalResidualRisk,
         riskReduction: totalInherentRisk > 0 
           ? (1 - (totalResidualRisk / totalInherentRisk)) * 100 
-          : 0
+          : 0,
+        // Use freshly calculated exposure curve data
+        exposureCurveData,
+        minimumExposure,
+        maximumExposure,
+        meanExposure,
+        medianExposure,
+        percentile95Exposure,
+        percentile99Exposure
       },
       controlSummary: {
         totalControls: controls.length,
