@@ -350,6 +350,7 @@ export const controls = pgTable('controls', {
   eResist: numeric('e_resist', { precision: 5, scale: 2 }).default('0.00'), // Resistance effectiveness (0-1)
   varFreq: integer('var_freq').default(0), // Frequency variance
   varDuration: integer('var_duration').default(0), // Duration variance
+  complianceFramework: complianceFrameworkEnum('compliance_framework').default('CIS'), // Compliance framework reference
   
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
