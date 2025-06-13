@@ -353,8 +353,9 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
                     type="number" 
                     min="0" 
                     max="100" 
-                    {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    step="0.1"
+                    value={field.value}
+                    onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
                   />
                 </FormControl>
                 <FormMessage />
@@ -437,8 +438,8 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
                         min="0" 
                         step="0.01"
                         placeholder="0.00"
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        value={field.value || ''}
+                        onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
                       />
                     </FormControl>
                     <FormMessage />
@@ -459,8 +460,8 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
                           min="0" 
                           step="0.01"
                           placeholder="0.00"
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          value={field.value || ''}
+                          onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
                         />
                       </FormControl>
                       <FormMessage />
@@ -479,8 +480,8 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
                           type="number" 
                           min="0" 
                           placeholder="0"
-                          {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          value={field.value || ''}
+                          onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
                         />
                       </FormControl>
                       <FormMessage />
