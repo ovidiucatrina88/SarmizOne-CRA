@@ -73,11 +73,11 @@ router.get('/summary', async (req, res) => {
     
     return sendSuccess(res, {
       riskSummary: latestRiskSummary ? {
-        totalRisks: latestRiskSummary.totalRisks,
-        criticalRisks: latestRiskSummary.criticalRisks,
-        highRisks: latestRiskSummary.highRisks,
-        mediumRisks: latestRiskSummary.mediumRisks,
-        lowRisks: latestRiskSummary.lowRisks,
+        totalRisks: totalRisks, // Use directly calculated value instead of stale service data
+        criticalRisks: criticalRisks, // Use directly calculated value
+        highRisks: highRisks, // Use directly calculated value
+        mediumRisks: mediumRisks, // Use directly calculated value
+        lowRisks: lowRisks, // Use directly calculated value
         totalInherentRisk: latestRiskSummary.totalInherentRisk,
         totalResidualRisk: latestRiskSummary.totalResidualRisk,
         riskReduction: latestRiskSummary.totalInherentRisk > 0 
