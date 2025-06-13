@@ -434,9 +434,9 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
         <IRISBenchmarkCard />
         
-        <RiskBreakdown 
-          title="Risk by Severity"
-          items={riskBySeverity}
+        <RiskCategorySeverityCard 
+          riskByCategory={riskByCategory}
+          riskBySeverity={riskBySeverity}
         />
         
         <TopRisks 
@@ -453,37 +453,11 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Risk Response Status and Category Breakdown */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      {/* Risk Response Status */}
+      <div className="mb-8">
         <RiskResponseStatus 
           responseTypeData={responseTypeData}
           riskReduction={riskReduction}
-        />
-        
-        <RiskBreakdown 
-          title="Risk by Category"
-          items={{
-            operational: {
-              count: 1,
-              percentage: 50,
-              color: "bg-blue-600"
-            },
-            strategic: {
-              count: 0,
-              percentage: 0,
-              color: "bg-indigo-600"
-            },
-            compliance: {
-              count: 1,
-              percentage: 50,
-              color: "bg-purple-600"
-            },
-            financial: {
-              count: 0,
-              percentage: 0,
-              color: "bg-teal-600"
-            }
-          }}
         />
       </div>
     </Layout>
