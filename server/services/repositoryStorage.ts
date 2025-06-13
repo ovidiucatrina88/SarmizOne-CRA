@@ -285,41 +285,7 @@ export class DatabaseStorage {
   }
 
   async createControl(control: InsertControl): Promise<Control> {
-    console.log("Creating control with data:", JSON.stringify(control, null, 2));
-    
-    // Build the control object with proper field mapping
-    const controlData: any = {
-      controlId: control.controlId,
-      name: control.name,
-      description: control.description || '',
-      associatedRisks: control.associatedRisks || [],
-      controlType: control.controlType,
-      controlCategory: control.controlCategory,
-      implementationStatus: control.implementationStatus,
-      controlEffectiveness: control.controlEffectiveness,
-      implementationCost: control.implementationCost,
-      costPerAgent: control.costPerAgent || 0,
-      isPerAgentPricing: control.isPerAgentPricing || false,
-      deployedAgentCount: control.deployedAgentCount || 0,
-      notes: control.notes || '',
-      libraryItemId: control.libraryItemId,
-      itemType: control.itemType || 'instance',
-      assetId: control.assetId,
-      riskId: control.riskId,
-      legalEntityId: control.legalEntityId,
-      // FAIR methodology effectiveness fields
-      eAvoid: (control as any).eAvoid || 0,
-      eDeter: (control as any).eDeter || 0,
-      eDetect: (control as any).eDetect || 0,
-      eResist: (control as any).eResist || 0,
-      varFreq: (control as any).varFreq || 0,
-      varDuration: (control as any).varDuration || 0
-    };
-    
-    console.log("Mapped control data for insertion:", JSON.stringify(controlData, null, 2));
-    
-    const [createdControl] = await db.insert(controls).values(controlData).returning();
-    console.log("Created control result:", JSON.stringify(createdControl, null, 2));
+    const [createdControl] = await db.insert(controls).values(control).returning();
     return createdControl;
   }
 
