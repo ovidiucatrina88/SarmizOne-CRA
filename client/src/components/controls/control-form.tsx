@@ -89,6 +89,19 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
     queryKey: ["/api/risks"],
   });
 
+  // Initialize selected risks when control and risks data are available
+  useEffect(() => {
+    if (control && risks?.data && Array.isArray(risks.data)) {
+      // Convert database IDs in associatedRisks to risk IDs for display
+      const riskIds = (control.associatedRisks || []).map(dbId => {
+        const risk = risks.data.find((r: any) => r.id.toString() === dbId.toString());
+        return risk ? risk.riskId : null;
+      }).filter(Boolean);
+      
+      setSelectedRisks(riskIds);
+    }
+  }, [control, risks]);
+
   // Fetch assets for agent count validation
   const { data: assets } = useQuery({
     queryKey: ["/api/assets"],
@@ -203,8 +216,15 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
   // Create mutation for adding/updating control
   const mutation = useMutation({
     mutationFn: async (values: z.infer<typeof controlFormSchema>) => {
-      // Include the selected risks
-      values.associatedRisks = selectedRisks;
+      // Convert risk IDs back to database IDs for storage
+      if (risks?.data && Array.isArray(risks.data)) {
+        values.associatedRisks = selectedRisks.map(riskId => {
+          const risk = risks.data.find((r: any) => r.riskId === riskId);
+          return risk ? risk.id.toString() : null;
+        }).filter(Boolean);
+      } else {
+        values.associatedRisks = [];
+      }
       
       // Add itemType based on whether this is a template or instance
       values.itemType = isTemplate ? "template" : "instance";
