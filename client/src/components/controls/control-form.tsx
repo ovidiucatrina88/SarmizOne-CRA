@@ -58,6 +58,14 @@ const controlFormSchema = insertControlSchema.extend({
   assetId: z.string().optional(),
   riskId: z.number().optional(),
   legalEntityId: z.string().optional(),
+  // Control effectiveness components (FAIR methodology)
+  eAvoid: z.number().min(0).max(1, "Avoidance effectiveness must be between 0 and 1").optional(),
+  eDeter: z.number().min(0).max(1, "Deterrence effectiveness must be between 0 and 1").optional(),
+  eDetect: z.number().min(0).max(1, "Detection effectiveness must be between 0 and 1").optional(),
+  eResist: z.number().min(0).max(1, "Resistance effectiveness must be between 0 and 1").optional(),
+  // Variance fields
+  varFreq: z.number().min(0, "Frequency variance must be positive").optional(),
+  varDuration: z.number().min(0, "Duration variance must be positive").optional(),
 });
 
 type ControlFormProps = {
@@ -157,6 +165,13 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
           assetId: control.assetId || undefined,
           riskId: control.riskId || undefined,
           legalEntityId: control.legalEntityId || undefined,
+          // Control effectiveness components
+          eAvoid: Number((control as any).eAvoid || 0),
+          eDeter: Number((control as any).eDeter || 0),
+          eDetect: Number((control as any).eDetect || 0),
+          eResist: Number((control as any).eResist || 0),
+          varFreq: Number((control as any).varFreq || 0),
+          varDuration: Number((control as any).varDuration || 0),
         }
       : {
           controlId: "",
@@ -177,6 +192,13 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
           assetId: undefined,
           riskId: undefined,
           legalEntityId: undefined,
+          // Control effectiveness components defaults
+          eAvoid: 0,
+          eDeter: 0,
+          eDetect: 0,
+          eResist: 0,
+          varFreq: 0,
+          varDuration: 0,
         },
   });
 
@@ -692,6 +714,166 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
           )}
         />
 
+        {/* FAIR Methodology Control Effectiveness Section */}
+        <div className="space-y-4 border-t pt-4">
+          <h3 className="text-lg font-medium">FAIR Control Effectiveness</h3>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Avoidance Effectiveness */}
+            <FormField
+              control={form.control}
+              name="eAvoid"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Avoidance Effectiveness (0-1)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="1"
+                      placeholder="0.00"
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Probability the control prevents the threat event
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Deterrence Effectiveness */}
+            <FormField
+              control={form.control}
+              name="eDeter"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Deterrence Effectiveness (0-1)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="1"
+                      placeholder="0.00"
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Probability the control deters threat actors
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Detection Effectiveness */}
+            <FormField
+              control={form.control}
+              name="eDetect"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Detection Effectiveness (0-1)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="1"
+                      placeholder="0.00"
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Probability the control detects the threat event
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Resistance Effectiveness */}
+            <FormField
+              control={form.control}
+              name="eResist"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Resistance Effectiveness (0-1)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      max="1"
+                      placeholder="0.00"
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Probability the control resists successful attacks
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Frequency Variance */}
+            <FormField
+              control={form.control}
+              name="varFreq"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Frequency Variance</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="1"
+                      min="0"
+                      placeholder="0"
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Statistical variance in control frequency effectiveness
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Duration Variance */}
+            <FormField
+              control={form.control}
+              name="varDuration"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Duration Variance</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="1"
+                      min="0"
+                      placeholder="0"
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Statistical variance in control duration effectiveness
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
+
         {/* Asset and Legal Entity Linking Section */}
         <div className="space-y-4 border-t pt-4">
           <h3 className="text-lg font-medium">Entity Associations</h3>
@@ -713,7 +895,7 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">No Asset</SelectItem>
+                      <SelectItem value="none">No Asset</SelectItem>
                       {assets?.data?.map((asset: any) => (
                         <SelectItem key={asset.assetId} value={asset.assetId}>
                           {asset.name} ({asset.assetId})
