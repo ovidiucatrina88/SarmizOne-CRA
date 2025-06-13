@@ -684,7 +684,7 @@ export function LossExceedanceCurveModern({
             Math.abs(point.impact - lossExposure) < lossExposure * 0.1
           );
           if (smbMatch) {
-            smbBenchmarkProbability = smbMatch.probability;
+            smbBenchmarkProbability = smbMatch.probability * 100; // Convert to percentage
           } else {
             // Interpolate between SMB benchmark points
             const smbSorted = irisBenchmarks.smb.sort((a, b) => a.impact - b.impact);
@@ -695,7 +695,7 @@ export function LossExceedanceCurveModern({
                 const range = upper.impact - lower.impact;
                 const position = lossExposure - lower.impact;
                 const ratio = range > 0 ? position / range : 0;
-                smbBenchmarkProbability = lower.probability - (lower.probability - upper.probability) * ratio;
+                smbBenchmarkProbability = (lower.probability - (lower.probability - upper.probability) * ratio) * 100; // Convert to percentage
                 break;
               }
             }
@@ -708,7 +708,7 @@ export function LossExceedanceCurveModern({
             Math.abs(point.impact - lossExposure) < lossExposure * 0.1
           );
           if (enterpriseMatch) {
-            enterpriseBenchmarkProbability = enterpriseMatch.probability;
+            enterpriseBenchmarkProbability = enterpriseMatch.probability * 100; // Convert to percentage
           } else {
             // Interpolate between Enterprise benchmark points
             const enterpriseSorted = irisBenchmarks.enterprise.sort((a, b) => a.impact - b.impact);
@@ -719,7 +719,7 @@ export function LossExceedanceCurveModern({
                 const range = upper.impact - lower.impact;
                 const position = lossExposure - lower.impact;
                 const ratio = range > 0 ? position / range : 0;
-                enterpriseBenchmarkProbability = lower.probability - (lower.probability - upper.probability) * ratio;
+                enterpriseBenchmarkProbability = (lower.probability - (lower.probability - upper.probability) * ratio) * 100; // Convert to percentage
                 break;
               }
             }
