@@ -49,11 +49,11 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
   const [selectedControls, setSelectedControls] = useState<string[]>([]);
 
   const { data: response, isLoading, error } = useQuery({
-    queryKey: ['/api/risks', riskId, 'control-suggestions'],
+    queryKey: [`/api/risks/${riskId}/control-suggestions`],
     enabled: !!riskId
   });
 
-  // Extract the data from the API response structure
+  // Extract the data from the API response structure  
   const suggestions = response?.data as ControlSuggestionsResponse;
 
   const associateControlMutation = useMutation({
@@ -67,8 +67,8 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/risks', riskId, 'control-suggestions'] });
-      queryClient.invalidateQueries({ queryKey: ['/api/risks', riskId, 'controls'] });
+      queryClient.invalidateQueries({ queryKey: [`/api/risks/${riskId}/control-suggestions`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/risks/${riskId}/controls`] });
       toast({ title: 'Control associated successfully' });
     },
     onError: () => {

@@ -134,7 +134,8 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
         directLength: queryResult?.length || 0
       });
       
-      relevantControls = queryResult || [];
+      // Properly extract rows from Drizzle result
+      relevantControls = queryResult?.rows || [];
       
     } catch (error) {
       console.error(`[ControlSuggestions] Database query failed:`, error);
