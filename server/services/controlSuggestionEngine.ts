@@ -1,6 +1,6 @@
 /**
  * Control Suggestion Engine with FAIR Impact Categorization
- * Suggests controls based on their impact on likelihood vs loss magnitude
+ * Reads from configured control mappings (34 risk mappings + 59 asset mappings)
  */
 
 import { db } from '../db';
