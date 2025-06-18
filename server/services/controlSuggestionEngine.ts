@@ -106,8 +106,8 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
     // DEBUG: Test the database tables directly
     console.log(`[ControlSuggestions] Testing database tables...`);
     
-    // Direct query using raw SQL to ensure we get the data
-    const relevantControls = await db.execute(sql`
+    // Direct query using raw SQL - fix data access
+    const queryResult = await db.execute(sql`
       SELECT cl.control_id, cl.name, cl.description, cl.control_type, cl.control_category,
              cl.implementation_status, cl.control_effectiveness, cl.implementation_cost,
              cl.cost_per_agent, cl.is_per_agent_pricing,
@@ -121,8 +121,11 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
       LIMIT 20
     `);
     
-    console.log(`[ControlSuggestions] Query returned ${Array.isArray(relevantControls) ? relevantControls.length : 0} controls`);
-    if (Array.isArray(relevantControls) && relevantControls.length > 0) {
+    // Access the actual rows from the query result
+    const relevantControls = Array.isArray(queryResult) ? queryResult : (queryResult.rows || []);
+    
+    console.log(`[ControlSuggestions] Query returned ${relevantControls.length} controls`);
+    if (relevantControls.length > 0) {
       console.log(`[ControlSuggestions] Sample control:`, { id: relevantControls[0].control_id, name: relevantControls[0].name, score: relevantControls[0].risk_relevance });
     }
     
@@ -134,11 +137,8 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
       WHERE rc.risk_id = ${riskData.id}
     `);
     
-    const associatedControlIds = new Set(
-      Array.isArray(associatedControlsQuery) 
-        ? associatedControlsQuery.map((c: any) => c.control_id) 
-        : []
-    );
+    const associatedRows = Array.isArray(associatedControlsQuery) ? associatedControlsQuery : (associatedControlsQuery.rows || []);
+    const associatedControlIds = new Set(associatedRows.map((c: any) => c.control_id));
     
     const currentExposure = {
       inherent: parseFloat(riskData.inherentRisk || '0'),
@@ -147,7 +147,7 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
     
     const suggestions: ControlSuggestion[] = [];
     
-    for (const control of Array.isArray(relevantControls) ? relevantControls : []) {
+    for (const control of relevantControls) {
       let impactCategory;
       if (control.risk_impact_type) {
         impactCategory = {
