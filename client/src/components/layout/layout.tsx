@@ -66,7 +66,8 @@ const navigation = [
     icon: Shield,
     subItems: [
       { name: "My Controls", href: "/controls" },
-      { name: "Control Library", href: "/control-library" }
+      { name: "Control Library", href: "/control-library" },
+      { name: "Control Mappings", href: "/control-mappings" }
     ]
   },
   { 
