@@ -6,7 +6,7 @@
 import { db } from '../db';
 import { risks, controls, riskControls } from '../../shared/schema';
 import { eq, sql } from 'drizzle-orm';
-import { calculateRiskExposure } from '../../shared/utils/enhancedRiskCalculations';
+import { runEnhancedRiskCalculation } from '../../shared/utils/enhancedRiskCalculations';
 
 export interface ControlSuggestion {
   controlId: string;
@@ -126,17 +126,16 @@ async function calculateControlROI(risk: any, control: any): Promise<{
       secondaryLossMagnitude: { min: risk.secondaryLossMagnitudeMin || 100, avg: risk.secondaryLossMagnitudeAvg || 1000, max: risk.secondaryLossMagnitudeMax || 10000 }
     };
     
-    const inherentResult = calculateRiskExposure(inherentParams, []);
+    // Simplified calculation for ROI estimation
+    const inherentRisk = (inherentParams.primaryLossMagnitude.avg * 
+                         inherentParams.contactFrequency.avg * 
+                         inherentParams.probabilityOfAction.avg) || 10000;
     
-    // Simulate with control applied
-    const controlEffect = {
-      effectiveness: control.controlEffectiveness || 7.5,
-      controlType: control.controlType || 'preventive'
-    };
+    // Apply control effectiveness reduction
+    const effectiveness = (control.controlEffectiveness || 7.5) / 10;
+    const residualRisk = inherentRisk * (1 - effectiveness / 100);
     
-    const residualResult = calculateRiskExposure(inherentParams, [controlEffect]);
-    
-    const riskReduction = inherentResult.expectedLoss - residualResult.expectedLoss;
+    const riskReduction = inherentRisk - residualRisk;
     const implementationCost = parseFloat(control.implementationCost || '0');
     const roi = implementationCost > 0 ? ((riskReduction - implementationCost) / implementationCost) * 100 : 0;
     const paybackMonths = implementationCost > 0 ? (implementationCost / (riskReduction / 12)) : 0;

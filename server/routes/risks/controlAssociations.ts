@@ -72,11 +72,11 @@ router.post('/:riskId/controls', async (req, res) => {
       
       // Log the activity
       await db.insert(activityLogs).values({
-        action: 'control_associated',
+        activity: 'control_associated',
         entityType: 'risk',
-        entityId: riskData.id.toString(),
-        details: `Associated control ${control.name} with risk ${riskData.name} via ${associationType}`,
-        userId: 1 // TODO: Get from auth context
+        entity: riskData.riskId,
+        user: 'admin',
+        entityId: riskData.id.toString()
       });
     }
     
@@ -154,11 +154,11 @@ router.delete('/:riskId/controls/:controlId', async (req, res) => {
     
     // Log the activity
     await db.insert(activityLogs).values({
-      action: 'control_disassociated',
+      activity: 'control_disassociated',
       entityType: 'risk',
-      entityId: riskData.id.toString(),
-      details: `Removed control ${controlData.name} from risk ${riskData.name}`,
-      userId: 1 // TODO: Get from auth context
+      entity: riskData.riskId,
+      user: 'admin',
+      entityId: riskData.id.toString()
     });
     
     console.log(`[ControlAssociation] Removed association successfully`);
@@ -261,11 +261,11 @@ router.put('/:riskId/controls', async (req, res) => {
     
     // Log the activity
     await db.insert(activityLogs).values({
-      action: 'controls_bulk_updated',
+      activity: 'controls_bulk_updated',
       entityType: 'risk',
-      entityId: riskData.id.toString(),
-      details: `Bulk updated controls for risk ${riskData.name}: ${selectedControls.map(c => c.name).join(', ')}`,
-      userId: 1 // TODO: Get from auth context
+      entity: riskData.riskId,
+      user: 'admin',
+      entityId: riskData.id.toString()
     });
     
     console.log(`[ControlAssociation] Created ${newAssociations.length} associations`);
