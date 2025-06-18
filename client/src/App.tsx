@@ -22,6 +22,7 @@ import Controls from "@/pages/controls";
 import ControlLibrary from "@/pages/ControlLibrary";
 import ControlDetailPage from "@/pages/ControlDetailPage";
 import ControlROI from "@/pages/control-roi";
+import ControlMappingManager from "@/pages/ControlMappingManager";
 import Responses from "@/pages/responses";
 import Reports from "@/pages/reports";
 import Integrations from "@/pages/integrations";

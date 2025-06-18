@@ -156,7 +156,97 @@ async function calculateControlROI(risk: any, control: any): Promise<{
 }
 
 /**
- * Get control suggestions for a specific risk
+ * Calculate control relevance based on asset types and risk characteristics
+ */
+async function calculateIntelligentRelevance(control: any, riskData: any): Promise<{
+  score: number;
+  reasoning: string[];
+  category: 'likelihood' | 'magnitude' | 'both';
+}> {
+  const reasoning: string[] = [];
+  let totalScore = 0;
+  let assetMatchCount = 0;
+  let riskMatchCount = 0;
+
+  // Get associated assets for this risk
+  const riskAssets = riskData.associatedAssets || [];
+  
+  if (riskAssets.length > 0) {
+    // Get asset details
+    const assetDetails = await db.select()
+      .from(assets)
+      .where(inArray(assets.assetId, riskAssets));
+    
+    const assetTypes = assetDetails.map(a => a.type);
+    
+    // Check asset-type mappings
+    const assetMappings = await db.query(`
+      SELECT relevance_score, reasoning, asset_type 
+      FROM control_asset_mappings 
+      WHERE control_id = $1 AND asset_type = ANY($2)
+    `, [control.controlId, assetTypes]);
+    
+    if (assetMappings.rows.length > 0) {
+      const avgAssetScore = assetMappings.rows.reduce((sum, row) => sum + row.relevance_score, 0) / assetMappings.rows.length;
+      totalScore += avgAssetScore * 0.4; // 40% weight for asset matching
+      assetMatchCount = assetMappings.rows.length;
+      reasoning.push(`Asset relevance: ${Math.round(avgAssetScore)}% (${assetTypes.join(', ')})`);
+    }
+  }
+
+  // Check risk-based mappings
+  const riskMappings = await db.query(`
+    SELECT relevance_score, impact_type, reasoning 
+    FROM control_risk_mappings 
+    WHERE control_id = $1 
+    AND (
+      threat_community = $2 OR threat_community IS NULL
+    )
+    AND (
+      risk_category = $3 OR risk_category IS NULL
+    )
+    ORDER BY relevance_score DESC
+    LIMIT 3
+  `, [control.controlId, riskData.threatCommunity, riskData.riskCategory]);
+
+  let riskScore = 0;
+  let impactCategory: 'likelihood' | 'magnitude' | 'both' = 'both';
+
+  if (riskMappings.rows.length > 0) {
+    riskScore = riskMappings.rows.reduce((sum, row) => sum + row.relevance_score, 0) / riskMappings.rows.length;
+    totalScore += riskScore * 0.4; // 40% weight for risk matching
+    riskMatchCount = riskMappings.rows.length;
+    
+    // Use the highest-scoring mapping's impact type
+    impactCategory = riskMappings.rows[0].impact_type || 'both';
+    reasoning.push(`Risk relevance: ${Math.round(riskScore)}% (${riskData.threatCommunity || 'general'} threats)`);
+  }
+
+  // Fallback to pattern matching if no database mappings
+  if (assetMatchCount === 0 && riskMatchCount === 0) {
+    const patternMatch = categorizeControlImpact(control);
+    totalScore = patternMatch.score * 0.2; // Lower weight for pattern matching
+    impactCategory = patternMatch.category;
+    reasoning.push(`Pattern match: ${patternMatch.reasoning}`);
+  } else {
+    // Add pattern matching as a bonus
+    const patternMatch = categorizeControlImpact(control);
+    totalScore += patternMatch.score * 0.2; // 20% weight for pattern matching
+    reasoning.push(`Pattern bonus: ${patternMatch.reasoning}`);
+  }
+
+  // Ensure score doesn't exceed 100
+  totalScore = Math.min(totalScore, 100);
+
+  return {
+    score: totalScore,
+    reasoning,
+    category: impactCategory
+  };
+}
+
+/**
+ * Get control suggestions for a specific risk using intelligent asset-type and risk-based mapping
  */
 export async function getControlSuggestions(riskId: string): Promise<ControlSuggestionResponse> {
   try {
@@ -168,17 +258,21 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
     
     const riskData = risk[0];
     
-    // Get all controls
-    const allControls = await db.select().from(controls);
+    // Get all controls from control library (templates)
+    const allControls = await db.query(`
+      SELECT * FROM control_library 
+      ORDER BY control_id
+    `);
     
-    // Get currently associated controls
-    const associatedControls = await db
-      .select({ controlId: controls.id })
-      .from(riskControls)
-      .innerJoin(controls, eq(riskControls.controlId, controls.id))
-      .where(eq(riskControls.riskId, riskData.id));
+    // Get currently associated controls for this risk
+    const associatedControls = await db.query(`
+      SELECT c.control_id
+      FROM risk_controls rc
+      JOIN controls c ON rc.control_id = c.id
+      WHERE rc.risk_id = $1
+    `, [riskData.id]);
     
-    const associatedControlIds = new Set(associatedControls.map(c => c.controlId));
+    const associatedControlIds = new Set(associatedControls.rows.map(c => c.control_id));
     
     // Calculate current risk exposure
     const currentExposure = {
@@ -186,49 +280,52 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
       residual: parseFloat(riskData.residualRisk || '0')
     };
     
-    // Process each control
+    // Process each control with intelligent relevance calculation
     const suggestions: ControlSuggestion[] = [];
     
-    for (const control of allControls) {
-      const impact = categorizeControlImpact(control);
+    for (const control of allControls.rows) {
+      const relevance = await calculateIntelligentRelevance(control, riskData);
       const roiMetrics = await calculateControlROI(riskData, control);
       
       const suggestion: ControlSuggestion = {
-        controlId: control.controlId,
+        controlId: control.control_id,
         name: control.name,
         description: control.description || '',
-        controlType: control.controlType,
-        controlCategory: control.controlCategory,
-        implementationStatus: control.implementationStatus,
-        controlEffectiveness: control.controlEffectiveness || 0,
-        implementationCost: control.implementationCost || '0',
-        costPerAgent: control.costPerAgent || '0',
-        isPerAgentPricing: control.isPerAgentPricing || false,
+        controlType: control.control_type,
+        controlCategory: control.control_category,
+        implementationStatus: control.implementation_status,
+        controlEffectiveness: control.control_effectiveness || 0,
+        implementationCost: control.implementation_cost || '0',
+        costPerAgent: control.cost_per_agent || '0',
+        isPerAgentPricing: control.is_per_agent_pricing || false,
         
-        impactCategory: impact.category,
-        matchScore: impact.score,
-        priority: impact.score >= 85 ? 'high' : impact.score >= 70 ? 'medium' : 'low',
-        reasoning: impact.reasoning,
+        impactCategory: relevance.category,
+        matchScore: relevance.score,
+        priority: relevance.score >= 80 ? 'high' : relevance.score >= 60 ? 'medium' : 'low',
+        reasoning: relevance.reasoning.join('; '),
         
         estimatedRiskReduction: roiMetrics.estimatedRiskReduction,
         roi: roiMetrics.roi,
         paybackMonths: roiMetrics.paybackMonths,
-        isAssociated: associatedControlIds.has(control.id)
+        isAssociated: associatedControlIds.has(control.control_id)
       };
       
-      suggestions.push(suggestion);
+      // Only include controls with reasonable relevance
+      if (relevance.score > 30 || associatedControlIds.has(control.control_id)) {
+        suggestions.push(suggestion);
+      }
     }
     
-    // Sort by match score and ROI
+    // Sort by relevance score, then ROI, with associated controls first
     suggestions.sort((a, b) => {
       if (a.isAssociated !== b.isAssociated) return a.isAssociated ? -1 : 1;
-      return (b.matchScore * 0.7 + b.roi * 0.3) - (a.matchScore * 0.7 + a.roi * 0.3);
+      return (b.matchScore * 0.6 + Math.max(0, b.roi) * 0.4) - (a.matchScore * 0.6 + Math.max(0, a.roi) * 0.4);
     });
     
     // Categorize suggestions
-    const likelihoodControls = suggestions.filter(s => s.impactCategory === 'likelihood');
-    const magnitudeControls = suggestions.filter(s => s.impactCategory === 'magnitude');
-    const bothControls = suggestions.filter(s => s.impactCategory === 'both');
+    const likelihoodControls = suggestions.filter(s => s.impactCategory === 'likelihood').slice(0, 10);
+    const magnitudeControls = suggestions.filter(s => s.impactCategory === 'magnitude').slice(0, 10);
+    const bothControls = suggestions.filter(s => s.impactCategory === 'both').slice(0, 10);
     
     return {
       likelihoodControls,
