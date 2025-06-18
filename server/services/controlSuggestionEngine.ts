@@ -151,8 +151,7 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
       }
       
       const riskRelevance = parseFloat(control.risk_relevance || '0');
-      const assetRelevance = parseFloat(control.asset_relevance || '0');
-      const baseScore = Math.max(riskRelevance, assetRelevance, impactCategory.score);
+      const baseScore = Math.max(riskRelevance, impactCategory.score);
       
       const suggestion: ControlSuggestion = {
         controlId: String(control.control_id || ''),
