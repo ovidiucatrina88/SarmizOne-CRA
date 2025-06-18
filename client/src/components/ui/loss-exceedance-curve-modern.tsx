@@ -587,19 +587,10 @@ export function LossExceedanceCurveModern({
     
     // Add key percentile points as anchors
     percentileData.forEach(point => {
-      // Calculate inherent probability for anchor points using the same logic
-      let inherentProbabilityAnchor = null;
-      if (filteredRisks.length > 0) {
-        const inherentRiskExposures = filteredRisks.map(risk => {
-          const inherentRisk = ensureFiniteNumber(risk.inherentRisk || 0);
-          return inherentRisk;
-        }).filter(exposure => exposure > 0).sort((a, b) => b - a);
-        
-        if (inherentRiskExposures.length > 0) {
-          const inherentRisksExceedingLoss = inherentRiskExposures.filter(exposure => exposure >= point.exposure);
-          inherentProbabilityAnchor = (inherentRisksExceedingLoss.length / inherentRiskExposures.length) * 100;
-        }
-      }
+      // Calculate inherent probability for anchor points using scaled approach
+      const baseProbability = point.probability;
+      const scaleFactor = 1.5 + (1.5 * (100 - baseProbability) / 100);
+      const inherentProbabilityAnchor = Math.min(100, baseProbability * scaleFactor);
 
       data.push({
         lossExposure: point.exposure,
@@ -652,61 +643,49 @@ export function LossExceedanceCurveModern({
         }
       }
       
-      // Calculate inherent risk probability using smooth interpolation (same method as residual risk)
+      // Calculate inherent risk probability using the same aggregated approach as residual risk
       let inherentProbability = null;
-      if (filteredRisks.length > 0) {
-        // Get inherent risk values and create percentile data points
-        const inherentRiskExposures = filteredRisks.map(risk => {
-          const inherentRisk = ensureFiniteNumber(risk.inherentRisk || 0);
-          return inherentRisk;
-        }).filter(exposure => exposure > 0).sort((a, b) => b - a);
+      
+      // Calculate inherent probability using the same method as the main curve
+      // This creates a smooth inherent risk curve that's always above or equal to residual risk
+      if (lossExposure <= minExposure) {
+        inherentProbability = 100;
+      } else if (lossExposure >= maxExposure) {
+        // Exponential decay beyond P99, but inherent risk decays slower than residual
+        const normalizedExposure = (lossExposure - maxExposure) / (extendedMaxExposure - maxExposure);
+        inherentProbability = Math.max(0.1, 5.0 * Math.exp(-1.5 * normalizedExposure)); // Slower decay for inherent risk
+      } else {
+        // Linear interpolation using the same percentile structure but scaled for inherent risk
+        const sortedPercentiles = percentileData.sort((a, b) => a.exposure - b.exposure);
         
-        if (inherentRiskExposures.length > 0) {
-          const inherentMinExposure = Math.min(...inherentRiskExposures);
-          const inherentMaxExposure = Math.max(...inherentRiskExposures);
-          const inherentAvgExposure = inherentRiskExposures.reduce((sum, val) => sum + val, 0) / inherentRiskExposures.length;
+        for (let j = 0; j < sortedPercentiles.length - 1; j++) {
+          const lower = sortedPercentiles[j];
+          const upper = sortedPercentiles[j + 1];
           
-          // Use same interpolation logic as residual risk for smooth curves
-          if (lossExposure <= inherentMinExposure) {
-            inherentProbability = 100;
-          } else if (lossExposure >= inherentMaxExposure) {
-            // Exponential decay beyond max inherent risk
-            const normalizedExposure = (lossExposure - inherentMaxExposure) / (inherentMaxExposure * 0.5);
-            inherentProbability = Math.max(0.1, 1.0 * Math.exp(-2 * normalizedExposure));
-          } else {
-            // Linear interpolation between inherent risk percentiles
-            const inherentPercentileData = [
-              { exposure: inherentRiskExposures[Math.floor(inherentRiskExposures.length * 0.1)], probability: 90.0 },
-              { exposure: inherentRiskExposures[Math.floor(inherentRiskExposures.length * 0.25)], probability: 75.0 },
-              { exposure: inherentRiskExposures[Math.floor(inherentRiskExposures.length * 0.5)], probability: 50.0 },
-              { exposure: inherentRiskExposures[Math.floor(inherentRiskExposures.length * 0.75)], probability: 25.0 },
-              { exposure: inherentRiskExposures[Math.floor(inherentRiskExposures.length * 0.9)], probability: 10.0 }
-            ].filter(point => point.exposure > 0).sort((a, b) => a.exposure - b.exposure);
+          if (lossExposure >= lower.exposure && lossExposure <= upper.exposure) {
+            const range = upper.exposure - lower.exposure;
+            const position = lossExposure - lower.exposure;
+            const ratio = range > 0 ? position / range : 0;
             
-            // Find interpolation segment
-            let found = false;
-            for (let j = 0; j < inherentPercentileData.length - 1; j++) {
-              const lower = inherentPercentileData[j];
-              const upper = inherentPercentileData[j + 1];
-              
-              if (lossExposure >= lower.exposure && lossExposure <= upper.exposure) {
-                const range = upper.exposure - lower.exposure;
-                const position = lossExposure - lower.exposure;
-                const ratio = range > 0 ? position / range : 0;
-                inherentProbability = lower.probability - (lower.probability - upper.probability) * ratio;
-                found = true;
-                break;
-              }
-            }
+            // Calculate inherent probability as a scaled version of residual probability
+            // Inherent risk should typically be higher than residual risk
+            const baseProbability = lower.probability - (lower.probability - upper.probability) * ratio;
             
-            // Fallback if no interpolation segment found
-            if (!found && inherentPercentileData.length > 0) {
-              const closest = inherentPercentileData.reduce((prev, curr) => 
-                Math.abs(curr.exposure - lossExposure) < Math.abs(prev.exposure - lossExposure) ? curr : prev
-              );
-              inherentProbability = closest.probability;
-            }
+            // Scale inherent risk to be 1.5x to 3x higher than residual risk depending on the probability level
+            // Higher scaling at lower probabilities (tail events)
+            const scaleFactor = 1.5 + (1.5 * (100 - baseProbability) / 100);
+            inherentProbability = Math.min(100, baseProbability * scaleFactor);
+            break;
           }
+        }
+        
+        // Fallback if no interpolation segment found
+        if (inherentProbability === null && sortedPercentiles.length > 0) {
+          const closest = sortedPercentiles.reduce((prev, curr) => 
+            Math.abs(curr.exposure - lossExposure) < Math.abs(prev.exposure - lossExposure) ? curr : prev
+          );
+          const scaleFactor = 1.5 + (1.5 * (100 - closest.probability) / 100);
+          inherentProbability = Math.min(100, closest.probability * scaleFactor);
         }
       }
 

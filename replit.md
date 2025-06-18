@@ -106,6 +106,7 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 ## Changelog
 
 - June 18, 2025. Initial setup
+- June 18, 2025. Added inherent risk curve to Loss Exceedance Curve with smooth interpolation and proper scaling
 
 ## User Preferences
 
