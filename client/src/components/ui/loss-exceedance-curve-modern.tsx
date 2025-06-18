@@ -518,6 +518,8 @@ export function LossExceedanceCurveModern({
     if (filterType === 'all') {
       // For ALL filter: Use aggregated data from risk_summaries directly
       console.log(`Using aggregated risk_summaries data for ALL filter`);
+      console.log(`Filtered risks count: ${filteredRisks.length}, with inherent risks:`, 
+        filteredRisks.map(r => ({ id: r.riskId, inherent: r.inherentRisk, residual: r.residualRisk })));
       
       calculatedMinExposure = exposureData?.minimum || 0;
       calculatedMaxExposure = exposureData?.maximum || 0;
@@ -527,6 +529,13 @@ export function LossExceedanceCurveModern({
       const exposures = filteredRisks
         .map(risk => ensureFiniteNumber(risk.residualRisk || risk.inherentRisk || 0))
         .filter(v => v > 0);
+      
+      console.log(`Filter type: ${filterType}, filtered risks: ${filteredRisks.length}, valid exposures: ${exposures.length}`);
+      console.log(`Inherent risks in filtered data:`, filteredRisks.map(r => ({ 
+        id: r.riskId, 
+        inherent: r.inherentRisk, 
+        residual: r.residualRisk 
+      })));
       
       if (exposures.length === 0) {
         console.log(`No valid exposures found for filter ${filterType}`);
@@ -539,11 +548,13 @@ export function LossExceedanceCurveModern({
         calculatedMinExposure = totalExposure * 0.1;
         calculatedMaxExposure = totalExposure * 1.5;
         calculatedAvgExposure = totalExposure;
+        console.log(`Aggregated exposure for ${filterType}: ${totalExposure}`);
       } else {
         // For asset filter: Use individual risk values (no summing)
         calculatedMinExposure = Math.min(...exposures);
         calculatedMaxExposure = Math.max(...exposures);
         calculatedAvgExposure = exposures.reduce((sum, val) => sum + val, 0) / exposures.length;
+        console.log(`Individual exposure range for ${filterType}: ${calculatedMinExposure} - ${calculatedMaxExposure}`);
       }
     }
     
@@ -576,9 +587,24 @@ export function LossExceedanceCurveModern({
     
     // Add key percentile points as anchors
     percentileData.forEach(point => {
+      // Calculate inherent probability for anchor points using the same logic
+      let inherentProbabilityAnchor = null;
+      if (filteredRisks.length > 0) {
+        const inherentRiskExposures = filteredRisks.map(risk => {
+          const inherentRisk = ensureFiniteNumber(risk.inherentRisk || 0);
+          return inherentRisk;
+        }).filter(exposure => exposure > 0).sort((a, b) => b - a);
+        
+        if (inherentRiskExposures.length > 0) {
+          const inherentRisksExceedingLoss = inherentRiskExposures.filter(exposure => exposure >= point.exposure);
+          inherentProbabilityAnchor = (inherentRisksExceedingLoss.length / inherentRiskExposures.length) * 100;
+        }
+      }
+
       data.push({
         lossExposure: point.exposure,
         probability: point.probability,
+        inherentProbability: inherentProbabilityAnchor,
         formattedLoss: formatExposure(point.exposure),
         isThresholdPoint: true,
         exposureData: {
@@ -626,17 +652,61 @@ export function LossExceedanceCurveModern({
         }
       }
       
-      // Calculate inherent risk probability (risk without controls)
+      // Calculate inherent risk probability using smooth interpolation (same method as residual risk)
       let inherentProbability = null;
       if (filteredRisks.length > 0) {
+        // Get inherent risk values and create percentile data points
         const inherentRiskExposures = filteredRisks.map(risk => {
           const inherentRisk = ensureFiniteNumber(risk.inherentRisk || 0);
           return inherentRisk;
-        }).filter(exposure => exposure > 0);
+        }).filter(exposure => exposure > 0).sort((a, b) => b - a);
         
         if (inherentRiskExposures.length > 0) {
-          const inherentRisksExceedingLoss = inherentRiskExposures.filter(exposure => exposure >= lossExposure);
-          inherentProbability = (inherentRisksExceedingLoss.length / inherentRiskExposures.length) * 100;
+          const inherentMinExposure = Math.min(...inherentRiskExposures);
+          const inherentMaxExposure = Math.max(...inherentRiskExposures);
+          const inherentAvgExposure = inherentRiskExposures.reduce((sum, val) => sum + val, 0) / inherentRiskExposures.length;
+          
+          // Use same interpolation logic as residual risk for smooth curves
+          if (lossExposure <= inherentMinExposure) {
+            inherentProbability = 100;
+          } else if (lossExposure >= inherentMaxExposure) {
+            // Exponential decay beyond max inherent risk
+            const normalizedExposure = (lossExposure - inherentMaxExposure) / (inherentMaxExposure * 0.5);
+            inherentProbability = Math.max(0.1, 1.0 * Math.exp(-2 * normalizedExposure));
+          } else {
+            // Linear interpolation between inherent risk percentiles
+            const inherentPercentileData = [
+              { exposure: inherentRiskExposures[Math.floor(inherentRiskExposures.length * 0.1)], probability: 90.0 },
+              { exposure: inherentRiskExposures[Math.floor(inherentRiskExposures.length * 0.25)], probability: 75.0 },
+              { exposure: inherentRiskExposures[Math.floor(inherentRiskExposures.length * 0.5)], probability: 50.0 },
+              { exposure: inherentRiskExposures[Math.floor(inherentRiskExposures.length * 0.75)], probability: 25.0 },
+              { exposure: inherentRiskExposures[Math.floor(inherentRiskExposures.length * 0.9)], probability: 10.0 }
+            ].filter(point => point.exposure > 0).sort((a, b) => a.exposure - b.exposure);
+            
+            // Find interpolation segment
+            let found = false;
+            for (let j = 0; j < inherentPercentileData.length - 1; j++) {
+              const lower = inherentPercentileData[j];
+              const upper = inherentPercentileData[j + 1];
+              
+              if (lossExposure >= lower.exposure && lossExposure <= upper.exposure) {
+                const range = upper.exposure - lower.exposure;
+                const position = lossExposure - lower.exposure;
+                const ratio = range > 0 ? position / range : 0;
+                inherentProbability = lower.probability - (lower.probability - upper.probability) * ratio;
+                found = true;
+                break;
+              }
+            }
+            
+            // Fallback if no interpolation segment found
+            if (!found && inherentPercentileData.length > 0) {
+              const closest = inherentPercentileData.reduce((prev, curr) => 
+                Math.abs(curr.exposure - lossExposure) < Math.abs(prev.exposure - lossExposure) ? curr : prev
+              );
+              inherentProbability = closest.probability;
+            }
+          }
         }
       }
 
@@ -1240,12 +1310,12 @@ export function LossExceedanceCurveModern({
                 {/* Inherent risk line */}
                 {showInherentRisk && (
                   <Line 
-                    type="monotone"
+                    type="natural"
                     dataKey="inherentProbability"
                     name="Inherent Risk (No Controls)"
                     stroke="#f97316"
                     strokeWidth={2}
-                    strokeDasharray="2 2"
+                    strokeDasharray="4 2"
                     dot={false}
                     activeDot={{ r: 6, fill: "#f97316", stroke: "#fff", strokeWidth: 2 }}
                     animationDuration={1000}
