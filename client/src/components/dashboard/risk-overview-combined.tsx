@@ -1,6 +1,16 @@
 import React from 'react';
 import { Link } from 'wouter';
 import { formatCurrency } from '@shared/utils/calculations';
+import { Pie } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+
+// Register Chart.js components
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 interface RiskResponseStatusProps {
   responseTypeData: {
@@ -73,6 +83,61 @@ export function RiskOverviewCombined({
     }
   };
 
+  // Prepare pie chart data
+  const pieChartData = {
+    labels: ['Mitigate', 'Accept', 'Transfer', 'Avoid'],
+    datasets: [
+      {
+        data: [
+          responseTypeData.mitigate.percentage || 0,
+          responseTypeData.accept.percentage || 0,
+          responseTypeData.transfer.percentage || 0,
+          responseTypeData.avoid.percentage || 0,
+        ],
+        backgroundColor: [
+          'rgba(37, 99, 235, 0.8)', // Blue for Mitigate
+          'rgba(245, 158, 11, 0.8)', // Amber for Accept
+          'rgba(147, 51, 234, 0.8)', // Purple for Transfer
+          'rgba(220, 38, 38, 0.8)',  // Red for Avoid
+        ],
+        borderColor: [
+          'rgba(37, 99, 235, 1)',
+          'rgba(245, 158, 11, 1)',
+          'rgba(147, 51, 234, 1)',
+          'rgba(220, 38, 38, 1)',
+        ],
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const pieChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: {
+          color: 'rgba(255, 255, 255, 0.8)',
+          font: {
+            size: 12,
+          },
+          padding: 15,
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context: any) {
+            const label = context.label || '';
+            const value = context.parsed || 0;
+            const count = responseTypeData[label.toLowerCase() as keyof typeof responseTypeData]?.count || 0;
+            return `${label}: ${count} (${value.toFixed(1)}%)`;
+          },
+        },
+      },
+    },
+  };
+
   return (
     <div className="bg-gray-800 rounded-lg border border-gray-600">
       <div className="p-6">
@@ -135,65 +200,42 @@ export function RiskOverviewCombined({
             <h3 className="text-base font-medium text-white mb-4">Response Status</h3>
             
             <div className="space-y-4">
-              {/* Response Types */}
+              {/* Response Types - Pie Chart */}
               <div>
                 <div className="text-sm font-medium text-white/80 mb-3">By Response Type</div>
-                <div className="space-y-2">
-                  <div>
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="text-white/80">Mitigate</div>
-                      <div className="font-medium text-white">
-                        {responseTypeData.mitigate.count} ({(responseTypeData.mitigate.percentage || 0).toFixed(0)}%)
-                      </div>
+                <div className="h-48 mb-4">
+                  <Pie data={pieChartData} options={pieChartOptions} />
+                </div>
+                
+                {/* Summary stats below the chart */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center justify-between p-2 bg-gray-700/50 rounded">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-blue-600 rounded-full mr-2"></div>
+                      <span className="text-white/80">Mitigate</span>
                     </div>
-                    <div className="w-full h-2 mt-1 bg-gray-600 rounded-full">
-                      <div
-                        className="h-2 bg-blue-600/80 rounded-full"
-                        style={{ width: `${responseTypeData.mitigate.percentage || 0}%` }}
-                      />
-                    </div>
+                    <span className="text-white font-medium">{responseTypeData.mitigate.count}</span>
                   </div>
-                  <div>
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="text-white/80">Accept</div>
-                      <div className="font-medium text-white">
-                        {responseTypeData.accept.count} ({(responseTypeData.accept.percentage || 0).toFixed(0)}%)
-                      </div>
+                  <div className="flex items-center justify-between p-2 bg-gray-700/50 rounded">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-amber-500 rounded-full mr-2"></div>
+                      <span className="text-white/80">Accept</span>
                     </div>
-                    <div className="w-full h-2 mt-1 bg-gray-600 rounded-full">
-                      <div
-                        className="h-2 bg-amber-500/80 rounded-full"
-                        style={{ width: `${responseTypeData.accept.percentage || 0}%` }}
-                      />
-                    </div>
+                    <span className="text-white font-medium">{responseTypeData.accept.count}</span>
                   </div>
-                  <div>
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="text-white/80">Transfer</div>
-                      <div className="font-medium text-white">
-                        {responseTypeData.transfer.count} ({(responseTypeData.transfer.percentage || 0).toFixed(0)}%)
-                      </div>
+                  <div className="flex items-center justify-between p-2 bg-gray-700/50 rounded">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-purple-600 rounded-full mr-2"></div>
+                      <span className="text-white/80">Transfer</span>
                     </div>
-                    <div className="w-full h-2 mt-1 bg-gray-600 rounded-full">
-                      <div
-                        className="h-2 bg-purple-600/80 rounded-full"
-                        style={{ width: `${responseTypeData.transfer.percentage || 0}%` }}
-                      />
-                    </div>
+                    <span className="text-white font-medium">{responseTypeData.transfer.count}</span>
                   </div>
-                  <div>
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="text-white/80">Avoid</div>
-                      <div className="font-medium text-white">
-                        {responseTypeData.avoid.count} ({(responseTypeData.avoid.percentage || 0).toFixed(0)}%)
-                      </div>
+                  <div className="flex items-center justify-between p-2 bg-gray-700/50 rounded">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 bg-red-600 rounded-full mr-2"></div>
+                      <span className="text-white/80">Avoid</span>
                     </div>
-                    <div className="w-full h-2 mt-1 bg-gray-600 rounded-full">
-                      <div
-                        className="h-2 bg-red-600/80 rounded-full"
-                        style={{ width: `${responseTypeData.avoid.percentage || 0}%` }}
-                      />
-                    </div>
+                    <span className="text-white font-medium">{responseTypeData.avoid.count}</span>
                   </div>
                 </div>
               </div>
