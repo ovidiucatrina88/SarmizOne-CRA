@@ -4,8 +4,8 @@
  */
 
 import { db } from '../db';
-import { risks, controls, riskControls } from '../../shared/schema';
-import { eq, sql } from 'drizzle-orm';
+import { risks, controls, riskControls, assets } from '../../shared/schema';
+import { eq, sql, and, or, inArray } from 'drizzle-orm';
 // Removed import - using simplified calculation
 
 export interface ControlSuggestion {
