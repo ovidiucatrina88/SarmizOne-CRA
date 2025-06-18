@@ -109,6 +109,7 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 - June 18, 2025. Added inherent risk curve to Loss Exceedance Curve with smooth interpolation and proper scaling
 - June 18, 2025. Merged "Risk Response Status" and "Top Risks" into single combined card for streamlined dashboard layout
 - June 18, 2025. Implemented intelligent control recommendation system with threat-specific mapping and auto-association API
+- June 18, 2025. Removed "Factors" tab from risk detail view, streamlined interface to focus on Control Suggestions as primary tab
 
 ## User Preferences
 

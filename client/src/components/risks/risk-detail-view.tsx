@@ -53,7 +53,7 @@ const TimelineChart: React.FC<{
 };
 
 export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
-  const [activeTab, setActiveTab] = useState("factors");
+  const [activeTab, setActiveTab] = useState("suggestions");
   
   // Fetch controls associated with this risk
   const { data: controlsData } = useQuery<Control[]>({
@@ -110,7 +110,7 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
 
       {/* Main content with tabs */}
       <Tabs
-        defaultValue="factors"
+        defaultValue="suggestions"
         value={activeTab}
         onValueChange={setActiveTab}
         className="flex-1"
@@ -118,12 +118,6 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
         <div className="border-b border-gray-800">
           <div className="px-4">
             <TabsList className="bg-transparent border-b-0">
-              <TabsTrigger
-                value="factors"
-                className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-[#f97316] text-gray-400 rounded-none px-4 py-2"
-              >
-                Factors
-              </TabsTrigger>
               <TabsTrigger
                 value="suggestions"
                 className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-[#f97316] text-gray-400 rounded-none px-4 py-2"
@@ -140,226 +134,7 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
           </div>
         </div>
 
-        {/* Factors Tab Content */}
-        <TabsContent value="factors" className="flex-1 p-4">
-          <div className="grid grid-cols-1 gap-6">
-            {/* Annualized Loss Section */}
-            <div className="bg-[#1e1e1e] rounded-lg p-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-lg font-medium">Annualized Loss</h2>
-                <div className="text-amber-500">MED</div>
-              </div>
-              
-              <div className="flex justify-between items-center mt-4">
-                <div className="text-2xl font-bold">$0</div>
-                <div className="text-2xl font-bold">{formattedLossMagnitude.replace('$', '$')}</div>
-                <div className="text-2xl font-bold">{formattedAnnualizedLoss.replace('$', '$')}</div>
-              </div>
-              
-              <div className="h-1 bg-gray-700 mt-4 relative">
-                <div className="absolute w-full h-1 flex justify-between px-1">
-                  <div className="w-1 h-3 bg-gray-600 -mt-1"></div>
-                  <div className="w-1 h-3 bg-gray-600 -mt-1"></div>
-                  <div className="w-1 h-3 bg-gray-600 -mt-1"></div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-8 mt-10 mb-2">
-                {/* Likelihood */}
-                <div className="bg-[#1a1a1a] rounded-lg p-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-base font-medium">Likelihood</h3>
-                    <div className="text-amber-500">MED</div>
-                  </div>
-                  
-                  <div className="flex justify-between items-baseline mt-4">
-                    <div className="text-3xl font-bold">{likelihoodPercentage}%</div>
-                  </div>
-                  
-                  <div className="mt-6 h-20">
-                    <TimelineChart data={likelihoodTimelineData} />
-                  </div>
-                  
-                  <div className="text-xs text-gray-400 mt-1">
-                    +4% LAST YEAR
-                  </div>
-                </div>
-                
-                {/* Loss Magnitude */}
-                <div className="bg-[#1a1a1a] rounded-lg p-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="text-base font-medium">Loss Magnitude</h3>
-                    <div className="text-amber-500">MED</div>
-                  </div>
-                  
-                  <div className="flex justify-between items-baseline mt-4">
-                    <div className="text-3xl font-bold">{formattedLossMagnitude}</div>
-                  </div>
-                  
-                  <div className="mt-6 h-20">
-                    <TimelineChart data={lossTimelineData} />
-                  </div>
-                  
-                  <div className="text-xs text-gray-400 mt-1">
-                    +$9.3M LAST YEAR
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Controls that Reduce Likelihood */}
-            <div className="bg-[#1e1e1e] rounded-lg p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-medium">Reduce Likelihood</h2>
-                <Button variant="outline" size="sm" className="bg-transparent border-gray-700 hover:bg-gray-800">
-                  <Maximize2 className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              <div className="space-y-3">
-                {/* Real controls */}
-                {Array.isArray(controls) && controls.filter(c => c.controlType === 'preventive').map((control, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="bg-blue-600 text-white w-8 h-8 rounded flex items-center justify-center">
-                        {control.controlId.substring(0, 3).toUpperCase()}
-                      </div>
-                      <div>
-                        <div className="font-medium">{control.name}</div>
-                        <div className="text-xs text-gray-400">Implemented</div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3">
-                      <div className="text-xs text-gray-500">Effectiveness:</div>
-                      <div className="text-blue-400 font-medium">
-                        {Math.round((control.controlEffectiveness / 10) * 100)}%
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center text-green-500">
-                      <div className="text-xs">
-                        Status: {control.implementationStatus?.replace('_', ' ').toUpperCase()}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                
-                {/* Suggested controls if no real preventive controls exist */}
-                {Array.isArray(controls) && controls.filter(c => c.controlType === 'preventive').length === 0 && (
-                  <>
-                    {controlSuggestions.filter((s: ControlRecommendation) => s.controlType === 'preventive').map((suggestion: ControlRecommendation, index: number) => (
-                      <div key={suggestion.controlId} className="flex items-center justify-between border border-amber-600/30 bg-amber-900/20 rounded-lg p-3">
-                        <div className="flex items-center space-x-3">
-                          <div className="bg-amber-600 text-white w-8 h-8 rounded flex items-center justify-center">
-                            {suggestion.controlId.split('-')[1]?.substring(0, 3).toUpperCase() || 'SUG'}
-                          </div>
-                          <div>
-                            <div className="font-medium">{suggestion.name}</div>
-                            <div className="text-xs text-amber-400">Suggested - {suggestion.justification}</div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center space-x-3">
-                          <div className="text-xs text-gray-500">Relevance:</div>
-                          <div className="text-amber-400 font-medium">
-                            {Math.round(suggestion.relevanceScore)}%
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center">
-                          <div className={`text-xs px-2 py-1 rounded ${
-                            suggestion.priority === 'high' ? 'bg-red-600/20 text-red-400' :
-                            suggestion.priority === 'medium' ? 'bg-yellow-600/20 text-yellow-400' :
-                            'bg-green-600/20 text-green-400'
-                          }`}>
-                            {suggestion.priority.toUpperCase()} PRIORITY
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
-            </div>
-            
-            {/* Controls that Reduce Loss Magnitude */}
-            <div className="bg-[#1e1e1e] rounded-lg p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-medium">Reduce Loss Magnitude</h2>
-                <Button variant="outline" size="sm" className="bg-transparent border-gray-700 hover:bg-gray-800">
-                  <Maximize2 className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              <div className="space-y-3">
-                {/* Real controls */}
-                {Array.isArray(controls) && controls.filter(c => c.controlType === 'corrective').map((control, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="bg-purple-600 text-white w-8 h-8 rounded flex items-center justify-center">
-                        {control.controlId.substring(0, 2).toUpperCase()}
-                      </div>
-                      <div>
-                        <div className="font-medium">{control.name}</div>
-                        <div className="text-xs text-gray-400">Implemented</div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3">
-                      <div className="text-xs text-gray-500">Effectiveness:</div>
-                      <div className="text-purple-400 font-medium">
-                        {Math.round((control.controlEffectiveness / 10) * 100)}%
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center text-green-500">
-                      <div className="text-xs">
-                        Status: {control.implementationStatus?.replace('_', ' ').toUpperCase()}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                
-                {/* Suggested controls if no real corrective controls exist */}
-                {Array.isArray(controls) && controls.filter(c => c.controlType === 'corrective').length === 0 && (
-                  <>
-                    {controlSuggestions.filter((s: ControlRecommendation) => s.controlType === 'corrective').map((suggestion: ControlRecommendation, index: number) => (
-                      <div key={suggestion.controlId} className="flex items-center justify-between border border-amber-600/30 bg-amber-900/20 rounded-lg p-3">
-                        <div className="flex items-center space-x-3">
-                          <div className="bg-amber-600 text-white w-8 h-8 rounded flex items-center justify-center">
-                            {suggestion.controlId.split('-')[1]?.substring(0, 2).toUpperCase() || 'SG'}
-                          </div>
-                          <div>
-                            <div className="font-medium">{suggestion.name}</div>
-                            <div className="text-xs text-amber-400">Suggested - {suggestion.justification}</div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center space-x-3">
-                          <div className="text-xs text-gray-500">Relevance:</div>
-                          <div className="text-amber-400 font-medium">
-                            {Math.round(suggestion.relevanceScore)}%
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center">
-                          <div className={`text-xs px-2 py-1 rounded ${
-                            suggestion.priority === 'high' ? 'bg-red-600/20 text-red-400' :
-                            suggestion.priority === 'medium' ? 'bg-yellow-600/20 text-yellow-400' :
-                            'bg-green-600/20 text-green-400'
-                          }`}>
-                            {suggestion.priority.toUpperCase()} PRIORITY
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </TabsContent>
+
 
         {/* Control Suggestions Tab Content */}
         <TabsContent value="suggestions" className="flex-1 p-4">
