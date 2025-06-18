@@ -1,11 +1,12 @@
-import React from "@/common/react-import";
-import { useState, useQuery } from "@/common/react-import";
 import { Risk, Control } from "@shared/schema";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Maximize2, ArrowLeft } from "lucide-react";
+import { ArrowLeft, Maximize2, TrendingUp, TrendingDown } from "lucide-react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getThreatSpecificSuggestions, type ControlRecommendation } from "@shared/utils/controlRecommendation";
 
 interface RiskDetailViewProps {
   risk: Risk;
@@ -240,7 +241,7 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
                 {/* Suggested controls if no real preventive controls exist */}
                 {Array.isArray(controls) && controls.filter(c => c.controlType === 'preventive').length === 0 && (
                   <>
-                    {controlSuggestions.filter(s => s.controlType === 'preventive').map((suggestion, index) => (
+                    {controlSuggestions.filter((s: ControlRecommendation) => s.controlType === 'preventive').map((suggestion: ControlRecommendation, index: number) => (
                       <div key={suggestion.controlId} className="flex items-center justify-between border border-amber-600/30 bg-amber-900/20 rounded-lg p-3">
                         <div className="flex items-center space-x-3">
                           <div className="bg-amber-600 text-white w-8 h-8 rounded flex items-center justify-center">
@@ -316,7 +317,7 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
                 {/* Suggested controls if no real corrective controls exist */}
                 {Array.isArray(controls) && controls.filter(c => c.controlType === 'corrective').length === 0 && (
                   <>
-                    {controlSuggestions.filter(s => s.controlType === 'corrective').map((suggestion, index) => (
+                    {controlSuggestions.filter((s: ControlRecommendation) => s.controlType === 'corrective').map((suggestion: ControlRecommendation, index: number) => (
                       <div key={suggestion.controlId} className="flex items-center justify-between border border-amber-600/30 bg-amber-900/20 rounded-lg p-3">
                         <div className="flex items-center space-x-3">
                           <div className="bg-amber-600 text-white w-8 h-8 rounded flex items-center justify-center">

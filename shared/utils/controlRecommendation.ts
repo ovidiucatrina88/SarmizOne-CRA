@@ -173,12 +173,12 @@ function calculateRelevanceScore(
     threatPattern = 'phishing';
   }
 
-  if (threatPattern && THREAT_CONTROL_MAPPINGS[threatPattern]) {
-    const mappings = THREAT_CONTROL_MAPPINGS[threatPattern];
+  if (threatPattern && THREAT_CONTROL_MAPPINGS[threatPattern as keyof typeof THREAT_CONTROL_MAPPINGS]) {
+    const mappings = THREAT_CONTROL_MAPPINGS[threatPattern as keyof typeof THREAT_CONTROL_MAPPINGS];
     
-    ['preventive', 'detective', 'corrective'].forEach(controlType => {
+    (['preventive', 'detective', 'corrective'] as const).forEach(controlType => {
       if (mappings[controlType]) {
-        mappings[controlType].forEach(mapping => {
+        mappings[controlType].forEach((mapping: any) => {
           const regex = new RegExp(mapping.pattern, 'i');
           if (regex.test(controlText)) {
             totalScore += mapping.score;
@@ -213,8 +213,8 @@ function calculateRelevanceScore(
         assetType = 'cloud';
       }
 
-      if (assetType && ASSET_CONTROL_MAPPINGS[assetType]) {
-        ASSET_CONTROL_MAPPINGS[assetType].forEach(mapping => {
+      if (assetType && ASSET_CONTROL_MAPPINGS[assetType as keyof typeof ASSET_CONTROL_MAPPINGS]) {
+        ASSET_CONTROL_MAPPINGS[assetType as keyof typeof ASSET_CONTROL_MAPPINGS].forEach((mapping: any) => {
           const regex = new RegExp(mapping.pattern, 'i');
           if (regex.test(controlText)) {
             totalScore += mapping.score * 0.7; // Asset mappings weighted lower than threat mappings
