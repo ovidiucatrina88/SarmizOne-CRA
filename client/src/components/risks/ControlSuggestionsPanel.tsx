@@ -224,15 +224,15 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="text-sm font-medium text-gray-500">Inherent Risk</div>
-              <div className="text-2xl font-bold text-red-600">
-                {formatCurrency(suggestions.currentRiskExposure.inherent)}
+              <div className="text-sm font-medium text-gray-400">Inherent Risk</div>
+              <div className="text-2xl font-bold text-red-400">
+                {formatCurrency(suggestions.currentRiskExposure?.inherent || 0)}
               </div>
             </div>
             <div>
-              <div className="text-sm font-medium text-gray-500">Residual Risk</div>
-              <div className="text-2xl font-bold text-orange-600">
-                {formatCurrency(suggestions.currentRiskExposure.residual)}
+              <div className="text-sm font-medium text-gray-400">Residual Risk</div>
+              <div className="text-2xl font-bold text-orange-400">
+                {formatCurrency(suggestions.currentRiskExposure?.residual || 0)}
               </div>
             </div>
           </div>
@@ -244,15 +244,15 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
         <TabsList className="grid w-full grid-cols-3 bg-[#2a2a2a] border-gray-600">
           <TabsTrigger value="likelihood" className="flex items-center space-x-2">
             <TrendingDown className="h-4 w-4" />
-            <span>Reduce Likelihood ({suggestions.likelihoodControls.length})</span>
+            <span>Reduce Likelihood ({suggestions.likelihoodControls?.length || 0})</span>
           </TabsTrigger>
           <TabsTrigger value="magnitude" className="flex items-center space-x-2">
             <TrendingUp className="h-4 w-4" />
-            <span>Reduce Impact ({suggestions.magnitudeControls.length})</span>
+            <span>Reduce Impact ({suggestions.magnitudeControls?.length || 0})</span>
           </TabsTrigger>
           <TabsTrigger value="both" className="flex items-center space-x-2">
             <Shield className="h-4 w-4" />
-            <span>Both ({suggestions.bothControls.length})</span>
+            <span>Both ({suggestions.bothControls?.length || 0})</span>
           </TabsTrigger>
         </TabsList>
 
@@ -261,7 +261,7 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
             <div className="text-sm text-gray-400">
               These controls primarily reduce the likelihood of the risk event occurring.
             </div>
-            {suggestions.likelihoodControls.length > 0 ? (
+            {suggestions.likelihoodControls?.length > 0 ? (
               suggestions.likelihoodControls.map(renderControlCard)
             ) : (
               <Card className="bg-[#1e1e1e] border-gray-700">
@@ -278,7 +278,7 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
             <div className="text-sm text-gray-400">
               These controls primarily reduce the impact or loss magnitude if the risk event occurs.
             </div>
-            {suggestions.magnitudeControls.length > 0 ? (
+            {suggestions.magnitudeControls?.length > 0 ? (
               suggestions.magnitudeControls.map(renderControlCard)
             ) : (
               <Card className="bg-[#1e1e1e] border-gray-700">
@@ -295,7 +295,7 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
             <div className="text-sm text-gray-400">
               These controls affect both the likelihood and impact of the risk event.
             </div>
-            {suggestions.bothControls.length > 0 ? (
+            {suggestions.bothControls?.length > 0 ? (
               suggestions.bothControls.map(renderControlCard)
             ) : (
               <Card className="bg-[#1e1e1e] border-gray-700">
