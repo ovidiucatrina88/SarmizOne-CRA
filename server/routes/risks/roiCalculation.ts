@@ -8,7 +8,7 @@ import { sendError, sendSuccess } from '../common/responses/apiResponse';
 import { db } from '../../db';
 import { risks, controls } from '../../../shared/schema';
 import { eq, inArray } from 'drizzle-orm';
-import { runEnhancedRiskCalculation } from '../../../shared/utils/enhancedRiskCalculations';
+// Removed import - using simplified calculation
 
 const router = Router();
 
@@ -53,9 +53,9 @@ router.post('/:riskId/calculate-roi', async (req, res) => {
     };
     
     // Simplified risk calculation for ROI
-    const inherentRisk = (inherentParams.primaryLossMagnitude.avg * 
-                         inherentParams.contactFrequency.avg * 
-                         inherentParams.probabilityOfAction.avg) || 10000;
+    const inherentRisk = (Number(inherentParams.primaryLossMagnitude.avg) * 
+                         Number(inherentParams.contactFrequency.avg) * 
+                         Number(inherentParams.probabilityOfAction.avg)) || 10000;
     
     // Calculate combined control effectiveness
     const totalEffectiveness = selectedControls.reduce((total, control) => {

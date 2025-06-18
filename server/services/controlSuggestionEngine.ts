@@ -6,7 +6,7 @@
 import { db } from '../db';
 import { risks, controls, riskControls } from '../../shared/schema';
 import { eq, sql } from 'drizzle-orm';
-import { runEnhancedRiskCalculation } from '../../shared/utils/enhancedRiskCalculations';
+// Removed import - using simplified calculation
 
 export interface ControlSuggestion {
   controlId: string;

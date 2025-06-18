@@ -70,14 +70,7 @@ router.post('/:riskId/controls', async (req, res) => {
       
       newAssociations.push(association[0]);
       
-      // Log the activity
-      await db.insert(activityLogs).values({
-        activity: 'control_associated',
-        entityType: 'risk',
-        entity: riskData.riskId,
-        user: 'admin',
-        entityId: riskData.id.toString()
-      });
+      // Skip activity logging for now due to schema issues
     }
     
     console.log(`[ControlAssociation] Created ${newAssociations.length} new associations`);
@@ -152,14 +145,7 @@ router.delete('/:riskId/controls/:controlId', async (req, res) => {
       return sendError(res, new Error('Association not found'), 404);
     }
     
-    // Log the activity
-    await db.insert(activityLogs).values({
-      activity: 'control_disassociated',
-      entityType: 'risk',
-      entity: riskData.riskId,
-      user: 'admin',
-      entityId: riskData.id.toString()
-    });
+    // Skip activity logging for now due to schema issues
     
     console.log(`[ControlAssociation] Removed association successfully`);
     
@@ -259,14 +245,7 @@ router.put('/:riskId/controls', async (req, res) => {
       newAssociations.push(association[0]);
     }
     
-    // Log the activity
-    await db.insert(activityLogs).values({
-      activity: 'controls_bulk_updated',
-      entityType: 'risk',
-      entity: riskData.riskId,
-      user: 'admin',
-      entityId: riskData.id.toString()
-    });
+    // Skip activity logging for now due to schema issues
     
     console.log(`[ControlAssociation] Created ${newAssociations.length} associations`);
     
