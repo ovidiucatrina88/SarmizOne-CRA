@@ -243,7 +243,7 @@ export function EnhancedAssetGroupedRiskList({
   // Delete risk mutation
   const deleteRiskMutation = useMutation({
     mutationFn: async (riskId: number) => {
-      return apiRequest(`/api/risks/${riskId}`, "DELETE");
+      return apiRequest("DELETE", `/api/risks/${riskId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/risks"] });

@@ -232,7 +232,7 @@ export function RiskGroupedControlList({
   // Delete control mutation
   const deleteControlMutation = useMutation({
     mutationFn: async (controlId: number) => {
-      return apiRequest(`/api/controls/${controlId}`, "DELETE");
+      return apiRequest("DELETE", `/api/controls/${controlId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/controls"] });
