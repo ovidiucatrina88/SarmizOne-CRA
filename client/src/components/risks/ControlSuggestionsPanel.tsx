@@ -48,7 +48,7 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
   const queryClient = useQueryClient();
   const [selectedControls, setSelectedControls] = useState<string[]>([]);
 
-  const { data: suggestions, isLoading } = useQuery<ControlSuggestionsResponse>({
+  const { data: suggestions, isLoading, error } = useQuery<ControlSuggestionsResponse>({
     queryKey: ['/api/risks', riskId, 'control-suggestions'],
     enabled: !!riskId
   });
@@ -103,7 +103,7 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
   };
 
   const renderControlCard = (control: ControlSuggestion) => (
-    <Card key={control.controlId} className="mb-4">
+    <Card key={control.controlId} className="mb-4 bg-[#2a2a2a] border-gray-600">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
@@ -181,10 +181,21 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="bg-[#1e1e1e] border-gray-700">
         <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin" />
-          <span className="ml-2">Loading control suggestions...</span>
+          <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+          <span className="ml-2 text-white">Loading control suggestions...</span>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="bg-[#1e1e1e] border-gray-700">
+        <CardContent className="py-8 text-center">
+          <p className="text-red-400 mb-2">Failed to load control suggestions</p>
+          <p className="text-gray-400 text-sm">{error.message}</p>
         </CardContent>
       </Card>
     );
@@ -192,8 +203,8 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
 
   if (!suggestions) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center text-gray-500">
+      <Card className="bg-[#1e1e1e] border-gray-700">
+        <CardContent className="py-8 text-center text-gray-400">
           No control suggestions available
         </CardContent>
       </Card>
@@ -203,10 +214,10 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
   return (
     <div className="space-y-6">
       {/* Risk Exposure Summary */}
-      <Card>
+      <Card className="bg-[#1e1e1e] border-gray-700">
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Target className="h-5 w-5" />
+          <CardTitle className="flex items-center space-x-2 text-white">
+            <Target className="h-5 w-5 text-orange-500" />
             <span>Current Risk Exposure</span>
           </CardTitle>
         </CardHeader>
@@ -230,7 +241,7 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
 
       {/* Control Suggestions Tabs */}
       <Tabs defaultValue="likelihood" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-3 bg-[#2a2a2a] border-gray-600">
           <TabsTrigger value="likelihood" className="flex items-center space-x-2">
             <TrendingDown className="h-4 w-4" />
             <span>Reduce Likelihood ({suggestions.likelihoodControls.length})</span>
@@ -247,14 +258,14 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
 
         <TabsContent value="likelihood" className="mt-6">
           <div className="space-y-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-400">
               These controls primarily reduce the likelihood of the risk event occurring.
             </div>
             {suggestions.likelihoodControls.length > 0 ? (
               suggestions.likelihoodControls.map(renderControlCard)
             ) : (
-              <Card>
-                <CardContent className="py-8 text-center text-gray-500">
+              <Card className="bg-[#1e1e1e] border-gray-700">
+                <CardContent className="py-8 text-center text-gray-400">
                   No likelihood-focused controls available
                 </CardContent>
               </Card>
@@ -264,14 +275,14 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
 
         <TabsContent value="magnitude" className="mt-6">
           <div className="space-y-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-400">
               These controls primarily reduce the impact or loss magnitude if the risk event occurs.
             </div>
             {suggestions.magnitudeControls.length > 0 ? (
               suggestions.magnitudeControls.map(renderControlCard)
             ) : (
-              <Card>
-                <CardContent className="py-8 text-center text-gray-500">
+              <Card className="bg-[#1e1e1e] border-gray-700">
+                <CardContent className="py-8 text-center text-gray-400">
                   No impact-focused controls available
                 </CardContent>
               </Card>
@@ -281,14 +292,14 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
 
         <TabsContent value="both" className="mt-6">
           <div className="space-y-4">
-            <div className="text-sm text-gray-600">
+            <div className="text-sm text-gray-400">
               These controls affect both the likelihood and impact of the risk event.
             </div>
             {suggestions.bothControls.length > 0 ? (
               suggestions.bothControls.map(renderControlCard)
             ) : (
-              <Card>
-                <CardContent className="py-8 text-center text-gray-500">
+              <Card className="bg-[#1e1e1e] border-gray-700">
+                <CardContent className="py-8 text-center text-gray-400">
                   No dual-impact controls available
                 </CardContent>
               </Card>

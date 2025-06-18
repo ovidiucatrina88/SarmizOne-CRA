@@ -7,6 +7,7 @@ import { ArrowLeft, Maximize2, TrendingUp, TrendingDown } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getThreatSpecificSuggestions, type ControlRecommendation } from "@shared/utils/controlRecommendation";
+import { ControlSuggestionsPanel } from "./ControlSuggestionsPanel";
 
 interface RiskDetailViewProps {
   risk: Risk;
@@ -122,6 +123,12 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
                 className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-[#f97316] text-gray-400 rounded-none px-4 py-2"
               >
                 Factors
+              </TabsTrigger>
+              <TabsTrigger
+                value="suggestions"
+                className="data-[state=active]:bg-transparent data-[state=active]:text-white data-[state=active]:border-b-2 data-[state=active]:border-[#f97316] text-gray-400 rounded-none px-4 py-2"
+              >
+                Control Suggestions
               </TabsTrigger>
               <TabsTrigger
                 value="curve"
@@ -352,6 +359,11 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
               </div>
             </div>
           </div>
+        </TabsContent>
+
+        {/* Control Suggestions Tab Content */}
+        <TabsContent value="suggestions" className="flex-1 p-4">
+          <ControlSuggestionsPanel riskId={risk.riskId} />
         </TabsContent>
 
         {/* Loss Exceedance Curve Tab Content */}
