@@ -149,7 +149,7 @@ export function RiskOverviewCombined({
                     <div className="w-full h-2 mt-1 bg-gray-600 rounded-full">
                       <div
                         className="h-2 bg-blue-600/80 rounded-full"
-                        style={{ width: `${responseTypeData.mitigate.percentage}%` }}
+                        style={{ width: `${responseTypeData.mitigate.percentage || 0}%` }}
                       />
                     </div>
                   </div>
@@ -163,7 +163,7 @@ export function RiskOverviewCombined({
                     <div className="w-full h-2 mt-1 bg-gray-600 rounded-full">
                       <div
                         className="h-2 bg-amber-500/80 rounded-full"
-                        style={{ width: `${responseTypeData.accept.percentage}%` }}
+                        style={{ width: `${responseTypeData.accept.percentage || 0}%` }}
                       />
                     </div>
                   </div>
@@ -177,7 +177,7 @@ export function RiskOverviewCombined({
                     <div className="w-full h-2 mt-1 bg-gray-600 rounded-full">
                       <div
                         className="h-2 bg-purple-600/80 rounded-full"
-                        style={{ width: `${responseTypeData.transfer.percentage}%` }}
+                        style={{ width: `${responseTypeData.transfer.percentage || 0}%` }}
                       />
                     </div>
                   </div>
@@ -191,7 +191,7 @@ export function RiskOverviewCombined({
                     <div className="w-full h-2 mt-1 bg-gray-600 rounded-full">
                       <div
                         className="h-2 bg-red-600/80 rounded-full"
-                        style={{ width: `${responseTypeData.avoid.percentage}%` }}
+                        style={{ width: `${responseTypeData.avoid.percentage || 0}%` }}
                       />
                     </div>
                   </div>
