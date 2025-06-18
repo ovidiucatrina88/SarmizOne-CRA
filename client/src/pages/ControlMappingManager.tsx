@@ -194,8 +194,8 @@ function ControlMappingManager() {
                       <SelectValue placeholder="Select asset type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {assetTypes.map(type => (
-                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                      {assetTypes.map((type, index) => (
+                        <SelectItem key={`asset-${index}-${type}`} value={type}>{type}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -312,9 +312,8 @@ function ControlMappingManager() {
                       <SelectValue placeholder="Select threat community" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Any threat</SelectItem>
-                      {threatCommunities.map(threat => (
-                        <SelectItem key={threat} value={threat}>{threat}</SelectItem>
+                      {threatCommunities.map((threat, index) => (
+                        <SelectItem key={`threat-${index}-${threat}`} value={threat}>{threat}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -331,8 +330,8 @@ function ControlMappingManager() {
                       <SelectValue placeholder="Select risk category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {riskCategories.map(category => (
-                        <SelectItem key={category} value={category}>{category}</SelectItem>
+                      {riskCategories.map((category, index) => (
+                        <SelectItem key={`risk-${index}-${category}`} value={category}>{category}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
