@@ -17,6 +17,7 @@ import adminRouter from './admin';
 import vulnerabilitiesRouter from './vulnerabilities';
 import riskSummaryRouter from './risk-summary';
 import controlMappingRouter from './controlMapping';
+import controlMappingsRouter from './controlMappings';
 import controlSuggestionsRouter from './risks/controlSuggestions';
 import roiCalculationRouter from './risks/roiCalculation';
 import controlAssociationsRouter from './risks/controlAssociations';
@@ -58,6 +59,7 @@ export function registerRoutes(app: Express): Server {
   apiRouter.use('/', vulnerabilitiesRouter);
   apiRouter.use('/', authRouter);
   apiRouter.use('/control-mapping', controlMappingRouter);
+  apiRouter.use('/control-mappings', controlMappingsRouter);
   apiRouter.use('/risks', controlSuggestionsRouter);
   apiRouter.use('/risks', roiCalculationRouter);
   apiRouter.use('/risks', controlAssociationsRouter);

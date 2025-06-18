@@ -63,6 +63,7 @@ function AuthenticatedRoutes() {
         <Route path="/control-library" component={ControlLibrary} />
         <Route path="/controls/:id" component={ControlDetailPage} />
         <Route path="/control-roi" component={ControlROI} />
+        <Route path="/control-mappings" component={ControlMappingManager} />
         <Route path="/responses" component={Responses} />
         <Route path="/reports" component={Reports} />
         <Route path="/integrations" component={Integrations} />

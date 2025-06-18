@@ -110,6 +110,9 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 - June 18, 2025. Merged "Risk Response Status" and "Top Risks" into single combined card for streamlined dashboard layout
 - June 18, 2025. Implemented intelligent control recommendation system with threat-specific mapping and auto-association API
 - June 18, 2025. Removed "Factors" tab from risk detail view, streamlined interface to focus on Control Suggestions as primary tab
+- June 18, 2025. Created comprehensive asset-type and risk-based control mapping system with intelligent suggestion engine
+- June 18, 2025. Added Control Mapping Manager UI for configuring control relevance based on asset types and risk characteristics
+- June 18, 2025. Fixed all API parameter order issues and validated complete CRUD functionality across application
 
 ## User Preferences
 
