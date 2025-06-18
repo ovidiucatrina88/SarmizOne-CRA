@@ -61,6 +61,17 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
   
   // Ensure controls is always an array
   const controls = Array.isArray(controlsData) ? controlsData : [];
+  
+  // Get threat-specific control suggestions when no real controls exist
+  const controlSuggestions = useMemo(() => {
+    if (controls.length === 0) {
+      return getThreatSpecificSuggestions(
+        risk.threatCommunity || '',
+        risk.vulnerability || ''
+      );
+    }
+    return [];
+  }, [controls.length, risk.threatCommunity, risk.vulnerability]);
 
   // For demo purposes - random data for timeline charts
   const likelihoodTimelineData = [0.4, 0.5, 0.6, 0.3, 0.5, 0.4, 0.3];
@@ -198,90 +209,67 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
               </div>
               
               <div className="space-y-3">
+                {/* Real controls */}
                 {Array.isArray(controls) && controls.filter(c => c.controlType === 'preventive').map((control, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="bg-blue-600 text-white w-8 h-8 rounded flex items-center justify-center">
                         {control.controlId.substring(0, 3).toUpperCase()}
                       </div>
-                      <div>{control.name}</div>
+                      <div>
+                        <div className="font-medium">{control.name}</div>
+                        <div className="text-xs text-gray-400">Implemented</div>
+                      </div>
                     </div>
                     
                     <div className="flex items-center space-x-3">
-                      <div className="text-gray-400">
-                        {Math.floor(Math.random() * 60) + 40}%
-                      </div>
-                      <div className="text-gray-400">→</div>
-                      <div className="text-gray-400">
-                        {Math.floor(Math.random() * 30) + 70}%
+                      <div className="text-xs text-gray-500">Effectiveness:</div>
+                      <div className="text-blue-400 font-medium">
+                        {Math.round((control.controlEffectiveness / 10) * 100)}%
                       </div>
                     </div>
                     
                     <div className="flex items-center text-green-500">
-                      ↓ {Math.floor(Math.random() * 40) + 5}.{Math.floor(Math.random() * 99)}%
+                      <div className="text-xs">
+                        Status: {control.implementationStatus?.replace('_', ' ').toUpperCase()}
+                      </div>
                     </div>
                   </div>
                 ))}
                 
-                {/* Fallback controls if none exist */}
+                {/* Suggested controls if no real preventive controls exist */}
                 {Array.isArray(controls) && controls.filter(c => c.controlType === 'preventive').length === 0 && (
                   <>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="bg-blue-600 text-white w-8 h-8 rounded flex items-center justify-center">
-                          NFW
+                    {controlSuggestions.filter(s => s.controlType === 'preventive').map((suggestion, index) => (
+                      <div key={suggestion.controlId} className="flex items-center justify-between border border-amber-600/30 bg-amber-900/20 rounded-lg p-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="bg-amber-600 text-white w-8 h-8 rounded flex items-center justify-center">
+                            {suggestion.controlId.split('-')[1]?.substring(0, 3).toUpperCase() || 'SUG'}
+                          </div>
+                          <div>
+                            <div className="font-medium">{suggestion.name}</div>
+                            <div className="text-xs text-amber-400">Suggested - {suggestion.justification}</div>
+                          </div>
                         </div>
-                        <div>Network Firewall</div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-3">
-                        <div className="text-gray-400">69%</div>
-                        <div className="text-gray-400">→</div>
-                        <div className="text-gray-400">83%</div>
-                      </div>
-                      
-                      <div className="flex items-center text-green-500">
-                        ↓ 14.93%
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="bg-blue-600 text-white w-8 h-8 rounded flex items-center justify-center">
-                          WAF
+                        
+                        <div className="flex items-center space-x-3">
+                          <div className="text-xs text-gray-500">Relevance:</div>
+                          <div className="text-amber-400 font-medium">
+                            {Math.round(suggestion.relevanceScore)}%
+                          </div>
                         </div>
-                        <div>Web Application Firewall</div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-3">
-                        <div className="text-gray-400">0%</div>
-                        <div className="text-gray-400">→</div>
-                        <div className="text-gray-400">30%</div>
-                      </div>
-                      
-                      <div className="flex items-center text-green-500">
-                        ↓ 13.38%
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="bg-blue-600 text-white w-8 h-8 rounded flex items-center justify-center">
-                          HAC
+                        
+                        <div className="flex items-center">
+                          <div className={`text-xs px-2 py-1 rounded ${
+                            suggestion.priority === 'high' ? 'bg-red-600/20 text-red-400' :
+                            suggestion.priority === 'medium' ? 'bg-yellow-600/20 text-yellow-400' :
+                            'bg-green-600/20 text-green-400'
+                          }`}>
+                            {suggestion.priority.toUpperCase()} PRIORITY
+                          </div>
                         </div>
-                        <div>Hardened Cloud</div>
                       </div>
-                      
-                      <div className="flex items-center space-x-3">
-                        <div className="text-gray-400">54%</div>
-                        <div className="text-gray-400">→</div>
-                        <div className="text-gray-400">77%</div>
-                      </div>
-                      
-                      <div className="flex items-center text-green-500">
-                        ↓ 7.13%
-                      </div>
-                    </div>
+                    ))}
                   </>
                 )}
               </div>
@@ -297,51 +285,68 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
               </div>
               
               <div className="space-y-3">
+                {/* Real controls */}
                 {Array.isArray(controls) && controls.filter(c => c.controlType === 'corrective').map((control, index) => (
                   <div key={index} className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       <div className="bg-purple-600 text-white w-8 h-8 rounded flex items-center justify-center">
                         {control.controlId.substring(0, 2).toUpperCase()}
                       </div>
-                      <div>{control.name}</div>
+                      <div>
+                        <div className="font-medium">{control.name}</div>
+                        <div className="text-xs text-gray-400">Implemented</div>
+                      </div>
                     </div>
                     
                     <div className="flex items-center space-x-3">
-                      <div className="text-gray-400">
-                        {Math.floor(Math.random() * 50) + 30}%
-                      </div>
-                      <div className="text-gray-400">→</div>
-                      <div className="text-gray-400">
-                        {Math.floor(Math.random() * 20) + 60}%
+                      <div className="text-xs text-gray-500">Effectiveness:</div>
+                      <div className="text-purple-400 font-medium">
+                        {Math.round((control.controlEffectiveness / 10) * 100)}%
                       </div>
                     </div>
                     
                     <div className="flex items-center text-green-500">
-                      ↓ ${Math.floor(Math.random() * 50) + 10}M
+                      <div className="text-xs">
+                        Status: {control.implementationStatus?.replace('_', ' ').toUpperCase()}
+                      </div>
                     </div>
                   </div>
                 ))}
                 
-                {/* Fallback control if none exists */}
+                {/* Suggested controls if no real corrective controls exist */}
                 {Array.isArray(controls) && controls.filter(c => c.controlType === 'corrective').length === 0 && (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="bg-purple-600 text-white w-8 h-8 rounded flex items-center justify-center">
-                        IR
+                  <>
+                    {controlSuggestions.filter(s => s.controlType === 'corrective').map((suggestion, index) => (
+                      <div key={suggestion.controlId} className="flex items-center justify-between border border-amber-600/30 bg-amber-900/20 rounded-lg p-3">
+                        <div className="flex items-center space-x-3">
+                          <div className="bg-amber-600 text-white w-8 h-8 rounded flex items-center justify-center">
+                            {suggestion.controlId.split('-')[1]?.substring(0, 2).toUpperCase() || 'SG'}
+                          </div>
+                          <div>
+                            <div className="font-medium">{suggestion.name}</div>
+                            <div className="text-xs text-amber-400">Suggested - {suggestion.justification}</div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-3">
+                          <div className="text-xs text-gray-500">Relevance:</div>
+                          <div className="text-amber-400 font-medium">
+                            {Math.round(suggestion.relevanceScore)}%
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center">
+                          <div className={`text-xs px-2 py-1 rounded ${
+                            suggestion.priority === 'high' ? 'bg-red-600/20 text-red-400' :
+                            suggestion.priority === 'medium' ? 'bg-yellow-600/20 text-yellow-400' :
+                            'bg-green-600/20 text-green-400'
+                          }`}>
+                            {suggestion.priority.toUpperCase()} PRIORITY
+                          </div>
+                        </div>
                       </div>
-                      <div>Incident Response</div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3">
-                      <div className="text-gray-400">34%</div>
-                      <div className="text-gray-400">→</div>
-                      <div className="text-gray-400">65%</div>
-                    </div>
-                    
-                    <div className="flex items-center text-green-500">
-                      ↓ $20M
-                    </div>
-                  </div>
+                    ))}
+                  </>
                 )}
               </div>
             </div>
