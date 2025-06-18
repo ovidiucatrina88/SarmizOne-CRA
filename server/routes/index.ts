@@ -17,6 +17,9 @@ import adminRouter from './admin';
 import vulnerabilitiesRouter from './vulnerabilities';
 import riskSummaryRouter from './risk-summary';
 import controlMappingRouter from './controlMapping';
+import controlSuggestionsRouter from './risks/controlSuggestions';
+import roiCalculationRouter from './risks/roiCalculation';
+import controlAssociationsRouter from './risks/controlAssociations';
 import { errorHandler } from './common/middleware/errorHandler';
 import { requestLogger } from './common/middleware/requestLogger';
 import { healthRouter } from './health';
@@ -54,6 +57,10 @@ export function registerRoutes(app: Express): Server {
   apiRouter.use('/admin', adminRouter);
   apiRouter.use('/', vulnerabilitiesRouter);
   apiRouter.use('/', authRouter);
+  apiRouter.use('/control-mapping', controlMappingRouter);
+  apiRouter.use('/risks', controlSuggestionsRouter);
+  apiRouter.use('/risks', roiCalculationRouter);
+  apiRouter.use('/risks', controlAssociationsRouter);
   
   // Add API router to app
   app.use('/api', apiRouter);
