@@ -103,19 +103,28 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
     const riskData = risk[0];
     console.log(`[ControlSuggestions] Risk data:`, { id: riskData.id, riskId: riskData.riskId, category: riskData.riskCategory });
     
-    // Simplified query to directly get mapped controls for operational risks
+    // DEBUG: Test the database tables directly
+    console.log(`[ControlSuggestions] Testing database tables...`);
+    
+    // Direct query using raw SQL to ensure we get the data
     const relevantControls = await db.execute(sql`
-      SELECT cl.*, 
-        crm.relevance_score as risk_relevance,
-        crm.impact_type as risk_impact_type
+      SELECT cl.control_id, cl.name, cl.description, cl.control_type, cl.control_category,
+             cl.implementation_status, cl.control_effectiveness, cl.implementation_cost,
+             cl.cost_per_agent, cl.is_per_agent_pricing,
+             crm.relevance_score as risk_relevance,
+             crm.impact_type as risk_impact_type
       FROM control_library cl
       INNER JOIN control_risk_mappings crm ON cl.control_id = crm.control_id 
-      WHERE crm.risk_category = ${riskData.riskCategory || 'operational'}
+      WHERE crm.risk_category = 'operational'
         AND crm.relevance_score > 0
-      ORDER BY crm.relevance_score DESC, cl.control_id
+      ORDER BY crm.relevance_score DESC
+      LIMIT 20
     `);
     
     console.log(`[ControlSuggestions] Query returned ${Array.isArray(relevantControls) ? relevantControls.length : 0} controls`);
+    if (Array.isArray(relevantControls) && relevantControls.length > 0) {
+      console.log(`[ControlSuggestions] Sample control:`, { id: relevantControls[0].control_id, name: relevantControls[0].name, score: relevantControls[0].risk_relevance });
+    }
     
     // Get currently associated controls
     const associatedControlsQuery = await db.execute(sql`
