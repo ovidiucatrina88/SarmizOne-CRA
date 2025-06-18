@@ -103,30 +103,47 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
     const riskData = risk[0];
     console.log(`[ControlSuggestions] Risk data:`, { id: riskData.id, riskId: riskData.riskId, category: riskData.riskCategory });
     
-    // DEBUG: Test the database tables directly
-    console.log(`[ControlSuggestions] Testing database tables...`);
+    // Use a more direct approach with proper error handling
+    console.log(`[ControlSuggestions] Testing database connection...`);
     
-    // Direct query using raw SQL - fix data access
-    const queryResult = await db.execute(sql`
-      SELECT cl.control_id, cl.name, cl.description, cl.control_type, cl.control_category,
-             cl.implementation_status, cl.control_effectiveness, cl.implementation_cost,
-             cl.cost_per_agent, cl.is_per_agent_pricing,
-             crm.relevance_score as risk_relevance,
-             crm.impact_type as risk_impact_type
-      FROM control_library cl
-      INNER JOIN control_risk_mappings crm ON cl.control_id = crm.control_id 
-      WHERE crm.risk_category = 'operational'
-        AND crm.relevance_score > 0
-      ORDER BY crm.relevance_score DESC
-      LIMIT 20
-    `);
+    let relevantControls = [];
+    try {
+      // Test the query step by step
+      const testResult = await db.execute(sql`SELECT COUNT(*) as count FROM control_library`);
+      console.log(`[ControlSuggestions] Control library has ${testResult[0]?.count || 0} records`);
+      
+      const mappingResult = await db.execute(sql`SELECT COUNT(*) as count FROM control_risk_mappings WHERE risk_category = 'operational'`);
+      console.log(`[ControlSuggestions] Found ${mappingResult[0]?.count || 0} operational mappings`);
+      
+      // Now try the actual query
+      const queryResult = await db.execute(sql`
+        SELECT cl.control_id, cl.name, cl.description, cl.control_type, 
+               crm.relevance_score as risk_relevance,
+               crm.impact_type as risk_impact_type
+        FROM control_library cl
+        INNER JOIN control_risk_mappings crm ON cl.control_id = crm.control_id 
+        WHERE crm.risk_category = 'operational'
+          AND crm.relevance_score > 0
+        ORDER BY crm.relevance_score DESC
+        LIMIT 10
+      `);
+      
+      console.log(`[ControlSuggestions] Query result structure:`, { 
+        isArray: Array.isArray(queryResult), 
+        hasRows: queryResult?.rows ? queryResult.rows.length : 'no rows property',
+        directLength: queryResult?.length || 0
+      });
+      
+      relevantControls = queryResult || [];
+      
+    } catch (error) {
+      console.error(`[ControlSuggestions] Database query failed:`, error);
+      relevantControls = [];
+    }
     
-    // Access the actual rows from the query result
-    const relevantControls = Array.isArray(queryResult) ? queryResult : (queryResult.rows || []);
-    
-    console.log(`[ControlSuggestions] Query returned ${relevantControls.length} controls`);
+    console.log(`[ControlSuggestions] Final controls array length: ${relevantControls.length}`);
     if (relevantControls.length > 0) {
-      console.log(`[ControlSuggestions] Sample control:`, { id: relevantControls[0].control_id, name: relevantControls[0].name, score: relevantControls[0].risk_relevance });
+      console.log(`[ControlSuggestions] First control:`, relevantControls[0]);
     }
     
     // Get currently associated controls

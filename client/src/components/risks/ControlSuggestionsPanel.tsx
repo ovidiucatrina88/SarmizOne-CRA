@@ -48,10 +48,13 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
   const queryClient = useQueryClient();
   const [selectedControls, setSelectedControls] = useState<string[]>([]);
 
-  const { data: suggestions, isLoading, error } = useQuery<ControlSuggestionsResponse>({
+  const { data: response, isLoading, error } = useQuery({
     queryKey: ['/api/risks', riskId, 'control-suggestions'],
     enabled: !!riskId
   });
+
+  // Extract the data from the API response structure
+  const suggestions = response?.data as ControlSuggestionsResponse;
 
   const associateControlMutation = useMutation({
     mutationFn: async (controlId: string) => {
@@ -210,6 +213,12 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
       </Card>
     );
   }
+
+  // Debug logging to see what data we're receiving
+  console.log('Control suggestions data:', suggestions);
+  console.log('Likelihood controls:', suggestions.likelihoodControls?.length || 0);
+  console.log('Magnitude controls:', suggestions.magnitudeControls?.length || 0);
+  console.log('Both controls:', suggestions.bothControls?.length || 0);
 
   return (
     <div className="space-y-6">
