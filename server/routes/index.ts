@@ -16,6 +16,7 @@ import authRouter from './auth';
 import adminRouter from './admin';
 import vulnerabilitiesRouter from './vulnerabilities';
 import riskSummaryRouter from './risk-summary';
+import controlMappingRouter from './controlMapping';
 import { errorHandler } from './common/middleware/errorHandler';
 import { requestLogger } from './common/middleware/requestLogger';
 import { healthRouter } from './health';

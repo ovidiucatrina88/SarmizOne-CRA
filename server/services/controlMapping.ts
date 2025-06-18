@@ -79,10 +79,20 @@ const CONTROL_MAPPING_RULES: MappingRule[] = [
   // Mobile device protection
   {
     threatPattern: /mobile.*device|device.*theft|lost.*device/i,
-    controlPattern: /remote.*locate|remote.*wipe|device.*management|mobile.*management/i,
+    controlPattern: /remote.*locate|remote.*wipe|device.*management|mobile.*management|locate/i,
     score: 90,
     priority: 'high',
     reasoning: 'Remote device controls mitigate mobile security risks'
+  },
+  
+  // Data breach + insufficient access controls -> encryption
+  {
+    threatPattern: /data.*breach/i,
+    vulnerabilityPattern: /access.*control|insufficient.*access/i,
+    controlPattern: /encrypt|encryption|sensitive.*data/i,
+    score: 92,
+    priority: 'high',
+    reasoning: 'Encryption is critical when access controls are insufficient'
   },
   
   // General security controls (lower priority)
@@ -129,7 +139,7 @@ function calculateMappingScore(
   const riskText = `${risk.name} ${risk.threatCommunity} ${risk.vulnerability}`.toLowerCase();
   const controlText = `${control.name} ${control.description}`.toLowerCase();
   
-  let bestMatch = { score: 0, reasoning: '', priority: 'low' as const };
+  let bestMatch: { score: number; reasoning: string; priority: 'high' | 'medium' | 'low' } = { score: 0, reasoning: '', priority: 'low' };
   
   for (const rule of CONTROL_MAPPING_RULES) {
     let matches = 0;
