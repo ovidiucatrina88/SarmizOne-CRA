@@ -21,6 +21,7 @@ router.get('/:riskId/control-suggestions', async (req, res) => {
     const suggestions = await getControlSuggestions(riskId);
     
     console.log(`[ControlSuggestions] Found ${suggestions.likelihoodControls.length} likelihood controls, ${suggestions.magnitudeControls.length} magnitude controls, ${suggestions.bothControls.length} both controls`);
+    console.log(`[ControlSuggestions] Sample controls:`, suggestions.likelihoodControls.slice(0, 2).map(c => c.name), suggestions.magnitudeControls.slice(0, 2).map(c => c.name));
     
     return sendSuccess(res, suggestions);
   } catch (error) {
