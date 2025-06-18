@@ -58,7 +58,7 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
       const response = await fetch(`/api/risks/${riskId}/controls`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ controlId, associationType: 'user_selected' })
+        body: JSON.stringify({ controlIds: [controlId], associationType: 'manual' })
       });
       if (!response.ok) throw new Error('Failed to associate control');
       return response.json();
