@@ -2,8 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { SquareStack, AlertTriangle, Shield, DollarSign, History } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/stats-card";
 import { RiskBreakdown } from "@/components/dashboard/risk-breakdown";
-import { RiskResponseStatus } from "@/components/dashboard/risk-response-status";
-import { TopRisks } from "@/components/dashboard/top-risks";
+import { RiskOverviewCombined } from "@/components/dashboard/risk-overview-combined";
 import Layout from "@/components/layout/layout";
 import { LossExceedanceCurveModern } from "@/components/ui/loss-exceedance-curve-modern";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -431,17 +430,12 @@ export default function Dashboard() {
       </div>
 
       {/* IRIS Benchmarks and Risk Breakdown */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         <IRISBenchmarkCard />
         
         <RiskCategorySeverityCard 
           riskByCategory={riskByCategory}
           riskBySeverity={riskBySeverity}
-        />
-        
-        <TopRisks 
-          risks={risksData?.data || []}
-          maxItems={5}
         />
       </div>
 
@@ -453,9 +447,11 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Risk Response Status */}
+      {/* Combined Risk Overview */}
       <div className="mb-8">
-        <RiskResponseStatus 
+        <RiskOverviewCombined 
+          risks={risksData?.data || []}
+          maxItems={5}
           responseTypeData={responseTypeData}
           riskReduction={riskReduction}
         />
