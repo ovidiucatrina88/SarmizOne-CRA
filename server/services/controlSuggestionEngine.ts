@@ -5,7 +5,7 @@
 
 import { db } from '../db';
 import { risks, controls, riskControls, assets } from '../../shared/schema';
-import { eq, sql, and, or, inArray } from 'drizzle-orm';
+import { eq, sql, and, or, inArray, like } from 'drizzle-orm';
 // Removed import - using simplified calculation
 
 export interface ControlSuggestion {
@@ -250,8 +250,22 @@ async function calculateIntelligentRelevance(control: any, riskData: any): Promi
  */
 export async function getControlSuggestions(riskId: string): Promise<ControlSuggestionResponse> {
   try {
-    // Get the risk
-    const risk = await db.select().from(risks).where(eq(risks.riskId, riskId)).limit(1);
+    // Get the risk - handle both numeric ID and full risk ID
+    let risk;
+    
+    // First try to find by riskId (full ID like "RISK-CREDENTIAL-534")
+    risk = await db.select().from(risks).where(eq(risks.riskId, riskId)).limit(1);
+    
+    // If not found and riskId looks like a number, try finding by numeric ID
+    if (risk.length === 0 && /^\d+$/.test(riskId)) {
+      risk = await db.select().from(risks).where(eq(risks.id, parseInt(riskId))).limit(1);
+    }
+    
+    // If still not found, try finding by partial match (e.g., "534" -> "RISK-*-534")
+    if (risk.length === 0) {
+      risk = await db.select().from(risks).where(like(risks.riskId, `%-${riskId}`)).limit(1);
+    }
+    
     if (risk.length === 0) {
       throw new Error('Risk not found');
     }
