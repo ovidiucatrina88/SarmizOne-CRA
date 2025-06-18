@@ -14,6 +14,7 @@ import { ControlForm } from "@/components/controls/control-form";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import Layout from "@/components/layout/layout";
 
 export default function Controls() {
@@ -103,9 +104,30 @@ export default function Controls() {
     setIsCreateModalOpen(true);
   };
 
+  // Delete control mutation
+  const deleteControlMutation = useMutation({
+    mutationFn: async (controlId: number) => {
+      return apiRequest(`/api/controls/${controlId}`, "DELETE");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/controls"] });
+      toast({
+        title: "Control deleted",
+        description: "The control has been successfully deleted.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete control",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleDeleteControl = (control: Control) => {
-    // Delete handling is managed by individual components' mutations
     console.log('Deleting control:', control.name);
+    deleteControlMutation.mutate(control.id);
   };
 
   const handleCloseControl = () => {
