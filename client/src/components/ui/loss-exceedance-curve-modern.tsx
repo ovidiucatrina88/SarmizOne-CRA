@@ -899,6 +899,14 @@ export function LossExceedanceCurveModern({
           </div>
           <div className="flex items-center space-x-2">
             <Switch 
+              id="show-inherent-risk" 
+              checked={showInherentRisk} 
+              onCheckedChange={setShowInherentRisk} 
+            />
+            <Label htmlFor="show-inherent-risk" className="text-gray-300">Show Inherent Risk</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch 
               id="show-tolerance-config" 
               checked={showToleranceConfig} 
               onCheckedChange={setShowToleranceConfig} 
@@ -1229,11 +1237,28 @@ export function LossExceedanceCurveModern({
                   />
                 )}
                 
+                {/* Inherent risk line */}
+                {showInherentRisk && (
+                  <Line 
+                    type="monotone"
+                    dataKey="inherentProbability"
+                    name="Inherent Risk (No Controls)"
+                    stroke="#f97316"
+                    strokeWidth={2}
+                    strokeDasharray="2 2"
+                    dot={false}
+                    activeDot={{ r: 6, fill: "#f97316", stroke: "#fff", strokeWidth: 2 }}
+                    animationDuration={1000}
+                    isAnimationActive={true}
+                    connectNulls={true}
+                  />
+                )}
+                
                 {/* Current line */}
                 <Line 
                   type="monotone"
                   dataKey="probability"
-                  name="Current Loss Probability"
+                  name="Residual Risk (With Controls)"
                   stroke="#3b82f6"
                   strokeWidth={3}
                   dot={false}
@@ -1287,8 +1312,14 @@ export function LossExceedanceCurveModern({
         <div className="mt-4 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm">
           <div className="flex items-center">
             <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-            <span className="text-gray-300">Current Loss Probability</span>
+            <span className="text-gray-300">Residual Risk (With Controls)</span>
           </div>
+          {showInherentRisk && (
+            <div className="flex items-center">
+              <div className="w-3 h-1 bg-orange-500 mr-2" style={{borderStyle: 'dashed', borderWidth: '1px'}}></div>
+              <span className="text-gray-300">Inherent Risk (No Controls)</span>
+            </div>
+          )}
           {showHistory && (
             <div className="flex items-center">
               <div className="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
