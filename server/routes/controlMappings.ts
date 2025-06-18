@@ -4,7 +4,7 @@
  */
 
 import { Router } from 'express';
-import { db } from '../db';
+import { pool } from '../db';
 import { sendError, sendSuccess } from './common/responses/apiResponse';
 
 const router = Router();
@@ -15,7 +15,7 @@ const router = Router();
  */
 router.get('/assets', async (req, res) => {
   try {
-    const mappings = await db.query(`
+    const mappings = await pool.query(`
       SELECT * FROM control_asset_mappings 
       ORDER BY relevance_score DESC, control_id
     `);
@@ -39,7 +39,7 @@ router.post('/assets', async (req, res) => {
       return sendError(res, new Error('Missing required fields'), 400);
     }
     
-    const result = await db.query(`
+    const result = await pool.query(`
       INSERT INTO control_asset_mappings (control_id, asset_type, relevance_score, reasoning)
       VALUES ($1, $2, $3, $4)
       ON CONFLICT (control_id, asset_type) 
@@ -62,7 +62,7 @@ router.delete('/assets/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const result = await db.query(`
+    const result = await pool.query(`
       DELETE FROM control_asset_mappings WHERE id = $1 RETURNING *
     `, [id]);
     
@@ -83,7 +83,7 @@ router.delete('/assets/:id', async (req, res) => {
  */
 router.get('/risks', async (req, res) => {
   try {
-    const mappings = await db.query(`
+    const mappings = await pool.query(`
       SELECT * FROM control_risk_mappings 
       ORDER BY relevance_score DESC, control_id
     `);
@@ -115,7 +115,7 @@ router.post('/risks', async (req, res) => {
       return sendError(res, new Error('Control ID and reasoning are required'), 400);
     }
     
-    const result = await db.query(`
+    const result = await pool.query(`
       INSERT INTO control_risk_mappings 
       (control_id, threat_community, risk_category, vulnerability_pattern, relevance_score, impact_type, reasoning)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -145,7 +145,7 @@ router.delete('/risks/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    const result = await db.query(`
+    const result = await pool.query(`
       DELETE FROM control_risk_mappings WHERE id = $1 RETURNING *
     `, [id]);
     
