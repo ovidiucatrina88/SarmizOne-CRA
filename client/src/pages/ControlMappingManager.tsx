@@ -13,6 +13,7 @@ import { Slider } from "@/components/ui/slider";
 import { queryClient, getQueryFn } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Save, Download, Upload } from "lucide-react";
+import Layout from "@/components/layout/layout";
 
 interface ControlAssetMapping {
   id: number;
@@ -39,7 +40,7 @@ interface Control {
   control_category: string;
 }
 
-export default function ControlMappingManager() {
+function ControlMappingManager() {
   const { toast } = useToast();
   const [selectedTab, setSelectedTab] = useState("asset-mappings");
   
@@ -150,24 +151,6 @@ export default function ControlMappingManager() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Control Mapping Manager</h1>
-          <p className="text-muted-foreground">
-            Configure intelligent control suggestions based on asset types and risk characteristics
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-          <Button variant="outline" size="sm">
-            <Upload className="w-4 h-4 mr-2" />
-            Import
-          </Button>
-        </div>
-      </div>
 
       <Tabs value={selectedTab} onValueChange={setSelectedTab}>
         <TabsList className="grid w-full grid-cols-2">
@@ -467,5 +450,28 @@ export default function ControlMappingManager() {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+export default function ControlMappingManagerPage() {
+  return (
+    <Layout 
+      pageTitle="Control Mapping Manager"
+      pageDescription="Configure intelligent control suggestions based on asset types and risk characteristics"
+      pageActions={
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm">
+            <Download className="w-4 h-4 mr-2" />
+            Export
+          </Button>
+          <Button variant="outline" size="sm">
+            <Upload className="w-4 h-4 mr-2" />
+            Import
+          </Button>
+        </div>
+      }
+    >
+      <ControlMappingManager />
+    </Layout>
   );
 }

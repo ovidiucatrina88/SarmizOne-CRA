@@ -22,7 +22,7 @@ import Controls from "@/pages/controls";
 import ControlLibrary from "@/pages/ControlLibrary";
 import ControlDetailPage from "@/pages/ControlDetailPage";
 import ControlROI from "@/pages/control-roi";
-import ControlMappingManager from "@/pages/ControlMappingManager";
+import ControlMappingManagerPage from "@/pages/ControlMappingManager";
 import Responses from "@/pages/responses";
 import Reports from "@/pages/reports";
 import Integrations from "@/pages/integrations";
@@ -63,7 +63,7 @@ function AuthenticatedRoutes() {
         <Route path="/control-library" component={ControlLibrary} />
         <Route path="/controls/:id" component={ControlDetailPage} />
         <Route path="/control-roi" component={ControlROI} />
-        <Route path="/control-mappings" component={ControlMappingManager} />
+        <Route path="/control-mappings" component={ControlMappingManagerPage} />
         <Route path="/responses" component={Responses} />
         <Route path="/reports" component={Reports} />
         <Route path="/integrations" component={Integrations} />
