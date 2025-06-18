@@ -108,7 +108,7 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
     // If still not found, try finding by partial match (e.g., "534" -> "RISK-*-534")
     if (risk.length === 0) {
       const partialResults = await db.execute(sql`SELECT * FROM risks WHERE risk_id LIKE ${'%-' + riskId} LIMIT 1`);
-      if (partialResults.length > 0) {
+      if (Array.isArray(partialResults) && partialResults.length > 0) {
         risk = partialResults;
       }
     }
@@ -163,7 +163,7 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
     // Process each control with intelligent relevance calculation
     const suggestions: ControlSuggestion[] = [];
     
-    for (const control of relevantControls) {
+    for (const control of Array.isArray(relevantControls) ? relevantControls : []) {
       const impactCategory = categorizeControlImpact(control);
       
       // Calculate match score based on mapping relevance
