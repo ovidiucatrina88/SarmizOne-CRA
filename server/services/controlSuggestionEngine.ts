@@ -263,7 +263,7 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
     
     // If still not found, try finding by partial match (e.g., "534" -> "RISK-*-534")
     if (risk.length === 0) {
-      risk = await db.select().from(risks).where(like(risks.riskId, `%-${riskId}`)).limit(1);
+      risk = await db.select().from(risks).where(sql`${risks.riskId} LIKE ${'%-' + riskId}`).limit(1);
     }
     
     if (risk.length === 0) {
@@ -272,21 +272,18 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
     
     const riskData = risk[0];
     
-    // Get all controls from control library (templates)
-    const allControls = await db.query(`
-      SELECT * FROM control_library 
-      ORDER BY control_id
-    `);
+    // Get all controls from control library using raw query for now
+    const allControls = await db.execute(sql`SELECT * FROM control_library ORDER BY control_id`);
     
     // Get currently associated controls for this risk
-    const associatedControls = await db.query(`
+    const associatedControls = await db.execute(sql`
       SELECT c.control_id
       FROM risk_controls rc
       JOIN controls c ON rc.control_id = c.id
-      WHERE rc.risk_id = $1
-    `, [riskData.id]);
+      WHERE rc.risk_id = ${riskData.id}
+    `);
     
-    const associatedControlIds = new Set(associatedControls.rows.map(c => c.control_id));
+    const associatedControlIds = new Set(associatedControls.map((c: any) => c.control_id));
     
     // Calculate current risk exposure
     const currentExposure = {
