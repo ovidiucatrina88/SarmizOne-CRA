@@ -116,7 +116,7 @@ export function RiskOverviewCombined({
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'bottom' as const,
+        position: 'right' as const,
         labels: {
           color: 'rgba(255, 255, 255, 0.8)',
           font: {
@@ -203,40 +203,8 @@ export function RiskOverviewCombined({
               {/* Response Types - Pie Chart */}
               <div>
                 <div className="text-sm font-medium text-white/80 mb-3">By Response Type</div>
-                <div className="h-48 mb-4">
+                <div className="h-48">
                   <Pie data={pieChartData} options={pieChartOptions} />
-                </div>
-                
-                {/* Summary stats below the chart */}
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="flex items-center justify-between p-2 bg-gray-700/50 rounded">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-blue-600 rounded-full mr-2"></div>
-                      <span className="text-white/80">Mitigate</span>
-                    </div>
-                    <span className="text-white font-medium">{responseTypeData.mitigate.count}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-gray-700/50 rounded">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-amber-500 rounded-full mr-2"></div>
-                      <span className="text-white/80">Accept</span>
-                    </div>
-                    <span className="text-white font-medium">{responseTypeData.accept.count}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-gray-700/50 rounded">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-purple-600 rounded-full mr-2"></div>
-                      <span className="text-white/80">Transfer</span>
-                    </div>
-                    <span className="text-white font-medium">{responseTypeData.transfer.count}</span>
-                  </div>
-                  <div className="flex items-center justify-between p-2 bg-gray-700/50 rounded">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 bg-red-600 rounded-full mr-2"></div>
-                      <span className="text-white/80">Avoid</span>
-                    </div>
-                    <span className="text-white font-medium">{responseTypeData.avoid.count}</span>
-                  </div>
                 </div>
               </div>
 
