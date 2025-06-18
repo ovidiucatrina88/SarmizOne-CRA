@@ -22,6 +22,7 @@ import { formatCurrency } from '@shared/utils/calculations'
 interface DataPoint {
   lossExposure: number;
   probability: number;
+  inherentProbability?: number | null;
   previousProbability?: number | null;
   toleranceProbability?: number | null;
   unacceptableRisk?: number;
@@ -156,7 +157,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           <p className="text-sm font-bold text-white mb-1">{keypointLabel}</p>
         )}
         <p className="text-sm text-gray-300 mb-1">Loss Exposure: {data.formattedLoss}</p>
-        <p className="font-bold text-blue-400">Current Probability: {data.probability?.toFixed(1)}%</p>
+        <p className="font-bold text-blue-400">Residual Risk: {data.probability?.toFixed(1)}%</p>
+        {data.inherentProbability && (
+          <p className="font-bold text-orange-400">Inherent Risk: {data.inherentProbability?.toFixed(1)}%</p>
+        )}
         {data.previousProbability && (
           <p className="font-bold text-yellow-400">Previous Period: {data.previousProbability?.toFixed(1)}%</p>
         )}
@@ -213,6 +217,7 @@ export function LossExceedanceCurveModern({
   // UI state
   const [showHistory, setShowHistory] = useState(!!previousExposure);
   const [showTolerance, setShowTolerance] = useState(true);
+  const [showInherentRisk, setShowInherentRisk] = useState(false);
   const [showToleranceConfig, setShowToleranceConfig] = useState(false);
   const [showIrisBenchmarks, setShowIrisBenchmarks] = useState(!!irisBenchmarks);
   const [showSmbBenchmark, setShowSmbBenchmark] = useState(true);
@@ -621,13 +626,27 @@ export function LossExceedanceCurveModern({
         }
       }
       
+      // Calculate inherent risk probability (risk without controls)
+      let inherentProbability = null;
+      if (filteredRisks.length > 0) {
+        const inherentRiskExposures = filteredRisks.map(risk => {
+          const inherentRisk = ensureFiniteNumber(risk.inherentRisk || 0);
+          return inherentRisk;
+        }).filter(exposure => exposure > 0);
+        
+        if (inherentRiskExposures.length > 0) {
+          const inherentRisksExceedingLoss = inherentRiskExposures.filter(exposure => exposure >= lossExposure);
+          inherentProbability = (inherentRisksExceedingLoss.length / inherentRiskExposures.length) * 100;
+        }
+      }
+
       // Previous probability based on actual historical data
       let previousProbability = null;
       if (previousData && filteredRisks.length > 0) {
-        // Use inherent risk as proxy for previous risk values
+        // Use historical data for previous risk values
         const previousRiskExposures = filteredRisks.map(risk => {
-          const inherentRisk = ensureFiniteNumber(risk.inherentRisk || 0);
-          return inherentRisk;
+          const residualRisk = ensureFiniteNumber(risk.residualRisk || 0);
+          return residualRisk;
         }).filter(exposure => exposure > 0);
         
         if (previousRiskExposures.length > 0) {
@@ -832,6 +851,7 @@ export function LossExceedanceCurveModern({
       data.push({
         lossExposure,
         probability,
+        inherentProbability,
         previousProbability,
         toleranceProbability,
         unacceptableRisk: (probability !== null && toleranceProbability !== null && probability > toleranceProbability) 
