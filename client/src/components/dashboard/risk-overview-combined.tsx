@@ -115,7 +115,7 @@ export function RiskOverviewCombined({
                       </div>
                     </div>
                     <div className="flex flex-col items-end ml-2">
-                      <span className="text-sm font-medium text-white">{formatCurrency(risk.residualRisk || 0)}</span>
+                      <span className="text-sm font-medium text-white">{formatCurrency(parseFloat(risk.residualRisk) || 0)}</span>
                       <span className="text-xs text-gray-400">Expected Loss</span>
                     </div>
                   </div>
@@ -205,18 +205,18 @@ export function RiskOverviewCombined({
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
                       <div className="text-white/70">Inherent Risk:</div>
-                      <div className="font-medium text-white">{formatCurrency(riskReduction.inherentRisk)}</div>
+                      <div className="font-medium text-white">{formatCurrency(Number(riskReduction.inherentRisk) || 0)}</div>
                     </div>
                     <div>
                       <div className="text-white/70">Residual Risk:</div>
-                      <div className="font-medium text-white">{formatCurrency(riskReduction.residualRisk)}</div>
+                      <div className="font-medium text-white">{formatCurrency(Number(riskReduction.residualRisk) || 0)}</div>
                     </div>
                   </div>
                   <div className="mt-3">
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-xs text-white/70">Risk Reduction:</div>
                       <div className="text-xs font-medium text-green-500">
-                        {formatCurrency(riskReduction.reduction)} ({(riskReduction.reductionPercentage || 0).toFixed(0)}%)
+                        {formatCurrency(Number(riskReduction.reduction) || 0)} ({(Number(riskReduction.reductionPercentage) || 0).toFixed(0)}%)
                       </div>
                     </div>
                     <div className="w-full h-3 mb-1 bg-gray-600 rounded-full">
