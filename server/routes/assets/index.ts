@@ -47,6 +47,28 @@ const assetSchema = z.object({
   notes: data.notes || ''
 }));
 
+// GET /assets/vulnerabilities - Get vulnerabilities for assets (must come before /:id)
+router.get('/vulnerabilities', async (req, res) => {
+  try {
+    const vulnerabilities = [];
+    sendSuccess(res, vulnerabilities);
+  } catch (error) {
+    console.error('Error fetching asset vulnerabilities:', error);
+    sendError(res, 'Failed to fetch asset vulnerabilities', 500);
+  }
+});
+
+// POST /assets/vulnerabilities/import - Import vulnerabilities
+router.post('/vulnerabilities/import', async (req, res) => {
+  try {
+    const result = { imported: 0, message: 'Vulnerability import not yet implemented' };
+    sendSuccess(res, result);
+  } catch (error) {
+    console.error('Error importing vulnerabilities:', error);
+    sendError(res, 'Failed to import vulnerabilities', 500);
+  }
+});
+
 // Get all assets with optional filtering
 router.get('/', async (req, res) => {
   try {
