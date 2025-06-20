@@ -115,18 +115,41 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
       const mappingResult = await db.execute(sql`SELECT COUNT(*) as count FROM control_risk_mappings WHERE risk_category = 'operational'`);
       console.log(`[ControlSuggestions] Found ${mappingResult[0]?.count || 0} operational mappings`);
       
-      // Now try the actual query
-      const queryResult = await db.execute(sql`
-        SELECT cl.control_id, cl.name, cl.description, cl.control_type, 
-               crm.relevance_score as risk_relevance,
-               crm.impact_type as risk_impact_type
-        FROM control_library cl
-        INNER JOIN control_risk_mappings crm ON cl.control_id = crm.control_id 
-        WHERE crm.risk_category = 'operational'
-          AND crm.relevance_score > 0
-        ORDER BY crm.relevance_score DESC
-        LIMIT 10
-      `);
+      // Query for controls mapped to this specific risk's library ID
+      const riskLibraryId = riskData.libraryItemId;
+      console.log(`[ControlSuggestions] Looking for controls mapped to risk library ID: ${riskLibraryId}`);
+      
+      let queryResult;
+      if (riskLibraryId) {
+        queryResult = await db.execute(sql`
+          SELECT cl.control_id, cl.name, cl.description, cl.control_type, 
+                 crm.relevance_score as risk_relevance,
+                 crm.impact_type as risk_impact_type,
+                 crm.reasoning
+          FROM control_library cl
+          INNER JOIN control_risk_mappings crm ON cl.control_id = crm.control_id 
+          WHERE crm.risk_library_id = ${riskLibraryId}
+            AND crm.relevance_score > 0
+          ORDER BY crm.relevance_score DESC
+          LIMIT 20
+        `);
+        console.log(`[ControlSuggestions] Found ${queryResult.length} controls mapped to risk library ID ${riskLibraryId}`);
+      } else {
+        // Fallback to category-based mapping for legacy risks
+        queryResult = await db.execute(sql`
+          SELECT cl.control_id, cl.name, cl.description, cl.control_type, 
+                 crm.relevance_score as risk_relevance,
+                 crm.impact_type as risk_impact_type,
+                 crm.reasoning
+          FROM control_library cl
+          INNER JOIN control_risk_mappings crm ON cl.control_id = crm.control_id 
+          WHERE crm.risk_category = 'operational'
+            AND crm.relevance_score > 0
+          ORDER BY crm.relevance_score DESC
+          LIMIT 10
+        `);
+        console.log(`[ControlSuggestions] Using fallback category mapping, found ${queryResult.length} controls`);
+      }
       
       console.log(`[ControlSuggestions] Query result structure:`, { 
         isArray: Array.isArray(queryResult), 
