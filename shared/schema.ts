@@ -1,7 +1,7 @@
-import { pgTable, text, serial, integer, boolean, json, real, timestamp, pgEnum, numeric, foreignKey, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, json, real, timestamp, pgEnum, numeric, foreignKey, uniqueIndex, varchar } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
-import { relations, eq } from "drizzle-orm";
+import { relations, eq, sql } from "drizzle-orm";
 
 // Cost Module Types
 export const costModuleTypeEnum = pgEnum('cost_module_type', [
