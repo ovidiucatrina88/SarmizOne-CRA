@@ -42,7 +42,7 @@ function AuthenticatedRoutes() {
         <Route path="/asset-hierarchy" component={AssetHierarchy} />
         <Route path="/assets/hierarchy" component={AssetHierarchy} />
         <Route path="/assets/enterprise-architecture" component={EnterpriseArchitecture} />
-        <Route path="/assets/vulnerabilities" component={Assets} />
+        <Route path="/assets/vulnerabilities" component={AssetVulnerabilities} />
 
         <Route path="/assets/:assetId" component={AssetDetail} />
         
