@@ -258,7 +258,7 @@ export default function VulnerabilitiesPage() {
               <CardHeader>
                 <CardTitle>Vulnerabilities ({filteredVulns.length})</CardTitle>
                 <CardDescription>
-                  {searchTerm || severityFilter || statusFilter 
+                  {searchTerm || (severityFilter && severityFilter !== 'all') || (statusFilter && statusFilter !== 'all')
                     ? `Showing filtered results (${filteredVulns.length} of ${stats.total})`
                     : `Showing all vulnerabilities`
                   }

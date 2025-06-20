@@ -50,11 +50,114 @@ const assetSchema = z.object({
 // GET /assets/vulnerabilities - Get vulnerabilities for assets (must come before /:id)
 router.get('/vulnerabilities', async (req, res) => {
   try {
-    const vulnerabilities = [];
-    sendSuccess(res, vulnerabilities);
+    const { db } = await import('../../db');
+    const { vulnerabilities } = await import('../../../shared/schema');
+    
+    const allVulnerabilities = await db.select().from(vulnerabilities);
+    sendSuccess(res, allVulnerabilities);
   } catch (error) {
     console.error('Error fetching asset vulnerabilities:', error);
     sendError(res, 'Failed to fetch asset vulnerabilities', 500);
+  }
+});
+
+// GET /assets/vulnerabilities/:id - Get specific vulnerability
+router.get('/vulnerabilities/:id', async (req, res) => {
+  try {
+    const { db } = await import('../../db');
+    const { vulnerabilities } = await import('../../../shared/schema');
+    const { eq } = await import('drizzle-orm');
+    
+    const vulnerabilityId = parseInt(req.params.id);
+    const vulnerability = await db.select().from(vulnerabilities).where(eq(vulnerabilities.id, vulnerabilityId));
+    
+    if (vulnerability.length === 0) {
+      return sendError(res, 'Vulnerability not found', 404);
+    }
+    
+    sendSuccess(res, vulnerability[0]);
+  } catch (error) {
+    console.error('Error fetching vulnerability:', error);
+    sendError(res, 'Failed to fetch vulnerability', 500);
+  }
+});
+
+// GET /assets/vulnerabilities/:id/assets - Get assets affected by vulnerability
+router.get('/vulnerabilities/:id/assets', async (req, res) => {
+  try {
+    const { db } = await import('../../db');
+    const { vulnerabilityAssets, assets } = await import('../../../shared/schema');
+    const { eq } = await import('drizzle-orm');
+    
+    const vulnerabilityId = parseInt(req.params.id);
+    const affectedAssets = await db
+      .select({
+        id: assets.id,
+        assetId: assets.assetId,
+        name: assets.name,
+        type: assets.type,
+        status: assets.status,
+        value: assets.assetValue
+      })
+      .from(vulnerabilityAssets)
+      .innerJoin(assets, eq(vulnerabilityAssets.assetId, assets.id))
+      .where(eq(vulnerabilityAssets.vulnerabilityId, vulnerabilityId));
+    
+    sendSuccess(res, affectedAssets);
+  } catch (error) {
+    console.error('Error fetching vulnerability assets:', error);
+    sendError(res, 'Failed to fetch vulnerability assets', 500);
+  }
+});
+
+// POST /assets/vulnerabilities - Create new vulnerability
+router.post('/vulnerabilities', async (req, res) => {
+  try {
+    const { db } = await import('../../db');
+    const { vulnerabilities, vulnerabilityAssets } = await import('../../../shared/schema');
+    
+    const {
+      cveId,
+      title,
+      description,
+      cvssScore,
+      severity,
+      status,
+      eDetectImpact,
+      eResistImpact,
+      selectedAssets,
+      remediation,
+      references
+    } = req.body;
+
+    // Create vulnerability
+    const [newVulnerability] = await db.insert(vulnerabilities).values({
+      cveId,
+      title,
+      description,
+      cvssScore: cvssScore || null,
+      severity,
+      status,
+      eDetectImpact: eDetectImpact || 0.1,
+      eResistImpact: eResistImpact || 0.1,
+      remediation: remediation || null,
+      references: references || []
+    }).returning();
+
+    // Associate with assets if specified
+    if (selectedAssets && selectedAssets.length > 0) {
+      const assetAssociations = selectedAssets.map((assetId: number) => ({
+        vulnerabilityId: newVulnerability.id,
+        assetId: assetId
+      }));
+      
+      await db.insert(vulnerabilityAssets).values(assetAssociations);
+    }
+
+    sendSuccess(res, newVulnerability);
+  } catch (error) {
+    console.error('Error creating vulnerability:', error);
+    sendError(res, 'Failed to create vulnerability', 500);
   }
 });
 
