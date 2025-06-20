@@ -18,7 +18,6 @@ import vulnerabilitiesRouter from './vulnerabilities';
 import reportsRouter from './reports';
 import integrationsRouter from './integrations';
 import riskSummaryRouter from './risk-summary';
-import controlMappingRouter from './controlMapping';
 import controlMappingsRouter from './controlMappings';
 import controlSuggestionsRouter from './risks/controlSuggestions';
 import roiCalculationRouter from './risks/roiCalculation';
