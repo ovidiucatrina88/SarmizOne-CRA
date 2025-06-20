@@ -156,17 +156,27 @@ function ControlMappingManager() {
                 </div>
                 <div>
                   <Label className="text-sm font-medium">Risks from Library (Multiple Selection)</Label>
-                  <div className="mt-2 border rounded-md max-h-60 overflow-y-auto">
+                  <div className="mt-2 border border-gray-600 rounded-md max-h-60 overflow-y-auto bg-gray-800">
                     {riskLibrary?.data?.map((risk: any, index: number) => {
                       const isSelected = newRiskMapping.risk_library_ids.includes(risk.risk_id);
+                      
+                      const getCategoryColor = (category: string) => {
+                        switch (category?.toLowerCase()) {
+                          case 'operational': return 'bg-blue-100 text-blue-800 border-blue-200';
+                          case 'strategic': return 'bg-purple-100 text-purple-800 border-purple-200';
+                          case 'compliance': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                          case 'financial': return 'bg-green-100 text-green-800 border-green-200';
+                          default: return 'bg-gray-100 text-gray-800 border-gray-200';
+                        }
+                      };
                       
                       return (
                         <div 
                           key={`risk-lib-${index}-${risk.risk_id}`}
-                          className={`p-3 border-b last:border-b-0 cursor-pointer transition-colors ${
+                          className={`px-6 py-4 cursor-pointer transition-colors ${
                             isSelected 
-                              ? 'bg-primary/10 border-primary/20' 
-                              : 'hover:bg-accent'
+                              ? 'bg-blue-600 hover:bg-blue-700' 
+                              : 'hover:bg-gray-700'
                           }`}
                           onClick={() => {
                             if (isSelected) {
@@ -185,21 +195,21 @@ function ControlMappingManager() {
                           <div className="flex items-center justify-between">
                             <div className="flex items-center space-x-3">
                               <div className="flex-shrink-0">
-                                <div className="w-10 h-6 bg-gray-100 rounded flex items-center justify-center border">
-                                  <span className="text-xs font-medium text-gray-600">RSK</span>
+                                <div className="w-12 h-8 bg-gray-600 rounded flex items-center justify-center border border-gray-500">
+                                  <span className="text-xs font-medium text-gray-200">RSK</span>
                                 </div>
                               </div>
                               <div>
-                                <div className="font-medium text-sm">{risk.name}</div>
-                                <div className="text-xs text-muted-foreground">ID: {risk.risk_id}</div>
+                                <div className="font-medium text-white text-sm">{risk.name}</div>
+                                <div className="text-xs text-gray-400">ID: {risk.risk_id}</div>
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
-                                {risk.riskCategory || 'operational'}
+                              <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${getCategoryColor(risk.riskCategory || 'operational')}`}>
+                                {(risk.riskCategory || 'operational').charAt(0).toUpperCase() + (risk.riskCategory || 'operational').slice(1)}
                               </span>
                               {isSelected && (
-                                <div className="h-3 w-3 rounded-full bg-primary"></div>
+                                <div className="h-3 w-3 rounded-full bg-white"></div>
                               )}
                             </div>
                           </div>
@@ -207,7 +217,7 @@ function ControlMappingManager() {
                       );
                     })}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-xs text-gray-400 mt-2">
                     Selected: {newRiskMapping.risk_library_ids.length} risk(s)
                   </p>
                 </div>
