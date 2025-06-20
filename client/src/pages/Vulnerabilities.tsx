@@ -307,7 +307,7 @@ export default function VulnerabilitiesPage() {
                           </TableCell>
                           <TableCell>
                             <span className="font-mono">
-                              {vuln.cvssScore ? vuln.cvssScore.toFixed(1) : 'N/A'}
+                              {vuln.severityCvss3 ? vuln.severityCvss3.toFixed(1) : 'N/A'}
                             </span>
                           </TableCell>
                           <TableCell>

@@ -64,18 +64,17 @@ router.post('/', async (req, res) => {
       references
     } = req.body;
 
-    // Create vulnerability
+    // Create vulnerability using the correct column names
     const [newVulnerability] = await db.insert(vulnerabilities).values({
       cveId,
       title,
       description,
-      cvssScore: cvssScore || null,
+      severityCvss3: cvssScore || null,
       severity,
       status,
-      eDetectImpact: eDetectImpact || 0.1,
-      eResistImpact: eResistImpact || 0.1,
-      remediation: remediation || null,
-      references: references || []
+      eDetect: eDetectImpact || null,
+      eResist: eResistImpact || null,
+      source: 'manual'
     }).returning();
 
     // Associate with assets if specified
