@@ -27,9 +27,16 @@ interface ControlRiskMapping {
 }
 
 interface Control {
-  control_id: string;
+  controlId: string;
+  control_id?: string;
   name: string;
-  control_category: string;
+  description?: string;
+  controlType?: string;
+  control_type?: string;
+  controlCategory?: string;
+  control_category?: string;
+  complianceFramework?: string;
+  compliance_framework?: string;
 }
 
 function ControlMappingManager() {
@@ -188,22 +195,22 @@ function ControlMappingManager() {
               </div>
               
               <div className="border border-gray-600 rounded-md max-h-60 overflow-y-auto bg-gray-800">
-                {controls?.data?.filter((control: Control) => {
+                {controls?.data?.filter((control: any) => {
                   const matchesSearch = !controlSearchQuery || 
                     control.name?.toLowerCase().includes(controlSearchQuery.toLowerCase()) ||
-                    control.control_id?.toLowerCase().includes(controlSearchQuery.toLowerCase()) ||
+                    control.controlId?.toLowerCase().includes(controlSearchQuery.toLowerCase()) ||
                     control.description?.toLowerCase().includes(controlSearchQuery.toLowerCase());
                   
                   const matchesFramework = controlFilterFramework === "all" || 
-                    control.compliance_framework?.toLowerCase() === controlFilterFramework.toLowerCase();
+                    control.complianceFramework?.toLowerCase() === controlFilterFramework.toLowerCase();
                   
                   const matchesType = controlFilterType === "all" || 
-                    control.control_type?.toLowerCase() === controlFilterType.toLowerCase();
+                    control.controlType?.toLowerCase() === controlFilterType.toLowerCase();
                   
                   return matchesSearch && matchesFramework && matchesType;
-                })?.map((control: Control, index: number) => {
+                })?.map((control: any, index: number) => {
                   // Ensure proper data type handling for control IDs
-                  const controlId = String(control.control_id || control.controlId);
+                  const controlId = String(control.controlId);
                   const currentSelectedId = String(newRiskMapping.control_id || '');
                   const isSelected = currentSelectedId === controlId;
                   
@@ -251,8 +258,8 @@ function ControlMappingManager() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${getCategoryColor(control.control_category || 'governance')}`}>
-                            {(control.control_category || 'governance').charAt(0).toUpperCase() + (control.control_category || 'governance').slice(1)}
+                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${getCategoryColor(control.controlCategory || 'governance')}`}>
+                            {(control.controlCategory || 'governance').charAt(0).toUpperCase() + (control.controlCategory || 'governance').slice(1)}
                           </span>
                           {isSelected && (
                             <div className="h-3 w-3 rounded-full bg-white"></div>
@@ -273,10 +280,10 @@ function ControlMappingManager() {
                       control.description?.toLowerCase().includes(controlSearchQuery.toLowerCase());
                     
                     const matchesFramework = controlFilterFramework === "all" || 
-                      control.compliance_framework?.toLowerCase() === controlFilterFramework.toLowerCase();
+                      control.complianceFramework?.toLowerCase() === controlFilterFramework.toLowerCase();
                     
                     const matchesType = controlFilterType === "all" || 
-                      control.control_type?.toLowerCase() === controlFilterType.toLowerCase();
+                      control.controlType?.toLowerCase() === controlFilterType.toLowerCase();
                     
                     return matchesSearch && matchesFramework && matchesType;
                   })?.length || 0} of ${controls?.data?.length || 0} controls` : ''
