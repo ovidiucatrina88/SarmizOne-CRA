@@ -9,7 +9,8 @@ import { useAuth } from "@/hooks/useAuth";
 import Dashboard from "@/pages/dashboard";
 import Assets from "@/pages/assets";
 import AssetDetail from "@/pages/asset-detail";
-import AssetVulnerabilities from "@/pages/AssetVulnerabilities";
+import Vulnerabilities from "@/pages/Vulnerabilities";
+import VulnerabilityDetails from "@/pages/VulnerabilityDetails";
 import VulnerabilityImport from "@/pages/VulnerabilityImport";
 import AssetHierarchy from "@/pages/asset-hierarchy";
 import EnterpriseArchitecture from "@/pages/enterprise-architecture";
@@ -44,8 +45,9 @@ function AuthenticatedRoutes() {
         <Route path="/asset-hierarchy" component={AssetHierarchy} />
         <Route path="/assets/hierarchy" component={AssetHierarchy} />
         <Route path="/assets/enterprise-architecture" component={EnterpriseArchitecture} />
-        <Route path="/assets/vulnerabilities" component={AssetVulnerabilities} />
+        <Route path="/assets/vulnerabilities" component={Vulnerabilities} />
         <Route path="/assets/vulnerabilities/import" component={VulnerabilityImport} />
+        <Route path="/assets/vulnerabilities/:id" component={VulnerabilityDetails} />
 
         <Route path="/assets/:assetId" component={AssetDetail} />
         
