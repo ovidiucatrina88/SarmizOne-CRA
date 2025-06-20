@@ -115,6 +115,9 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 - June 18, 2025. Fixed all API parameter order issues and validated complete CRUD functionality across application
 - June 18, 2025. Completed Control Mapping Manager with proper sidebar navigation integration and SelectItem validation fixes
 - June 18, 2025. Fixed Control Suggestions API database column reference bug and simplified SQL query to read operational control mappings
+- June 20, 2025. Enhanced Control Mapping Manager with card-based selection interface and multiple risk mapping capability
+- June 20, 2025. Redesigned UI to match application dark theme with proper styling consistency across all components
+- June 20, 2025. Fixed data type handling for control and risk selection ensuring proper single/multi-selection behavior
 
 ## User Preferences
 

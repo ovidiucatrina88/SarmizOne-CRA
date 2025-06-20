@@ -170,7 +170,7 @@ function ControlMappingManager() {
                         e.preventDefault();
                         e.stopPropagation();
                         
-                        console.log('Clicked control:', controlId, 'Currently selected:', newRiskMapping.control_id, 'Is selected:', isSelected, 'Comparison:', currentSelectedId, '===', controlId);
+                        // Debug logging removed for production
                         
                         setNewRiskMapping(prev => ({
                           ...prev,
@@ -239,7 +239,7 @@ function ControlMappingManager() {
                         e.preventDefault();
                         e.stopPropagation();
                         
-                        console.log('Clicked risk:', riskId, 'Currently selected:', newRiskMapping.risk_library_ids, 'Is selected:', isSelected);
+                        // Debug logging removed for production
                         
                         if (isSelected) {
                           setNewRiskMapping(prev => ({
