@@ -7,21 +7,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Slider } from "@/components/ui/slider";
 import { queryClient, getQueryFn } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Save, Download, Upload } from "lucide-react";
+import { Plus, Trash2, Download, Upload } from "lucide-react";
 import Layout from "@/components/layout/layout";
 
-interface ControlAssetMapping {
-  id: number;
-  control_id: string;
-  asset_type: string;
-  relevance_score: number;
-  reasoning: string;
-}
+// Removed ControlAssetMapping interface
 
 interface ControlRiskMapping {
   id: number;
@@ -42,15 +35,6 @@ interface Control {
 
 function ControlMappingManager() {
   const { toast } = useToast();
-  const [selectedTab, setSelectedTab] = useState("asset-mappings");
-  
-  // New mapping form states
-  const [newAssetMapping, setNewAssetMapping] = useState({
-    control_id: '',
-    asset_type: '',
-    relevance_score: 50,
-    reasoning: ''
-  });
   
   const [newRiskMapping, setNewRiskMapping] = useState({
     control_id: '',
@@ -68,33 +52,14 @@ function ControlMappingManager() {
     queryFn: getQueryFn({ on401: "throw" })
   });
 
-  const { data: assetMappings, refetch: refetchAssetMappings } = useQuery({
-    queryKey: ['/api/control-mappings/assets'],
-    queryFn: getQueryFn({ on401: "throw" })
-  });
+  // Removed asset mappings query
 
   const { data: riskMappings, refetch: refetchRiskMappings } = useQuery({
     queryKey: ['/api/control-mappings/risks'],
     queryFn: getQueryFn({ on401: "throw" })
   });
 
-  // Mutations
-  const createAssetMappingMutation = useMutation({
-    mutationFn: async (mapping: typeof newAssetMapping) => {
-      const response = await fetch('/api/control-mappings/assets', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(mapping)
-      });
-      if (!response.ok) throw new Error('Failed to create asset mapping');
-      return response.json();
-    },
-    onSuccess: () => {
-      refetchAssetMappings();
-      setNewAssetMapping({ control_id: '', asset_type: '', relevance_score: 50, reasoning: '' });
-      toast({ title: 'Asset mapping created successfully' });
-    }
-  });
+  // Risk mapping mutation
 
   const createRiskMappingMutation = useMutation({
     mutationFn: async (mapping: typeof newRiskMapping) => {
@@ -121,17 +86,7 @@ function ControlMappingManager() {
     }
   });
 
-  const deleteAssetMappingMutation = useMutation({
-    mutationFn: async (id: number) => {
-      const response = await fetch(`/api/control-mappings/assets/${id}`, { method: 'DELETE' });
-      if (!response.ok) throw new Error('Failed to delete asset mapping');
-      return response.json();
-    },
-    onSuccess: () => {
-      refetchAssetMappings();
-      toast({ title: 'Asset mapping deleted successfully' });
-    }
-  });
+  // Removed asset mapping delete mutation
 
   const deleteRiskMappingMutation = useMutation({
     mutationFn: async (id: number) => {
@@ -145,7 +100,7 @@ function ControlMappingManager() {
     }
   });
 
-  const assetTypes = ['application', 'data', 'system', 'network', 'device', 'facility', 'personnel', 'other'];
+  // Removed asset types array
   const threatCommunities = ['External Threat Actor', 'External cybercriminals', 'Individual hackers', 'Internal threats'];
   const riskCategories = ['operational', 'strategic', 'compliance', 'financial'];
 
@@ -155,7 +110,7 @@ function ControlMappingManager() {
       <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Create Risk-Based Mapping</CardTitle>
+              <CardTitle>Create Control Mapping</CardTitle>
               <CardDescription>
                 Map controls to risk characteristics for intelligent threat-specific suggestions
               </CardDescription>
