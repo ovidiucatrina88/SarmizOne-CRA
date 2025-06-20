@@ -11,8 +11,8 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { RefreshCw, PlusCircle, Plus, Search, Trash2 } from "lucide-react";
-import { RiskList } from "@/components/risks/risk-list";
-import { RiskForm } from "@/components/risks";
+import { RiskList } from "@/modules/risks/components/risk-list";
+import { RiskForm } from "@/modules/risks/components";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { useLocation } from "wouter";

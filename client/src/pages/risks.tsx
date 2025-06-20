@@ -10,10 +10,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { RefreshCw, PlusCircle } from "lucide-react";
-import { RiskList } from "@/components/risks/risk-list";
-import { EnhancedAssetGroupedRiskList } from "@/components/risks/enhanced-asset-grouped-risk-list";
-import { ViewToggle } from "@/components/risks/view-toggle";
-import { RiskForm } from "@/components/risks";
+import { RiskList } from "@/modules/risks/components/risk-list";
+import { EnhancedAssetGroupedRiskList } from "@/modules/risks/components/enhanced-asset-grouped-risk-list";
+import { ViewToggle } from "@/modules/risks/components/view-toggle";
+import { RiskForm } from "@/modules/risks/components";
 import { Skeleton } from "@/components/ui/skeleton";
 import Layout from "@/components/layout/layout";
 import { Card } from "@/components/ui/card";

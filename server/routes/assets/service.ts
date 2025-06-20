@@ -1,4 +1,4 @@
-import { storage } from '../../services/storage';
+import { storage } from "../../../services/storage';
 import type { Asset, AssetUpdate } from './dto';
 
 /**

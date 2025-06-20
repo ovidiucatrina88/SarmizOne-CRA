@@ -47,7 +47,7 @@ import {
   User,
   FileText,
 } from "lucide-react";
-import { RiskForm } from "@/components/risks/risk-form";
+import { RiskForm } from "@/modules/risks/components/risk-form";
 
 export default function AssetDetail() {
   const { assetId } = useParams();
