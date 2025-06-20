@@ -66,8 +66,8 @@ export default function VulnerabilitiesPage() {
       vuln.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vuln.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesSeverity = !severityFilter || vuln.severity === severityFilter;
-    const matchesStatus = !statusFilter || vuln.status === statusFilter;
+    const matchesSeverity = !severityFilter || severityFilter === 'all' || vuln.severity === severityFilter;
+    const matchesStatus = !statusFilter || statusFilter === 'all' || vuln.status === statusFilter;
     
     return matchesSearch && matchesSeverity && matchesStatus;
   });
@@ -229,7 +229,7 @@ export default function VulnerabilitiesPage() {
                       <SelectValue placeholder="Severity" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Severities</SelectItem>
+                      <SelectItem value="all">All Severities</SelectItem>
                       <SelectItem value="critical">Critical</SelectItem>
                       <SelectItem value="high">High</SelectItem>
                       <SelectItem value="medium">Medium</SelectItem>
@@ -242,7 +242,7 @@ export default function VulnerabilitiesPage() {
                       <SelectValue placeholder="Status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Statuses</SelectItem>
+                      <SelectItem value="all">All Statuses</SelectItem>
                       <SelectItem value="open">Open</SelectItem>
                       <SelectItem value="in_progress">In Progress</SelectItem>
                       <SelectItem value="mitigated">Mitigated</SelectItem>
