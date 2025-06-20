@@ -11,9 +11,7 @@ import Assets from "@/pages/assets";
 import AssetDetail from "@/pages/asset-detail";
 import AssetHierarchy from "@/pages/asset-hierarchy";
 import EnterpriseArchitecture from "@/pages/enterprise-architecture";
-import Vulnerabilities from "@/pages/vulnerabilities";
-import VulnerabilityDetails from "@/pages/vulnerability-details";
-import VulnerabilityImport from "@/pages/vulnerability-import";
+
 import Risks from "@/pages/risks";
 import RiskLibrary from "@/pages/RiskLibrary";
 import RiskDetailPage from "@/pages/RiskDetailPage";
