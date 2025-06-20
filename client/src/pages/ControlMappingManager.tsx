@@ -142,8 +142,10 @@ function ControlMappingManager() {
               <Label className="text-sm font-medium text-gray-300 mb-2 block">Control</Label>
               <div className="border border-gray-600 rounded-md max-h-60 overflow-y-auto bg-gray-800">
                 {controls?.data?.map((control: Control, index: number) => {
-                  const controlId = String(control.control_id);
-                  const isSelected = newRiskMapping.control_id === controlId;
+                  // Ensure proper data type handling for control IDs
+                  const controlId = String(control.control_id || control.controlId);
+                  const currentSelectedId = String(newRiskMapping.control_id || '');
+                  const isSelected = currentSelectedId === controlId;
                   
                   const getCategoryColor = (category: string) => {
                     switch (category?.toLowerCase()) {
@@ -167,6 +169,8 @@ function ControlMappingManager() {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        
+                        console.log('Clicked control:', controlId, 'Currently selected:', newRiskMapping.control_id, 'Is selected:', isSelected, 'Comparison:', currentSelectedId, '===', controlId);
                         
                         setNewRiskMapping(prev => ({
                           ...prev,
