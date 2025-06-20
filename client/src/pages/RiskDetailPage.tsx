@@ -5,9 +5,9 @@ import { Risk, Control, Asset } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { RiskOverview } from "@/modules/risks/components/risk-overview";
-import { VulnerabilityMetrics } from "@/modules/risks/components/vulnerability-metrics";
-import { RiskCostAssignment } from "@/modules/risks/components/risk-cost-assignment";
+import { RiskOverview } from "@/components/risks/risk-overview";
+import { VulnerabilityMetrics } from "@/components/risks/vulnerability-metrics";
+import { RiskCostAssignment } from "@/components/risks/risk-cost-assignment";
 import {
   ChevronLeft,
   Eye,
@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { formatCurrency } from "@shared/utils/calculations";
 import { Badge } from "@/components/ui/badge";
-import { RiskForm } from "@/modules/risks/components";
+import { RiskForm } from "@/components/risks";
 import {
   Dialog,
   DialogContent,

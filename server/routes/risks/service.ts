@@ -1,7 +1,7 @@
-import { storage } from "../../../services/storage';
+import { storage } from '../../services/storage';
 import { Risk } from '@shared/schema';
 import { calculateRiskValues } from '@shared/utils/calculations';
-import { riskSummaryService } from '../../dashboard/riskSummaryService';
+import { riskSummaryService } from '../../services/riskSummaryService';
 import { CreateRiskDto, UpdateRiskDto, RiskFilterDto } from './dto';
 
 /**

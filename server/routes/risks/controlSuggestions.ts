@@ -4,7 +4,7 @@
 
 import { Router } from 'express';
 import { sendError, sendSuccess } from '../common/responses/apiResponse';
-import { getControlSuggestions } from "../../../services/controlSuggestionEngine';
+import { getControlSuggestions } from '../../services/controlSuggestionEngine';
 
 const router = Router();
 

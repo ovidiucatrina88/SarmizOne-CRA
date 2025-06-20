@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
 import { Lock, Shield, Eye, EyeOff } from 'lucide-react';
-import backgroundImage from '@assets/ChatGPT Image Jun 9, 2025, 12_01_45 AM_1749460665838.png';
+// Background image removed for cleaner implementation
 
 const loginSchema = z.object({
   username: z.string().min(1, 'Username is required'),

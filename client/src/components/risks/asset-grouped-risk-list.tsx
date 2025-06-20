@@ -4,7 +4,7 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency } from "@/lib/utils";
-import { RiskDetailView } from "@/modules/risks/components/risk-detail-view";
+import { RiskDetailView } from "@/components/risks/risk-detail-view";
 import { RiskFiltersComponent, RiskFilters } from "./risk-filters";
 import { Link } from "wouter";
 

@@ -1,4 +1,4 @@
-import { storage } from "../../../services/storage';
+import { storage } from '../../services/storage';
 import { DateRangeFilter } from './dto';
 import { mapControlsToEffectiveness } from '../../utils/controlEffectiveness';
 

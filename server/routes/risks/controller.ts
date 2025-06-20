@@ -3,7 +3,7 @@ import { sendError, sendSuccess } from '../common/responses/apiResponse';
 import { riskService } from '../../services';
 import { RiskFilterDto, CreateRiskDto, UpdateRiskDto } from './dto';
 import { calculateThreatEventFrequency, calculateSusceptibility, calculateInherentRisk } from '../../../shared/utils/calculations';
-import { AutomatedRiskSummaryService } from "../../../services/automatedRiskSummary';
+import { AutomatedRiskSummaryService } from '../../services/automatedRiskSummary';
 
 /**
  * Controller for risk-related API endpoints
