@@ -123,6 +123,7 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 - June 20, 2025. Removed Risk Scenario Modeler component from dashboard as it's not currently needed
 - June 20, 2025. Completed comprehensive API validation and fixed all route issues for full system functionality
 - June 20, 2025. Added missing API endpoints for reports, integrations, and vulnerability management
+- June 20, 2025. Restored missing AssetVulnerabilities page that was deleted during reorganization
 
 ## User Preferences
 
