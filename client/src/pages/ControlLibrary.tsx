@@ -521,122 +521,138 @@ export default function ControlLibrary() {
         {/* Search and Filter Controls */}
         <div className="bg-gray-800 rounded-lg border border-gray-600 mb-6">
           <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
-            <div className="flex items-center space-x-3">
-              <div className="relative flex-1">
+            <div className="space-y-4">
+              {/* Search Bar */}
+              <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
                 <Input
                   type="search"
-                  placeholder="Search controls..."
+                  placeholder="Search controls by name, ID, or description..."
                   className="w-full pl-8 bg-gray-600 border-gray-500 text-white placeholder-gray-400 focus:border-blue-500"
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
-                    setCurrentPage(1); // Reset to first page on search
+                    setCurrentPage(1);
                   }}
                 />
               </div>
-              <Select
-                value={filterType}
-                onValueChange={(value) => {
-                  setFilterType(value);
-                  setCurrentPage(1); // Reset to first page on filter change
-                }}
-              >
-                <SelectTrigger className="w-40 bg-gray-600 border-gray-500 text-white">
-                  <SelectValue placeholder="Type" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-700 border-gray-600">
-                  <SelectItem value="all" className="text-white hover:bg-gray-600">All Types</SelectItem>
-                  <SelectItem value="preventive" className="text-white hover:bg-gray-600">Preventive</SelectItem>
-                  <SelectItem value="detective" className="text-white hover:bg-gray-600">Detective</SelectItem>
-                  <SelectItem value="corrective" className="text-white hover:bg-gray-600">Corrective</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={filterCategory}
-                onValueChange={(value) => {
-                  setFilterCategory(value);
-                  setCurrentPage(1); // Reset to first page on filter change
-                }}
-              >
-                <SelectTrigger className="w-40 bg-gray-600 border-gray-500 text-white">
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-700 border-gray-600">
-                  <SelectItem value="all" className="text-white hover:bg-gray-600">All Categories</SelectItem>
-                  <SelectItem value="technical" className="text-white hover:bg-gray-600">Technical</SelectItem>
-                  <SelectItem value="administrative" className="text-white hover:bg-gray-600">Administrative</SelectItem>
-                  <SelectItem value="physical" className="text-white hover:bg-gray-600">Physical</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={filterStatus}
-                onValueChange={(value) => {
-                  setFilterStatus(value);
-                  setCurrentPage(1); // Reset to first page on filter change
-                }}
-              >
-                <SelectTrigger className="w-48 bg-gray-600 border-gray-500 text-white">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-700 border-gray-600">
-                  <SelectItem value="all" className="text-white hover:bg-gray-600">All Statuses</SelectItem>
-                  <SelectItem value="fully_implemented" className="text-white hover:bg-gray-600">Fully Implemented</SelectItem>
-                  <SelectItem value="partially_implemented" className="text-white hover:bg-gray-600">Partially Implemented</SelectItem>
-                  <SelectItem value="in_progress" className="text-white hover:bg-gray-600">In Progress</SelectItem>
-                  <SelectItem value="planned" className="text-white hover:bg-gray-600">Planned</SelectItem>
-                  <SelectItem value="not_implemented" className="text-white hover:bg-gray-600">Not Implemented</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={filterFramework}
-                onValueChange={(value) => {
-                  setFilterFramework(value);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="w-40 bg-gray-600 border-gray-500 text-white">
-                  <SelectValue placeholder="Framework" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-700 border-gray-600">
-                  <SelectItem value="all" className="text-white hover:bg-gray-600">All Frameworks</SelectItem>
-                  <SelectItem value="CIS" className="text-white hover:bg-gray-600">CIS</SelectItem>
-                  <SelectItem value="CCM" className="text-white hover:bg-gray-600">CCM</SelectItem>
-                  <SelectItem value="NIST" className="text-white hover:bg-gray-600">NIST</SelectItem>
-                  <SelectItem value="ISO27001" className="text-white hover:bg-gray-600">ISO27001</SelectItem>
-                  <SelectItem value="SOC2" className="text-white hover:bg-gray-600">SOC2</SelectItem>
-                  <SelectItem value="PCI_DSS" className="text-white hover:bg-gray-600">PCI DSS</SelectItem>
-                  <SelectItem value="Custom" className="text-white hover:bg-gray-600">Custom</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select
-                value={filterCloudDomain}
-                onValueChange={(value) => {
-                  setFilterCloudDomain(value);
-                  setCurrentPage(1);
-                }}
-              >
-                <SelectTrigger className="w-40 bg-gray-600 border-gray-500 text-white">
-                  <SelectValue placeholder="Cloud Domain" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-700 border-gray-600">
-                  <SelectItem value="all" className="text-white hover:bg-gray-600">All Domains</SelectItem>
-                  <SelectItem value="A&A" className="text-white hover:bg-gray-600">A&A</SelectItem>
-                  <SelectItem value="AIS" className="text-white hover:bg-gray-600">AIS</SelectItem>
-                  <SelectItem value="BCR" className="text-white hover:bg-gray-600">BCR</SelectItem>
-                  <SelectItem value="CCC" className="text-white hover:bg-gray-600">CCC</SelectItem>
-                  <SelectItem value="CEK" className="text-white hover:bg-gray-600">CEK</SelectItem>
-                  <SelectItem value="DCS" className="text-white hover:bg-gray-600">DCS</SelectItem>
-                  <SelectItem value="DSP" className="text-white hover:bg-gray-600">DSP</SelectItem>
-                  <SelectItem value="GRC" className="text-white hover:bg-gray-600">GRC</SelectItem>
-                  <SelectItem value="HRS" className="text-white hover:bg-gray-600">HRS</SelectItem>
-                  <SelectItem value="IAM" className="text-white hover:bg-gray-600">IAM</SelectItem>
-                  <SelectItem value="IVS" className="text-white hover:bg-gray-600">IVS</SelectItem>
-                  <SelectItem value="LOG" className="text-white hover:bg-gray-600">LOG</SelectItem>
-                  <SelectItem value="SEF" className="text-white hover:bg-gray-600">SEF</SelectItem>
-                  <SelectItem value="TVM" className="text-white hover:bg-gray-600">TVM</SelectItem>
-                </SelectContent>
-              </Select>
+              
+              {/* Primary Filters */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
+                  <Label className="text-xs text-gray-300 mb-1 block">Framework</Label>
+                  <Select
+                    value={filterFramework}
+                    onValueChange={(value) => {
+                      setFilterFramework(value);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="bg-gray-600 border-gray-500 text-white">
+                      <SelectValue placeholder="All Frameworks" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-700 border-gray-600">
+                      <SelectItem value="all" className="text-white hover:bg-gray-600">All Frameworks</SelectItem>
+                      <SelectItem value="CIS" className="text-white hover:bg-gray-600">CIS Controls</SelectItem>
+                      <SelectItem value="CCM" className="text-white hover:bg-gray-600">Cloud Security Alliance CCM</SelectItem>
+                      <SelectItem value="NIST" className="text-white hover:bg-gray-600">NIST Cybersecurity Framework</SelectItem>
+                      <SelectItem value="ISO27001" className="text-white hover:bg-gray-600">ISO 27001</SelectItem>
+                      <SelectItem value="SOC2" className="text-white hover:bg-gray-600">SOC 2</SelectItem>
+                      <SelectItem value="PCI_DSS" className="text-white hover:bg-gray-600">PCI DSS</SelectItem>
+                      <SelectItem value="Custom" className="text-white hover:bg-gray-600">Custom</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label className="text-xs text-gray-300 mb-1 block">Type</Label>
+                  <Select
+                    value={filterType}
+                    onValueChange={(value) => {
+                      setFilterType(value);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="bg-gray-600 border-gray-500 text-white">
+                      <SelectValue placeholder="All Types" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-700 border-gray-600">
+                      <SelectItem value="all" className="text-white hover:bg-gray-600">All Types</SelectItem>
+                      <SelectItem value="preventive" className="text-white hover:bg-gray-600">Preventive</SelectItem>
+                      <SelectItem value="detective" className="text-white hover:bg-gray-600">Detective</SelectItem>
+                      <SelectItem value="corrective" className="text-white hover:bg-gray-600">Corrective</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label className="text-xs text-gray-300 mb-1 block">Category</Label>
+                  <Select
+                    value={filterCategory}
+                    onValueChange={(value) => {
+                      setFilterCategory(value);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="bg-gray-600 border-gray-500 text-white">
+                      <SelectValue placeholder="All Categories" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-700 border-gray-600">
+                      <SelectItem value="all" className="text-white hover:bg-gray-600">All Categories</SelectItem>
+                      <SelectItem value="technical" className="text-white hover:bg-gray-600">Technical</SelectItem>
+                      <SelectItem value="administrative" className="text-white hover:bg-gray-600">Administrative</SelectItem>
+                      <SelectItem value="physical" className="text-white hover:bg-gray-600">Physical</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label className="text-xs text-gray-300 mb-1 block">Status</Label>
+                  <Select
+                    value={filterStatus}
+                    onValueChange={(value) => {
+                      setFilterStatus(value);
+                      setCurrentPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="bg-gray-600 border-gray-500 text-white">
+                      <SelectValue placeholder="All Statuses" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-700 border-gray-600">
+                      <SelectItem value="all" className="text-white hover:bg-gray-600">All Statuses</SelectItem>
+                      <SelectItem value="fully_implemented" className="text-white hover:bg-gray-600">Fully Implemented</SelectItem>
+                      <SelectItem value="partially_implemented" className="text-white hover:bg-gray-600">Partially Implemented</SelectItem>
+                      <SelectItem value="in_progress" className="text-white hover:bg-gray-600">In Progress</SelectItem>
+                      <SelectItem value="planned" className="text-white hover:bg-gray-600">Planned</SelectItem>
+                      <SelectItem value="not_implemented" className="text-white hover:bg-gray-600">Not Implemented</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              {/* Clear Filters Button */}
+              {(searchQuery || filterFramework !== "all" || filterType !== "all" || filterCategory !== "all" || filterStatus !== "all") && (
+                <div className="flex justify-between items-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setFilterFramework("all");
+                      setFilterType("all");
+                      setFilterCategory("all");
+                      setFilterStatus("all");
+                      setCurrentPage(1);
+                    }}
+                    className="text-gray-300 border-gray-500 hover:bg-gray-600"
+                  >
+                    Clear All Filters
+                  </Button>
+                  <div className="text-sm text-gray-400">
+                    Showing {filteredControls.length} of {controlLibrary.length} controls
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

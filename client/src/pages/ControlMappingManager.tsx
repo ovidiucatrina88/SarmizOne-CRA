@@ -140,8 +140,61 @@ function ControlMappingManager() {
             {/* Control Selection */}
             <div>
               <Label className="text-sm font-medium text-gray-300 mb-2 block">Control</Label>
+              
+              {/* Control Search and Filter */}
+              <div className="space-y-2 mb-3">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                  <Input
+                    type="search"
+                    placeholder="Search controls..."
+                    className="w-full pl-8 bg-gray-600 border-gray-500 text-white placeholder-gray-400 focus:border-blue-500 text-sm"
+                    value={controlSearchQuery}
+                    onChange={(e) => setControlSearchQuery(e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Select value={controlFilterFramework} onValueChange={setControlFilterFramework}>
+                    <SelectTrigger className="bg-gray-600 border-gray-500 text-white text-xs">
+                      <SelectValue placeholder="Framework" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-700 border-gray-600">
+                      <SelectItem value="all" className="text-white hover:bg-gray-600">All Frameworks</SelectItem>
+                      <SelectItem value="CIS" className="text-white hover:bg-gray-600">CIS</SelectItem>
+                      <SelectItem value="CCM" className="text-white hover:bg-gray-600">CCM</SelectItem>
+                      <SelectItem value="NIST" className="text-white hover:bg-gray-600">NIST</SelectItem>
+                      <SelectItem value="ISO27001" className="text-white hover:bg-gray-600">ISO 27001</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={controlFilterType} onValueChange={setControlFilterType}>
+                    <SelectTrigger className="bg-gray-600 border-gray-500 text-white text-xs">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-gray-700 border-gray-600">
+                      <SelectItem value="all" className="text-white hover:bg-gray-600">All Types</SelectItem>
+                      <SelectItem value="preventive" className="text-white hover:bg-gray-600">Preventive</SelectItem>
+                      <SelectItem value="detective" className="text-white hover:bg-gray-600">Detective</SelectItem>
+                      <SelectItem value="corrective" className="text-white hover:bg-gray-600">Corrective</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
               <div className="border border-gray-600 rounded-md max-h-60 overflow-y-auto bg-gray-800">
-                {controls?.data?.map((control: Control, index: number) => {
+                {controls?.data?.filter((control: Control) => {
+                  const matchesSearch = !controlSearchQuery || 
+                    control.name?.toLowerCase().includes(controlSearchQuery.toLowerCase()) ||
+                    control.control_id?.toLowerCase().includes(controlSearchQuery.toLowerCase()) ||
+                    control.description?.toLowerCase().includes(controlSearchQuery.toLowerCase());
+                  
+                  const matchesFramework = controlFilterFramework === "all" || 
+                    control.compliance_framework?.toLowerCase() === controlFilterFramework.toLowerCase();
+                  
+                  const matchesType = controlFilterType === "all" || 
+                    control.control_type?.toLowerCase() === controlFilterType.toLowerCase();
+                  
+                  return matchesSearch && matchesFramework && matchesType;
+                })?.map((control: Control, index: number) => {
                   // Ensure proper data type handling for control IDs
                   const controlId = String(control.control_id || control.controlId);
                   const currentSelectedId = String(newRiskMapping.control_id || '');
@@ -205,14 +258,67 @@ function ControlMappingManager() {
               </div>
               <p className="text-xs text-gray-400 mt-2">
                 {newRiskMapping.control_id ? `Selected: ${newRiskMapping.control_id}` : 'No control selected'}
+                {controlSearchQuery || controlFilterFramework !== "all" || controlFilterType !== "all" ? 
+                  ` • Showing ${controls?.data?.filter((control: Control) => {
+                    const matchesSearch = !controlSearchQuery || 
+                      control.name?.toLowerCase().includes(controlSearchQuery.toLowerCase()) ||
+                      control.control_id?.toLowerCase().includes(controlSearchQuery.toLowerCase()) ||
+                      control.description?.toLowerCase().includes(controlSearchQuery.toLowerCase());
+                    
+                    const matchesFramework = controlFilterFramework === "all" || 
+                      control.compliance_framework?.toLowerCase() === controlFilterFramework.toLowerCase();
+                    
+                    const matchesType = controlFilterType === "all" || 
+                      control.control_type?.toLowerCase() === controlFilterType.toLowerCase();
+                    
+                    return matchesSearch && matchesFramework && matchesType;
+                  })?.length || 0} of ${controls?.data?.length || 0} controls` : ''
+                }
               </p>
             </div>
 
             {/* Risk Selection */}
             <div>
               <Label className="text-sm font-medium text-gray-300 mb-2 block">Risks from Library (Multiple Selection)</Label>
+              
+              {/* Risk Search and Filter */}
+              <div className="space-y-2 mb-3">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+                  <Input
+                    type="search"
+                    placeholder="Search risks..."
+                    className="w-full pl-8 bg-gray-600 border-gray-500 text-white placeholder-gray-400 focus:border-blue-500 text-sm"
+                    value={riskSearchQuery}
+                    onChange={(e) => setRiskSearchQuery(e.target.value)}
+                  />
+                </div>
+                <Select value={riskFilterCategory} onValueChange={setRiskFilterCategory}>
+                  <SelectTrigger className="bg-gray-600 border-gray-500 text-white text-xs">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-700 border-gray-600">
+                    <SelectItem value="all" className="text-white hover:bg-gray-600">All Categories</SelectItem>
+                    <SelectItem value="operational" className="text-white hover:bg-gray-600">Operational</SelectItem>
+                    <SelectItem value="strategic" className="text-white hover:bg-gray-600">Strategic</SelectItem>
+                    <SelectItem value="compliance" className="text-white hover:bg-gray-600">Compliance</SelectItem>
+                    <SelectItem value="financial" className="text-white hover:bg-gray-600">Financial</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
               <div className="border border-gray-600 rounded-md max-h-60 overflow-y-auto bg-gray-800">
-                {riskLibrary?.data?.map((risk: any, index: number) => {
+                {riskLibrary?.data?.filter((risk: any) => {
+                  const matchesSearch = !riskSearchQuery || 
+                    risk.name?.toLowerCase().includes(riskSearchQuery.toLowerCase()) ||
+                    risk.riskId?.toLowerCase().includes(riskSearchQuery.toLowerCase()) ||
+                    risk.description?.toLowerCase().includes(riskSearchQuery.toLowerCase());
+                  
+                  const matchesCategory = riskFilterCategory === "all" || 
+                    risk.riskCategory?.toLowerCase() === riskFilterCategory.toLowerCase();
+                  
+                  return matchesSearch && matchesCategory;
+                })?.map((risk: any, index: number) => {
                   // Ensure we're comparing the same data types (both as strings)
                   const riskId = String(risk.risk_id || risk.riskId);
                   const isSelected = newRiskMapping.risk_library_ids.includes(riskId);
@@ -281,6 +387,19 @@ function ControlMappingManager() {
               </div>
               <p className="text-xs text-gray-400 mt-2">
                 Selected: {newRiskMapping.risk_library_ids.length} risk(s)
+                {riskSearchQuery || riskFilterCategory !== "all" ? 
+                  ` • Showing ${riskLibrary?.data?.filter((risk: any) => {
+                    const matchesSearch = !riskSearchQuery || 
+                      risk.name?.toLowerCase().includes(riskSearchQuery.toLowerCase()) ||
+                      risk.riskId?.toLowerCase().includes(riskSearchQuery.toLowerCase()) ||
+                      risk.description?.toLowerCase().includes(riskSearchQuery.toLowerCase());
+                    
+                    const matchesCategory = riskFilterCategory === "all" || 
+                      risk.riskCategory?.toLowerCase() === riskFilterCategory.toLowerCase();
+                    
+                    return matchesSearch && matchesCategory;
+                  })?.length || 0} of ${riskLibrary?.data?.length || 0} risks` : ''
+                }
               </p>
             </div>
           </div>
