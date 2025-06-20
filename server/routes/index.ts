@@ -14,7 +14,7 @@ import logsRouter from './logs';
 import enterpriseArchitectureRouter from './enterprise-architecture';
 import authRouter from './auth';
 import adminRouter from './admin';
-import vulnerabilitiesRouter from './vulnerabilities';
+// import vulnerabilitiesRouter from './vulnerabilities';
 import riskSummaryRouter from './risk-summary';
 import controlMappingRouter from './controlMapping';
 import controlMappingsRouter from './controlMappings';
@@ -56,7 +56,7 @@ export function registerRoutes(app: Express): Server {
   apiRouter.use('/risk-costs', riskCostsRouter);
   apiRouter.use('/enterprise-architecture', enterpriseArchitectureRouter);
   apiRouter.use('/admin', adminRouter);
-  apiRouter.use('/', vulnerabilitiesRouter);
+  // apiRouter.use('/', vulnerabilitiesRouter);
   apiRouter.use('/', authRouter);
   apiRouter.use('/control-mapping', controlMappingRouter);
   apiRouter.use('/control-mappings', controlMappingsRouter);

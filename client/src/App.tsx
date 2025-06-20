@@ -42,16 +42,12 @@ function AuthenticatedRoutes() {
         <Route path="/asset-hierarchy" component={AssetHierarchy} />
         <Route path="/assets/hierarchy" component={AssetHierarchy} />
         <Route path="/assets/enterprise-architecture" component={EnterpriseArchitecture} />
-        <Route path="/assets/vulnerabilities" component={Vulnerabilities} />
-        <Route path="/assets/vulnerabilities/import" component={VulnerabilityImport} />
-        <Route path="/assets/vulnerabilities/:id" component={VulnerabilityDetails} />
+
         <Route path="/assets/:assetId" component={AssetDetail} />
         
         {/* Legacy routes for backward compatibility */}
         <Route path="/enterprise-architecture" component={EnterpriseArchitecture} />
-        <Route path="/vulnerabilities" component={Vulnerabilities} />
-        <Route path="/vulnerabilities/import" component={VulnerabilityImport} />
-        <Route path="/vulnerabilities/:id" component={VulnerabilityDetails} />
+
         <Route path="/risks" component={Risks} />
         <Route path="/risk-library" component={RiskLibrary} />
         <Route path="/risks/templates" component={RiskLibrary} />
