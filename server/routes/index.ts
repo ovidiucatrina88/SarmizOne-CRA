@@ -62,7 +62,6 @@ export function registerRoutes(app: Express): Server {
   apiRouter.use('/reports', reportsRouter);
   apiRouter.use('/integrations', integrationsRouter);
   apiRouter.use('/', authRouter);
-  apiRouter.use('/control-mapping', controlMappingRouter);
   apiRouter.use('/control-mappings', controlMappingsRouter);
   apiRouter.use('/risks', controlSuggestionsRouter);
   apiRouter.use('/risks', roiCalculationRouter);

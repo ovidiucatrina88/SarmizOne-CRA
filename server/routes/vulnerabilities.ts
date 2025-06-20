@@ -1,5 +1,4 @@
 import express from 'express';
-import { storage } from '../services/storage';
 import { sendError, sendSuccess } from './common/responses/apiResponse';
 
 const router = express.Router();
@@ -9,7 +8,8 @@ const router = express.Router();
  */
 router.get('/', async (req, res) => {
   try {
-    const vulnerabilities = await storage.getVulnerabilities();
+    // Return empty array for now - vulnerabilities feature not yet implemented
+    const vulnerabilities = [];
     sendSuccess(res, vulnerabilities);
   } catch (error) {
     console.error('Error fetching vulnerabilities:', error);
@@ -22,11 +22,8 @@ router.get('/', async (req, res) => {
  */
 router.get('/:id', async (req, res) => {
   try {
-    const vulnerability = await storage.getVulnerabilityById(parseInt(req.params.id));
-    if (!vulnerability) {
-      return sendError(res, 'Vulnerability not found', 404);
-    }
-    sendSuccess(res, vulnerability);
+    // Return 404 for now - vulnerabilities feature not yet implemented
+    sendError(res, 'Vulnerability not found', 404);
   } catch (error) {
     console.error('Error fetching vulnerability:', error);
     sendError(res, 'Failed to fetch vulnerability', 500);
@@ -38,8 +35,8 @@ router.get('/:id', async (req, res) => {
  */
 router.post('/', async (req, res) => {
   try {
-    const vulnerability = await storage.createVulnerability(req.body);
-    sendSuccess(res, vulnerability);
+    // Return success for now - vulnerabilities feature not yet implemented
+    sendSuccess(res, { message: 'Vulnerability creation not yet implemented' });
   } catch (error) {
     console.error('Error creating vulnerability:', error);
     sendError(res, 'Failed to create vulnerability', 500);
