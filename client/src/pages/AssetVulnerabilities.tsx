@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertTriangle, Upload, Search, Filter, Bug, Shield, Calendar, Target } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import Layout from '@/components/layout/layout';
 
 interface Vulnerability {
   id: string;
@@ -111,8 +112,9 @@ export default function AssetVulnerabilities() {
   }
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
-      <div className="flex justify-between items-center">
+    <Layout>
+      <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+        <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Asset Vulnerabilities</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
@@ -274,7 +276,8 @@ export default function AssetVulnerabilities() {
             </Table>
           </CardContent>
         </Card>
-      )}
-    </div>
+        )}
+      </div>
+    </Layout>
   );
 }
