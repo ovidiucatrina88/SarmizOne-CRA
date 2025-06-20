@@ -69,11 +69,11 @@ router.post('/', async (req, res) => {
       cveId,
       title,
       description,
-      severityCvss3: cvssScore || null,
+      severityCvss3: cvssScore?.toString() || '0',
       severity,
       status,
-      eDetect: eDetectImpact || null,
-      eResist: eResistImpact || null,
+      eDetect: eDetectImpact?.toString() || null,
+      eResist: eResistImpact?.toString() || null,
       source: 'manual'
     }).returning();
 

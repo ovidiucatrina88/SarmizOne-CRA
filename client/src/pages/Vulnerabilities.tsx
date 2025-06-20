@@ -62,7 +62,7 @@ export default function VulnerabilitiesPage() {
   // Filter vulnerabilities based on search and filters
   const filteredVulns = vulns.filter((vuln: any) => {
     const matchesSearch = !searchTerm || 
-      vuln.cveId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      vuln.cve_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vuln.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vuln.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -282,7 +282,7 @@ export default function VulnerabilitiesPage() {
                       {filteredVulns.map((vuln: any) => (
                         <TableRow key={vuln.id}>
                           <TableCell className="font-mono text-sm">
-                            {vuln.cveId}
+                            {vuln.cve_id}
                           </TableCell>
                           <TableCell>
                             <div className="max-w-[300px]">
@@ -307,7 +307,7 @@ export default function VulnerabilitiesPage() {
                           </TableCell>
                           <TableCell>
                             <span className="font-mono">
-                              {vuln.severityCvss3 ? vuln.severityCvss3.toFixed(1) : 'N/A'}
+                              {vuln.severity_cvss3 ? parseFloat(vuln.severity_cvss3).toFixed(1) : 'N/A'}
                             </span>
                           </TableCell>
                           <TableCell>

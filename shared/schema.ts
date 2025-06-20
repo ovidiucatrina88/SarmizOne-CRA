@@ -914,35 +914,25 @@ export const vulnerabilitySeverityEnum = pgEnum('vulnerability_severity', [
   'info'
 ]);
 
-// Vulnerabilities Table
+// Vulnerabilities Table - matches actual database structure
 export const vulnerabilities = pgTable('vulnerabilities', {
   id: serial('id').primaryKey(),
   cveId: text('cve_id').notNull().unique(),
   title: text('title').notNull(),
   description: text('description'),
-  cvssScore: real('cvss_score'),
-  cvssVector: text('cvss_vector'),
-  severity: vulnerabilitySeverityEnum('severity').notNull().default('medium'),
-  status: vulnerabilityStatusEnum('status').notNull().default('open'),
-  discoveredDate: timestamp('discovered_date').defaultNow(),
-  remediatedDate: timestamp('remediated_date'),
-  publishedDate: timestamp('published_date'),
-  modifiedDate: timestamp('modified_date'),
-  
-  // FAIR-U Control Impact
-  eDetectImpact: real('e_detect_impact').default(0), // How much this vuln reduces detection effectiveness (0-1)
-  eResistImpact: real('e_resist_impact').default(0), // How much this vuln reduces resistance effectiveness (0-1)
-  
-  // Additional fields
-  references: json('references').$type<string[]>().default([]),
-  tags: json('tags').$type<string[]>().default([]),
-  remediation: text('remediation'),
-  workaround: text('workaround'),
-  exploitAvailable: boolean('exploit_available').default(false),
-  
-  // Metadata
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow()
+  discoveryDate: timestamp('discovery_date').defaultNow(),
+  severityCvss3: numeric('severity_cvss3').default('0'),
+  patchable: boolean('patchable').default(true),
+  source: text('source').default('manual'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  severity: varchar('severity').default('medium'),
+  status: varchar('status').default('open'),
+  eDetect: numeric('e_detect'),
+  eResist: numeric('e_resist'),
+  varianceFreq: integer('variance_freq'),
+  varianceDuration: integer('variance_duration'),
+  remediationDate: timestamp('remediation_date')
 });
 
 // Vulnerability to Asset Mapping Table
