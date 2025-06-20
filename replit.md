@@ -118,6 +118,7 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 - June 20, 2025. Enhanced Control Mapping Manager with card-based selection interface and multiple risk mapping capability
 - June 20, 2025. Redesigned UI to match application dark theme with proper styling consistency across all components
 - June 20, 2025. Fixed data type handling for control and risk selection ensuring proper single/multi-selection behavior
+- June 20, 2025. Removed Risk Scenario Modeler component from dashboard as it's not currently needed
 
 ## User Preferences
 

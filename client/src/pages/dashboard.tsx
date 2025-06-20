@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
 import { useState } from "react";
 import IRISBenchmarkCard from "@/components/dashboard/iris-benchmark-card";
-import { RiskScenarioModeler } from "@/components/dashboard/risk-scenario-modeler";
+
 import { RiskCategorySeverityCard } from "@/components/dashboard/risk-category-severity-card";
 
 function DashboardSkeleton() {
@@ -439,13 +439,7 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Risk Scenario Modeler */}
-      <div className="mb-8">
-        <RiskScenarioModeler 
-          risks={risksData?.data || []}
-          currentExposure={apiData?.riskSummary?.totalResidualRisk || 0}
-        />
-      </div>
+
 
       {/* Combined Risk Overview */}
       <div className="mb-8">
