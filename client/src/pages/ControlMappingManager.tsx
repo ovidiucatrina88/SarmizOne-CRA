@@ -152,131 +152,7 @@ function ControlMappingManager() {
   return (
     <div className="space-y-6">
 
-      <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="asset-mappings">Asset Type Mappings</TabsTrigger>
-          <TabsTrigger value="risk-mappings">Risk-Based Mappings</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="asset-mappings" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create Asset-Type Mapping</CardTitle>
-              <CardDescription>
-                Map controls to specific asset types to improve suggestion relevance
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="asset-control">Control</Label>
-                  <Select value={newAssetMapping.control_id} onValueChange={(value) => 
-                    setNewAssetMapping(prev => ({ ...prev, control_id: value }))
-                  }>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select control" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {controls?.data?.map((control: Control) => (
-                        <SelectItem key={control.control_id} value={control.control_id}>
-                          {control.control_id} - {control.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="asset-type">Asset Type</Label>
-                  <Select value={newAssetMapping.asset_type} onValueChange={(value) => 
-                    setNewAssetMapping(prev => ({ ...prev, asset_type: value }))
-                  }>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select asset type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {assetTypes.map((type, index) => (
-                        <SelectItem key={`asset-${index}-${type}`} value={type}>{type}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="asset-relevance">Relevance Score: {newAssetMapping.relevance_score}%</Label>
-                <Slider
-                  value={[newAssetMapping.relevance_score]}
-                  onValueChange={(value) => setNewAssetMapping(prev => ({ ...prev, relevance_score: value[0] }))}
-                  max={100}
-                  step={5}
-                  className="mt-2"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="asset-reasoning">Reasoning</Label>
-                <Textarea
-                  value={newAssetMapping.reasoning}
-                  onChange={(e) => setNewAssetMapping(prev => ({ ...prev, reasoning: e.target.value }))}
-                  placeholder="Explain why this control is relevant to this asset type..."
-                />
-              </div>
-              
-              <Button 
-                onClick={() => createAssetMappingMutation.mutate(newAssetMapping)}
-                disabled={!newAssetMapping.control_id || !newAssetMapping.asset_type || !newAssetMapping.reasoning}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Mapping
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Existing Asset Mappings</CardTitle>
-              <CardDescription>
-                {assetMappings?.data?.length || 0} mappings configured
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Control</TableHead>
-                    <TableHead>Asset Type</TableHead>
-                    <TableHead>Relevance</TableHead>
-                    <TableHead>Reasoning</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {assetMappings?.data?.map((mapping: ControlAssetMapping) => (
-                    <TableRow key={mapping.id}>
-                      <TableCell className="font-mono">{mapping.control_id}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{mapping.asset_type}</Badge>
-                      </TableCell>
-                      <TableCell>{mapping.relevance_score}%</TableCell>
-                      <TableCell className="max-w-md truncate">{mapping.reasoning}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteAssetMappingMutation.mutate(mapping.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="risk-mappings" className="space-y-6">
+      <div className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Create Risk-Based Mapping</CardTitle>
@@ -395,7 +271,7 @@ function ControlMappingManager() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Existing Risk Mappings</CardTitle>
+              <CardTitle>Existing Control Mappings</CardTitle>
               <CardDescription>
                 {riskMappings?.data?.length || 0} mappings configured
               </CardDescription>
@@ -446,8 +322,7 @@ function ControlMappingManager() {
               </Table>
             </CardContent>
           </Card>
-        </TabsContent>
-      </Tabs>
+      </div>
     </div>
   );
 }
@@ -456,7 +331,7 @@ export default function ControlMappingManagerPage() {
   return (
     <Layout 
       pageTitle="Control Mapping Manager"
-      pageDescription="Configure intelligent control suggestions based on asset types and risk characteristics"
+      pageDescription="Configure intelligent control suggestions based on risk characteristics"
       pageActions={
         <div className="flex gap-2">
           <Button variant="outline" size="sm">
