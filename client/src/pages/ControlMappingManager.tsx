@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
+// Removed checkbox import - using card-based selection pattern
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Slider } from "@/components/ui/slider";
@@ -155,34 +155,59 @@ function ControlMappingManager() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="risk-library">Risks from Library (Multiple Selection)</Label>
-                  <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
-                    {riskLibrary?.data?.map((risk: any, index: number) => (
-                      <div key={`risk-lib-${index}-${risk.risk_id}`} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={`risk-${risk.risk_id}`}
-                          checked={newRiskMapping.risk_library_ids.includes(risk.risk_id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setNewRiskMapping(prev => ({
-                                ...prev,
-                                risk_library_ids: [...prev.risk_library_ids, risk.risk_id]
-                              }));
-                            } else {
+                  <Label className="text-sm font-medium">Risks from Library (Multiple Selection)</Label>
+                  <div className="mt-2 border rounded-md max-h-60 overflow-y-auto">
+                    {riskLibrary?.data?.map((risk: any, index: number) => {
+                      const isSelected = newRiskMapping.risk_library_ids.includes(risk.risk_id);
+                      
+                      return (
+                        <div 
+                          key={`risk-lib-${index}-${risk.risk_id}`}
+                          className={`p-3 border-b last:border-b-0 cursor-pointer transition-colors ${
+                            isSelected 
+                              ? 'bg-primary/10 border-primary/20' 
+                              : 'hover:bg-accent'
+                          }`}
+                          onClick={() => {
+                            if (isSelected) {
                               setNewRiskMapping(prev => ({
                                 ...prev,
                                 risk_library_ids: prev.risk_library_ids.filter(id => id !== risk.risk_id)
                               }));
+                            } else {
+                              setNewRiskMapping(prev => ({
+                                ...prev,
+                                risk_library_ids: [...prev.risk_library_ids, risk.risk_id]
+                              }));
                             }
                           }}
-                        />
-                        <Label htmlFor={`risk-${risk.risk_id}`} className="text-sm font-normal">
-                          <span className="font-mono text-xs">{risk.risk_id}</span> - {risk.name}
-                        </Label>
-                      </div>
-                    ))}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="flex-shrink-0">
+                                <div className="w-10 h-6 bg-gray-100 rounded flex items-center justify-center border">
+                                  <span className="text-xs font-medium text-gray-600">RSK</span>
+                                </div>
+                              </div>
+                              <div>
+                                <div className="font-medium text-sm">{risk.name}</div>
+                                <div className="text-xs text-muted-foreground">ID: {risk.risk_id}</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                                {risk.riskCategory || 'operational'}
+                              </span>
+                              {isSelected && (
+                                <div className="h-3 w-3 rounded-full bg-primary"></div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-muted-foreground mt-2">
                     Selected: {newRiskMapping.risk_library_ids.length} risk(s)
                   </p>
                 </div>
