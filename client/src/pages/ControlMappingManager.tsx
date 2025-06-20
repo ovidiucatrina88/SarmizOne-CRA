@@ -140,24 +140,68 @@ function ControlMappingManager() {
             {/* Control Selection */}
             <div>
               <Label className="text-sm font-medium text-gray-300 mb-2 block">Control</Label>
-              <Select value={newRiskMapping.control_id} onValueChange={(value) => 
-                setNewRiskMapping(prev => ({ ...prev, control_id: value }))
-              }>
-                <SelectTrigger className="bg-gray-600 border-gray-500 text-white">
-                  <SelectValue placeholder="Select control" />
-                </SelectTrigger>
-                <SelectContent className="bg-gray-700 border-gray-600">
-                  {controls?.data?.map((control: Control, index: number) => (
-                    <SelectItem 
-                      key={`control-${index}-${control.control_id}`} 
-                      value={control.control_id}
-                      className="text-white hover:bg-gray-600"
+              <div className="border border-gray-600 rounded-md max-h-60 overflow-y-auto bg-gray-800">
+                {controls?.data?.map((control: Control, index: number) => {
+                  const controlId = String(control.control_id);
+                  const isSelected = newRiskMapping.control_id === controlId;
+                  
+                  const getCategoryColor = (category: string) => {
+                    switch (category?.toLowerCase()) {
+                      case 'access': return 'bg-green-100 text-green-800 border-green-200';
+                      case 'network': return 'bg-blue-100 text-blue-800 border-blue-200';
+                      case 'endpoint': return 'bg-purple-100 text-purple-800 border-purple-200';
+                      case 'data': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                      case 'governance': return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+                      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+                    }
+                  };
+                  
+                  return (
+                    <div 
+                      key={`control-${index}-${controlId}`}
+                      className={`px-6 py-4 cursor-pointer transition-colors ${
+                        isSelected 
+                          ? 'bg-green-600 hover:bg-green-700' 
+                          : 'hover:bg-gray-700'
+                      }`}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        setNewRiskMapping(prev => ({
+                          ...prev,
+                          control_id: isSelected ? '' : controlId
+                        }));
+                      }}
                     >
-                      {control.control_id} - {control.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="flex-shrink-0">
+                            <div className="w-12 h-8 bg-gray-600 rounded flex items-center justify-center border border-gray-500">
+                              <span className="text-xs font-medium text-gray-200">CTL</span>
+                            </div>
+                          </div>
+                          <div>
+                            <div className="font-medium text-white text-sm">{control.name}</div>
+                            <div className="text-xs text-gray-400">ID: {controlId}</div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${getCategoryColor(control.control_category || 'governance')}`}>
+                            {(control.control_category || 'governance').charAt(0).toUpperCase() + (control.control_category || 'governance').slice(1)}
+                          </span>
+                          {isSelected && (
+                            <div className="h-3 w-3 rounded-full bg-white"></div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                {newRiskMapping.control_id ? `Selected: ${newRiskMapping.control_id}` : 'No control selected'}
+              </p>
             </div>
 
             {/* Risk Selection */}
