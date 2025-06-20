@@ -125,200 +125,222 @@ function ControlMappingManager() {
   // No need for static arrays - using risk-library data instead
 
   return (
-    <div className="space-y-6">
+    <div className="bg-gray-800 border border-gray-600 rounded-lg">
+      {/* Create Control Mapping Section */}
+      <div className="p-6 border-b border-gray-600">
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-white mb-2">Create Control Mapping</h3>
+          <p className="text-sm text-gray-400">
+            Map one control from control-library to multiple risks from risk-library for intelligent suggestions
+          </p>
+        </div>
+        
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 gap-6">
+            {/* Control Selection */}
+            <div>
+              <Label className="text-sm font-medium text-gray-300 mb-2 block">Control</Label>
+              <Select value={newRiskMapping.control_id} onValueChange={(value) => 
+                setNewRiskMapping(prev => ({ ...prev, control_id: value }))
+              }>
+                <SelectTrigger className="bg-gray-600 border-gray-500 text-white">
+                  <SelectValue placeholder="Select control" />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-700 border-gray-600">
+                  {controls?.data?.map((control: Control, index: number) => (
+                    <SelectItem 
+                      key={`control-${index}-${control.control_id}`} 
+                      value={control.control_id}
+                      className="text-white hover:bg-gray-600"
+                    >
+                      {control.control_id} - {control.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-      <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create Control Mapping</CardTitle>
-              <CardDescription>
-                Map one control from control-library to multiple risks from risk-library for intelligent suggestions
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="risk-control">Control</Label>
-                  <Select value={newRiskMapping.control_id} onValueChange={(value) => 
-                    setNewRiskMapping(prev => ({ ...prev, control_id: value }))
-                  }>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select control" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {controls?.data?.map((control: Control, index: number) => (
-                        <SelectItem key={`control-${index}-${control.control_id}`} value={control.control_id}>
-                          {control.control_id} - {control.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium">Risks from Library (Multiple Selection)</Label>
-                  <div className="mt-2 border border-gray-600 rounded-md max-h-60 overflow-y-auto bg-gray-800">
-                    {riskLibrary?.data?.map((risk: any, index: number) => {
-                      const isSelected = newRiskMapping.risk_library_ids.includes(risk.risk_id);
-                      
-                      const getCategoryColor = (category: string) => {
-                        switch (category?.toLowerCase()) {
-                          case 'operational': return 'bg-blue-100 text-blue-800 border-blue-200';
-                          case 'strategic': return 'bg-purple-100 text-purple-800 border-purple-200';
-                          case 'compliance': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-                          case 'financial': return 'bg-green-100 text-green-800 border-green-200';
-                          default: return 'bg-gray-100 text-gray-800 border-gray-200';
+            {/* Risk Selection */}
+            <div>
+              <Label className="text-sm font-medium text-gray-300 mb-2 block">Risks from Library (Multiple Selection)</Label>
+              <div className="border border-gray-600 rounded-md max-h-60 overflow-y-auto bg-gray-800">
+                {riskLibrary?.data?.map((risk: any, index: number) => {
+                  const isSelected = newRiskMapping.risk_library_ids.includes(risk.risk_id);
+                  
+                  const getCategoryColor = (category: string) => {
+                    switch (category?.toLowerCase()) {
+                      case 'operational': return 'bg-blue-100 text-blue-800 border-blue-200';
+                      case 'strategic': return 'bg-purple-100 text-purple-800 border-purple-200';
+                      case 'compliance': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                      case 'financial': return 'bg-green-100 text-green-800 border-green-200';
+                      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+                    }
+                  };
+                  
+                  return (
+                    <div 
+                      key={`risk-lib-${index}-${risk.risk_id}`}
+                      className={`px-6 py-4 cursor-pointer transition-colors ${
+                        isSelected 
+                          ? 'bg-blue-600 hover:bg-blue-700' 
+                          : 'hover:bg-gray-700'
+                      }`}
+                      onClick={() => {
+                        if (isSelected) {
+                          setNewRiskMapping(prev => ({
+                            ...prev,
+                            risk_library_ids: prev.risk_library_ids.filter(id => id !== risk.risk_id)
+                          }));
+                        } else {
+                          setNewRiskMapping(prev => ({
+                            ...prev,
+                            risk_library_ids: [...prev.risk_library_ids, risk.risk_id]
+                          }));
                         }
-                      };
-                      
-                      return (
-                        <div 
-                          key={`risk-lib-${index}-${risk.risk_id}`}
-                          className={`px-6 py-4 cursor-pointer transition-colors ${
-                            isSelected 
-                              ? 'bg-blue-600 hover:bg-blue-700' 
-                              : 'hover:bg-gray-700'
-                          }`}
-                          onClick={() => {
-                            if (isSelected) {
-                              setNewRiskMapping(prev => ({
-                                ...prev,
-                                risk_library_ids: prev.risk_library_ids.filter(id => id !== risk.risk_id)
-                              }));
-                            } else {
-                              setNewRiskMapping(prev => ({
-                                ...prev,
-                                risk_library_ids: [...prev.risk_library_ids, risk.risk_id]
-                              }));
-                            }
-                          }}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                              <div className="flex-shrink-0">
-                                <div className="w-12 h-8 bg-gray-600 rounded flex items-center justify-center border border-gray-500">
-                                  <span className="text-xs font-medium text-gray-200">RSK</span>
-                                </div>
-                              </div>
-                              <div>
-                                <div className="font-medium text-white text-sm">{risk.name}</div>
-                                <div className="text-xs text-gray-400">ID: {risk.risk_id}</div>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${getCategoryColor(risk.riskCategory || 'operational')}`}>
-                                {(risk.riskCategory || 'operational').charAt(0).toUpperCase() + (risk.riskCategory || 'operational').slice(1)}
-                              </span>
-                              {isSelected && (
-                                <div className="h-3 w-3 rounded-full bg-white"></div>
-                              )}
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="flex-shrink-0">
+                            <div className="w-12 h-8 bg-gray-600 rounded flex items-center justify-center border border-gray-500">
+                              <span className="text-xs font-medium text-gray-200">RSK</span>
                             </div>
                           </div>
+                          <div>
+                            <div className="font-medium text-white text-sm">{risk.name}</div>
+                            <div className="text-xs text-gray-400">ID: {risk.risk_id}</div>
+                          </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                  <p className="text-xs text-gray-400 mt-2">
-                    Selected: {newRiskMapping.risk_library_ids.length} risk(s)
-                  </p>
-                </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${getCategoryColor(risk.riskCategory || 'operational')}`}>
+                            {(risk.riskCategory || 'operational').charAt(0).toUpperCase() + (risk.riskCategory || 'operational').slice(1)}
+                          </span>
+                          {isSelected && (
+                            <div className="h-3 w-3 rounded-full bg-white"></div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="impact-type">Impact Type</Label>
-                  <Select value={newRiskMapping.impact_type} onValueChange={(value) => 
-                    setNewRiskMapping(prev => ({ ...prev, impact_type: value as any }))
-                  }>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="likelihood">Likelihood</SelectItem>
-                      <SelectItem value="magnitude">Magnitude</SelectItem>
-                      <SelectItem value="both">Both</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="risk-relevance">Relevance Score: {newRiskMapping.relevance_score}%</Label>
-                  <Slider
-                    value={[newRiskMapping.relevance_score]}
-                    onValueChange={(value) => setNewRiskMapping(prev => ({ ...prev, relevance_score: value[0] }))}
-                    max={100}
-                    step={5}
-                    className="mt-2"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="risk-reasoning">Reasoning</Label>
-                <Textarea
-                  value={newRiskMapping.reasoning}
-                  onChange={(e) => setNewRiskMapping(prev => ({ ...prev, reasoning: e.target.value }))}
-                  placeholder="Explain why this control is effective against this risk scenario..."
-                />
-              </div>
-              
-              <Button 
-                onClick={() => createRiskMappingMutation.mutate(newRiskMapping)}
-                disabled={!newRiskMapping.control_id || newRiskMapping.risk_library_ids.length === 0 || !newRiskMapping.reasoning}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create {newRiskMapping.risk_library_ids.length > 0 ? `${newRiskMapping.risk_library_ids.length} ` : ''}Mapping{newRiskMapping.risk_library_ids.length > 1 ? 's' : ''}
-              </Button>
-            </CardContent>
-          </Card>
+              <p className="text-xs text-gray-400 mt-2">
+                Selected: {newRiskMapping.risk_library_ids.length} risk(s)
+              </p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <Label className="text-sm font-medium text-gray-300 mb-2 block">Impact Type</Label>
+              <Select value={newRiskMapping.impact_type} onValueChange={(value) => 
+                setNewRiskMapping(prev => ({ ...prev, impact_type: value as any }))
+              }>
+                <SelectTrigger className="bg-gray-600 border-gray-500 text-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-gray-700 border-gray-600">
+                  <SelectItem value="likelihood" className="text-white hover:bg-gray-600">Likelihood</SelectItem>
+                  <SelectItem value="magnitude" className="text-white hover:bg-gray-600">Magnitude</SelectItem>
+                  <SelectItem value="both" className="text-white hover:bg-gray-600">Both</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-300 mb-2 block">Relevance Score: {newRiskMapping.relevance_score}%</Label>
+              <Slider
+                value={[newRiskMapping.relevance_score]}
+                onValueChange={(value) => setNewRiskMapping(prev => ({ ...prev, relevance_score: value[0] }))}
+                max={100}
+                step={5}
+                className="mt-2"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <Label className="text-sm font-medium text-gray-300 mb-2 block">Reasoning</Label>
+            <Textarea
+              value={newRiskMapping.reasoning}
+              onChange={(e) => setNewRiskMapping(prev => ({ ...prev, reasoning: e.target.value }))}
+              placeholder="Explain why this control is effective against this risk scenario..."
+              className="bg-gray-600 border-gray-500 text-white placeholder-gray-400 focus:border-blue-500"
+            />
+          </div>
+          
+          <Button 
+            onClick={() => createRiskMappingMutation.mutate(newRiskMapping)}
+            disabled={!newRiskMapping.control_id || newRiskMapping.risk_library_ids.length === 0 || !newRiskMapping.reasoning}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Create {newRiskMapping.risk_library_ids.length > 0 ? `${newRiskMapping.risk_library_ids.length} ` : ''}Mapping{newRiskMapping.risk_library_ids.length > 1 ? 's' : ''}
+          </Button>
+        </div>
+      </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Existing Control Mappings</CardTitle>
-              <CardDescription>
-                {riskMappings?.data?.length || 0} mappings configured
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Control</TableHead>
-                    <TableHead>Risk Library ID</TableHead>
-                    <TableHead>Impact</TableHead>
-                    <TableHead>Score</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {riskMappings?.data?.map((mapping: any) => (
-                    <TableRow key={mapping.id}>
-                      <TableCell className="font-mono">{mapping.control_id}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{mapping.risk_library_id || 'Legacy'}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={
-                          mapping.impact_type === 'likelihood' ? 'default' :
-                          mapping.impact_type === 'magnitude' ? 'secondary' : 'destructive'
-                        }>
-                          {mapping.impact_type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{mapping.relevance_score}%</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteRiskMappingMutation.mutate(mapping.id)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+      {/* Existing Mappings Section */}
+      <div className="p-6">
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-white mb-2">Existing Control Mappings</h3>
+          <p className="text-sm text-gray-400">
+            {riskMappings?.data?.length || 0} mappings configured
+          </p>
+        </div>
+
+        {/* Grid Header */}
+        <div className="bg-gray-700 px-6 py-3 border-b border-gray-600 rounded-t-md">
+          <div className="grid grid-cols-5 gap-4 text-xs font-medium text-gray-300 uppercase tracking-wider">
+            <div>Control</div>
+            <div>Risk Library ID</div>
+            <div>Impact Type</div>
+            <div>Relevance Score</div>
+            <div className="text-right">Actions</div>
+          </div>
+        </div>
+
+        {/* Mappings List */}
+        <div className="divide-y divide-gray-600 border border-gray-600 border-t-0 rounded-b-md">
+          {riskMappings?.data?.length === 0 ? (
+            <div className="p-12 text-center">
+              <div className="text-gray-400 mb-4">No Control Mappings Configured</div>
+              <p className="text-gray-500">Create your first mapping using the form above.</p>
+            </div>
+          ) : (
+            riskMappings?.data?.map((mapping: any) => (
+              <div key={mapping.id} className="px-6 py-4 hover:bg-gray-700 transition-colors">
+                <div className="grid grid-cols-5 gap-4 items-center">
+                  <div className="font-mono text-white text-sm">{mapping.control_id}</div>
+                  <div>
+                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border bg-gray-100 text-gray-800 border-gray-200">
+                      {mapping.risk_library_id || 'Legacy'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${
+                      mapping.impact_type === 'likelihood' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                      mapping.impact_type === 'magnitude' ? 'bg-purple-100 text-purple-800 border-purple-200' : 
+                      'bg-red-100 text-red-800 border-red-200'
+                    }`}>
+                      {mapping.impact_type}
+                    </span>
+                  </div>
+                  <div className="text-white text-sm">{mapping.relevance_score}%</div>
+                  <div className="flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteRiskMappingMutation.mutate(mapping.id)}
+                      className="border-red-500 text-red-300 hover:bg-red-600 hover:text-white"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
@@ -331,18 +353,20 @@ export default function ControlMappingManagerPage() {
       pageDescription="Configure intelligent control suggestions based on risk characteristics"
       pageActions={
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" className="border-gray-500 text-gray-300 hover:bg-gray-600">
             <Download className="w-4 h-4 mr-2" />
             Export
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" className="border-gray-500 text-gray-300 hover:bg-gray-600">
             <Upload className="w-4 h-4 mr-2" />
             Import
           </Button>
         </div>
       }
     >
-      <ControlMappingManager />
+      <div className="p-6">
+        <ControlMappingManager />
+      </div>
     </Layout>
   );
 }
