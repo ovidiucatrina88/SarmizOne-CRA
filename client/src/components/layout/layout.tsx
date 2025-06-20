@@ -24,7 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import logoPath from "@assets/ChatGPT Image Jun 11, 2025, 07_13_39 PM_1749662025817.png";
+// Logo asset removed for cleaner implementation
 
 const navigation = [
   { 
@@ -232,19 +232,15 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
         <div className="p-3 border-b border-gray-700 pl-[0px] pr-[0px] pt-[0px] pb-[0px] mt-[-1px] mb-[-1px] ml-[0px] mr-[0px]">
           {!sidebarCollapsed && (
             <div className="flex items-center justify-center">
-              <img 
-                src={logoPath} 
-                alt="SARMIZ-ONE Logo" 
-                className="w-32 h-32 object-contain"
-              />
+              <div className="w-32 h-20 bg-blue-600 rounded-lg flex items-center justify-center">
+                <Shield className="h-12 w-12 text-white" />
+              </div>
             </div>
           )}
           {sidebarCollapsed && (
-            <img 
-              src={logoPath} 
-              alt="SARMIZ-ONE Logo" 
-              className="w-10 h-10 object-contain"
-            />
+            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+              <Shield className="h-5 w-5 text-white" />
+            </div>
           )}
         </div>
         
