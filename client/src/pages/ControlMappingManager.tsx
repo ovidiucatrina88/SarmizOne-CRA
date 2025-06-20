@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Slider } from "@/components/ui/slider";
@@ -36,7 +37,7 @@ function ControlMappingManager() {
   
   const [newRiskMapping, setNewRiskMapping] = useState({
     control_id: '',
-    risk_library_id: '',
+    risk_library_ids: [] as string[],
     relevance_score: 50,
     impact_type: 'both' as 'likelihood' | 'magnitude' | 'both',
     reasoning: ''
@@ -64,24 +65,46 @@ function ControlMappingManager() {
 
   const createRiskMappingMutation = useMutation({
     mutationFn: async (mapping: typeof newRiskMapping) => {
-      const response = await fetch('/api/control-mappings/risks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(mapping)
-      });
-      if (!response.ok) throw new Error('Failed to create risk mapping');
-      return response.json();
+      // Create multiple mappings, one for each selected risk
+      const promises = mapping.risk_library_ids.map(risk_library_id => 
+        fetch('/api/control-mappings/risks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            control_id: mapping.control_id,
+            risk_library_id,
+            relevance_score: mapping.relevance_score,
+            impact_type: mapping.impact_type,
+            reasoning: mapping.reasoning
+          })
+        }).then(response => {
+          if (!response.ok) throw new Error(`Failed to create mapping for ${risk_library_id}`);
+          return response.json();
+        })
+      );
+      
+      return Promise.all(promises);
     },
-    onSuccess: () => {
+    onSuccess: (results) => {
       refetchRiskMappings();
       setNewRiskMapping({
         control_id: '',
-        risk_library_id: '',
+        risk_library_ids: [],
         relevance_score: 50,
         impact_type: 'both',
         reasoning: ''
       });
-      toast({ title: 'Risk mapping created successfully' });
+      toast({ 
+        title: `Successfully created ${results.length} control mapping(s)`,
+        description: `Control mapped to ${results.length} risk(s) from library`
+      });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: 'Failed to create mappings', 
+        description: error.message,
+        variant: 'destructive' 
+      });
     }
   });
 
@@ -109,7 +132,7 @@ function ControlMappingManager() {
             <CardHeader>
               <CardTitle>Create Control Mapping</CardTitle>
               <CardDescription>
-                Map controls from control-library to risks from risk-library for intelligent suggestions
+                Map one control from control-library to multiple risks from risk-library for intelligent suggestions
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -132,21 +155,36 @@ function ControlMappingManager() {
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="risk-library">Risk from Library</Label>
-                  <Select value={newRiskMapping.risk_library_id} onValueChange={(value) => 
-                    setNewRiskMapping(prev => ({ ...prev, risk_library_id: value }))
-                  }>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select risk from library" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {riskLibrary?.data?.map((risk: any, index: number) => (
-                        <SelectItem key={`risk-lib-${index}-${risk.risk_id}`} value={risk.risk_id}>
-                          {risk.risk_id} - {risk.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="risk-library">Risks from Library (Multiple Selection)</Label>
+                  <div className="border rounded-md p-3 max-h-48 overflow-y-auto space-y-2">
+                    {riskLibrary?.data?.map((risk: any, index: number) => (
+                      <div key={`risk-lib-${index}-${risk.risk_id}`} className="flex items-center space-x-2">
+                        <Checkbox
+                          id={`risk-${risk.risk_id}`}
+                          checked={newRiskMapping.risk_library_ids.includes(risk.risk_id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setNewRiskMapping(prev => ({
+                                ...prev,
+                                risk_library_ids: [...prev.risk_library_ids, risk.risk_id]
+                              }));
+                            } else {
+                              setNewRiskMapping(prev => ({
+                                ...prev,
+                                risk_library_ids: prev.risk_library_ids.filter(id => id !== risk.risk_id)
+                              }));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`risk-${risk.risk_id}`} className="text-sm font-normal">
+                          <span className="font-mono text-xs">{risk.risk_id}</span> - {risk.name}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Selected: {newRiskMapping.risk_library_ids.length} risk(s)
+                  </p>
                 </div>
               </div>
               
@@ -189,10 +227,10 @@ function ControlMappingManager() {
               
               <Button 
                 onClick={() => createRiskMappingMutation.mutate(newRiskMapping)}
-                disabled={!newRiskMapping.control_id || !newRiskMapping.risk_library_id || !newRiskMapping.reasoning}
+                disabled={!newRiskMapping.control_id || newRiskMapping.risk_library_ids.length === 0 || !newRiskMapping.reasoning}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Create Mapping
+                Create {newRiskMapping.risk_library_ids.length > 0 ? `${newRiskMapping.risk_library_ids.length} ` : ''}Mapping{newRiskMapping.risk_library_ids.length > 1 ? 's' : ''}
               </Button>
             </CardContent>
           </Card>
