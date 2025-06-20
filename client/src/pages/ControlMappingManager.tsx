@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Slider } from "@/components/ui/slider";
 import { queryClient, getQueryFn } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Trash2, Download, Upload } from "lucide-react";
+import { Search, Plus, Trash2, Download, Upload } from "lucide-react";
 import Layout from "@/components/layout/layout";
 
 // Removed ControlAssetMapping interface
@@ -34,6 +34,13 @@ interface Control {
 
 function ControlMappingManager() {
   const { toast } = useToast();
+
+  // Search and filter states
+  const [controlSearchQuery, setControlSearchQuery] = useState("");
+  const [controlFilterFramework, setControlFilterFramework] = useState("all");
+  const [controlFilterType, setControlFilterType] = useState("all");
+  const [riskSearchQuery, setRiskSearchQuery] = useState("");
+  const [riskFilterCategory, setRiskFilterCategory] = useState("all");
   
   const [newRiskMapping, setNewRiskMapping] = useState({
     control_id: '',
