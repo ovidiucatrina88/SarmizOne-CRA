@@ -216,11 +216,11 @@ function ControlMappingManager() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {riskMappings?.data?.map((mapping: ControlRiskMapping) => (
+                  {riskMappings?.data?.map((mapping: any) => (
                     <TableRow key={mapping.id}>
                       <TableCell className="font-mono">{mapping.control_id}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{mapping.risk_library_id}</Badge>
+                        <Badge variant="outline">{mapping.risk_library_id || 'Legacy'}</Badge>
                       </TableCell>
                       <TableCell>
                         <Badge variant={

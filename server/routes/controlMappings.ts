@@ -103,28 +103,24 @@ router.post('/risks', async (req, res) => {
   try {
     const { 
       control_id, 
-      threat_community, 
-      risk_category, 
-      vulnerability_pattern, 
+      risk_library_id,
       relevance_score, 
       impact_type, 
       reasoning 
     } = req.body;
     
-    if (!control_id || !reasoning) {
-      return sendError(res, new Error('Control ID and reasoning are required'), 400);
+    if (!control_id || !risk_library_id || !reasoning) {
+      return sendError(res, new Error('Control ID, Risk Library ID, and reasoning are required'), 400);
     }
     
     const result = await pool.query(`
       INSERT INTO control_risk_mappings 
-      (control_id, threat_community, risk_category, vulnerability_pattern, relevance_score, impact_type, reasoning)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+      (control_id, risk_library_id, relevance_score, impact_type, reasoning)
+      VALUES ($1, $2, $3, $4, $5)
       RETURNING *
     `, [
       control_id, 
-      threat_community || null, 
-      risk_category || 'operational', 
-      vulnerability_pattern || null,
+      risk_library_id,
       relevance_score || 50, 
       impact_type || 'both', 
       reasoning
