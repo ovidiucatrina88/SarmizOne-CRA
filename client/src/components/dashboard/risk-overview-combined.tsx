@@ -145,7 +145,7 @@ export function RiskOverviewCombined({
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Top Risks Section */}
-          <div>
+          <div className="flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-medium text-white">Top Risks</h3>
               <Link href="/risks" className="text-sm font-medium text-blue-400 hover:underline">
@@ -153,19 +153,19 @@ export function RiskOverviewCombined({
               </Link>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 flex-1">
               {risks.slice(0, maxItems).map((risk, index) => (
-                <div key={risk.id || index} className="px-3 py-3 bg-gray-700/50 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center min-w-0 flex-1">
-                      <div className="flex-shrink-0">
+                <div key={risk.id || index} className="px-4 py-3 bg-gray-700/50 rounded-lg">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start min-w-0 flex-1">
+                      <div className="flex-shrink-0 mt-0.5">
                         <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-600/20">
                           <span className="text-xs font-medium leading-none text-blue-400">{index + 1}</span>
                         </span>
                       </div>
                       <div className="ml-3 min-w-0 flex-1">
-                        <p className="text-sm font-medium text-white truncate">{risk.name}</p>
-                        <div className="flex mt-1 space-x-1">
+                        <p className="text-sm font-medium text-white truncate leading-tight">{risk.name}</p>
+                        <div className="flex mt-2 space-x-1">
                           {risk.severity && (
                             <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${getSeverityBadgeClass(risk.severity)}`}>
                               {risk.severity.charAt(0).toUpperCase() + risk.severity.slice(1)}
@@ -179,16 +179,16 @@ export function RiskOverviewCombined({
                         </div>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end ml-2">
-                      <span className="text-sm font-medium text-white">{formatCurrency(parseFloat(risk.residualRisk) || 0)}</span>
-                      <span className="text-xs text-gray-400">Expected Loss</span>
+                    <div className="flex flex-col items-end ml-3 flex-shrink-0">
+                      <span className="text-sm font-medium text-white whitespace-nowrap">{formatCurrency(parseFloat(risk.residualRisk) || 0)}</span>
+                      <span className="text-xs text-gray-400 mt-1">Expected Loss</span>
                     </div>
                   </div>
                 </div>
               ))}
 
               {(!risks || risks.length === 0) && (
-                <div className="px-3 py-6 text-center text-gray-400 bg-gray-700/50 rounded-lg">
+                <div className="px-4 py-8 text-center text-gray-400 bg-gray-700/50 rounded-lg">
                   No risks found
                 </div>
               )}
@@ -196,14 +196,14 @@ export function RiskOverviewCombined({
           </div>
 
           {/* Risk Response Status Section */}
-          <div>
+          <div className="flex flex-col">
             <h3 className="text-base font-medium text-white mb-4">Response Status</h3>
             
-            <div className="space-y-4">
+            <div className="space-y-4 flex-1">
               {/* Response Types - Pie Chart */}
-              <div>
+              <div className="flex-1">
                 <div className="text-sm font-medium text-white/80 mb-3">By Response Type</div>
-                <div className="h-48">
+                <div className="h-48 flex items-center justify-center">
                   <Pie data={pieChartData} options={pieChartOptions} />
                 </div>
               </div>
@@ -211,25 +211,25 @@ export function RiskOverviewCombined({
               {/* Risk Reduction */}
               <div>
                 <div className="text-sm font-medium text-white/80 mb-3">Risk Reduction</div>
-                <div className="p-3 bg-gray-700/50 border border-gray-600 rounded-lg">
-                  <div className="grid grid-cols-2 gap-3 text-xs">
+                <div className="p-4 bg-gray-700/50 border border-gray-600 rounded-lg">
+                  <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
-                      <div className="text-white/70">Inherent Risk:</div>
+                      <div className="text-white/70 mb-1">Inherent Risk:</div>
                       <div className="font-medium text-white">{formatCurrency(Number(riskReduction.inherentRisk) || 0)}</div>
                     </div>
                     <div>
-                      <div className="text-white/70">Residual Risk:</div>
+                      <div className="text-white/70 mb-1">Residual Risk:</div>
                       <div className="font-medium text-white">{formatCurrency(Number(riskReduction.residualRisk) || 0)}</div>
                     </div>
                   </div>
-                  <div className="mt-3">
+                  <div className="mt-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="text-xs text-white/70">Risk Reduction:</div>
                       <div className="text-xs font-medium text-green-500">
                         {formatCurrency(Number(riskReduction.reduction) || 0)} ({(Number(riskReduction.reductionPercentage) || 0).toFixed(0)}%)
                       </div>
                     </div>
-                    <div className="w-full h-3 mb-1 bg-gray-600 rounded-full">
+                    <div className="w-full h-3 mb-2 bg-gray-600 rounded-full">
                       <div
                         className="h-3 rounded-full bg-gradient-to-r from-red-500/80 via-amber-500/80 to-green-500/80"
                         style={{ width: `${Math.min(riskReduction.reductionPercentage || 0, 100)}%` }}
