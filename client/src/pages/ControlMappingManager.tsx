@@ -165,7 +165,9 @@ function ControlMappingManager() {
               <Label className="text-sm font-medium text-gray-300 mb-2 block">Risks from Library (Multiple Selection)</Label>
               <div className="border border-gray-600 rounded-md max-h-60 overflow-y-auto bg-gray-800">
                 {riskLibrary?.data?.map((risk: any, index: number) => {
-                  const isSelected = newRiskMapping.risk_library_ids.includes(risk.risk_id);
+                  // Ensure we're comparing the same data types (both as strings)
+                  const riskId = String(risk.risk_id || risk.riskId);
+                  const isSelected = newRiskMapping.risk_library_ids.includes(riskId);
                   
                   const getCategoryColor = (category: string) => {
                     switch (category?.toLowerCase()) {
@@ -179,22 +181,27 @@ function ControlMappingManager() {
                   
                   return (
                     <div 
-                      key={`risk-lib-${index}-${risk.risk_id}`}
+                      key={`risk-lib-${index}-${riskId}`}
                       className={`px-6 py-4 cursor-pointer transition-colors ${
                         isSelected 
                           ? 'bg-blue-600 hover:bg-blue-700' 
                           : 'hover:bg-gray-700'
                       }`}
-                      onClick={() => {
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        console.log('Clicked risk:', riskId, 'Currently selected:', newRiskMapping.risk_library_ids, 'Is selected:', isSelected);
+                        
                         if (isSelected) {
                           setNewRiskMapping(prev => ({
                             ...prev,
-                            risk_library_ids: prev.risk_library_ids.filter(id => id !== risk.risk_id)
+                            risk_library_ids: prev.risk_library_ids.filter(id => String(id) !== riskId)
                           }));
                         } else {
                           setNewRiskMapping(prev => ({
                             ...prev,
-                            risk_library_ids: [...prev.risk_library_ids, risk.risk_id]
+                            risk_library_ids: [...prev.risk_library_ids, riskId]
                           }));
                         }
                       }}
@@ -208,7 +215,7 @@ function ControlMappingManager() {
                           </div>
                           <div>
                             <div className="font-medium text-white text-sm">{risk.name}</div>
-                            <div className="text-xs text-gray-400">ID: {risk.risk_id}</div>
+                            <div className="text-xs text-gray-400">ID: {riskId}</div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
