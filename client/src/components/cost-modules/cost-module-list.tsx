@@ -176,113 +176,115 @@ export function CostModuleList() {
   }
 
   return (
-    <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-background via-background to-muted/20 shadow-lg">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/10 opacity-50" />
-      <CardHeader className="relative">
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle className="text-foreground">Cost Modules</CardTitle>
-            <CardDescription className="text-muted-foreground">
-              Manage cost factors associated with CIS controls
-            </CardDescription>
+    <div>
+      <div className="mb-6 flex items-center gap-2">
+        <Button 
+          variant="default" 
+          size="sm" 
+          onClick={() => setIsCreateDialogOpen(true)}
+        >
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add Cost Module
+        </Button>
+      </div>
+      
+      <div className="mb-6">
+        <div className="bg-gray-800 rounded-lg border border-gray-600">
+          <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
+            <h3 className="text-lg font-semibold text-white">Cost Modules</h3>
+            <p className="text-gray-400 text-sm">Manage cost factors associated with CIS controls</p>
           </div>
-          <Button onClick={() => setIsCreateDialogOpen(true)} className="shadow-md hover:shadow-lg transition-shadow">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Cost Module
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {costModules.length === 0 ? (
-          <div className="text-center p-8 text-muted-foreground">
-            <DollarSign className="mx-auto h-12 w-12 text-muted-foreground/50" />
-            <p className="mt-4">No cost modules have been added yet.</p>
-            <p className="text-sm">
-              Add cost modules to map financial impacts to CIS controls.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {costModules.map((module: any) => (
-              <Card key={module.id} className="group relative overflow-hidden border-0 bg-gradient-to-br from-background via-background to-muted/20 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02]">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <CardHeader className="relative pb-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="relative w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow duration-300">
-                        <DollarSign className="w-5 h-5 text-white" />
-                        <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-foreground text-lg font-bold">{module.name}</CardTitle>
-                        <div className="text-sm text-muted-foreground uppercase tracking-wide font-medium">
-                          {formatCostType(module.costType || module.cost_type)}
+          
+          <div className="bg-gray-800 p-6 rounded-b-lg">
+            {costModules.length === 0 ? (
+              <div className="text-center py-8">
+                <DollarSign className="mx-auto h-12 w-12 text-gray-500" />
+                <p className="mt-4 text-white">No cost modules have been added yet.</p>
+                <p className="text-sm text-gray-400">
+                  Add cost modules to map financial impacts to CIS controls.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {costModules.map((module: any) => (
+                  <div key={module.id} className="bg-gray-700 rounded-lg border border-gray-600 p-4 hover:bg-gray-650 transition-colors">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
+                          <DollarSign className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <h4 className="text-white text-lg font-bold">{module.name}</h4>
+                          <div className="text-sm text-gray-400 uppercase tracking-wide font-medium">
+                            {formatCostType(module.costType || module.cost_type)}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex space-x-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors duration-200"
-                        onClick={() => {
-                          setEditModule(module);
-                          setIsEditDialogOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors duration-200"
-                        onClick={() => {
-                          setModuleToDelete(module);
-                          setIsDeleteDialogOpen(true);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="relative space-y-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2 uppercase tracking-wide font-medium">Cost Factor</p>
-                    <p className="text-foreground font-bold text-lg bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">{formatCostFactor(module)}</p>
-                  </div>
-                  
-                  {module.description && (
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-1 uppercase tracking-wide font-medium">Description</p>
-                      <p className="text-foreground/80 text-sm leading-relaxed">{module.description}</p>
-                    </div>
-                  )}
-                  
-                  {(module.cisControl || module.cis_control) && (
-                    <div className="pt-2 border-t border-border/50">
-                      <p className="text-sm text-muted-foreground mb-2 uppercase tracking-wide font-medium">CIS Controls</p>
-                      <div className="flex flex-wrap gap-2">
-                        {(module.cisControl || module.cis_control)?.map((control: string) => (
-                          <Badge key={control} variant="secondary" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20 transition-colors">
-                            {control}
-                          </Badge>
-                        ))}
+                      <div className="flex space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-600"
+                          onClick={() => {
+                            setEditModule(module);
+                            setIsEditDialogOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-gray-400 hover:text-red-300 hover:bg-gray-600"
+                          onClick={() => {
+                            setModuleToDelete(module);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm text-gray-400 mb-2 uppercase tracking-wide font-medium">Cost Factor</p>
+                        <p className="text-white font-bold text-lg">{formatCostFactor(module)}</p>
+                      </div>
+                      
+                      {module.description && (
+                        <div>
+                          <p className="text-sm text-gray-400 mb-1 uppercase tracking-wide font-medium">Description</p>
+                          <p className="text-gray-300 text-sm leading-relaxed">{module.description}</p>
+                        </div>
+                      )}
+                      
+                      {(module.cisControl || module.cis_control) && (
+                        <div className="pt-2 border-t border-gray-600">
+                          <p className="text-sm text-gray-400 mb-2 uppercase tracking-wide font-medium">CIS Controls</p>
+                          <div className="flex flex-wrap gap-2">
+                            {(module.cisControl || module.cis_control)?.map((control: string) => (
+                              <Badge key={control} variant="secondary" className="bg-blue-600 text-blue-100 border-blue-500">
+                                {control}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </CardContent>
+        </div>
+      </div>
 
       {/* Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-gray-800 border-gray-600">
           <DialogHeader>
-            <DialogTitle>Add New Cost Module</DialogTitle>
+            <DialogTitle className="text-white">Add New Cost Module</DialogTitle>
           </DialogHeader>
           <CostModuleForm 
             onSuccess={() => setIsCreateDialogOpen(false)} 
@@ -293,9 +295,9 @@ export function CostModuleList() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-gray-800 border-gray-600">
           <DialogHeader>
-            <DialogTitle>Edit Cost Module</DialogTitle>
+            <DialogTitle className="text-white">Edit Cost Module</DialogTitle>
           </DialogHeader>
           {editModule && (
             <CostModuleForm 
@@ -309,12 +311,12 @@ export function CostModuleList() {
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-gray-800 border-gray-600">
           <DialogHeader>
-            <DialogTitle>Delete Cost Module</DialogTitle>
+            <DialogTitle className="text-white">Delete Cost Module</DialogTitle>
           </DialogHeader>
           <div className="py-4">
-            <p>
+            <p className="text-gray-300">
               Are you sure you want to delete the cost module "{moduleToDelete?.name}"?
               This action cannot be undone.
             </p>
@@ -323,6 +325,7 @@ export function CostModuleList() {
             <Button
               variant="outline"
               onClick={() => setIsDeleteDialogOpen(false)}
+              className="bg-gray-600 text-white border-gray-500 hover:bg-gray-500"
             >
               Cancel
             </Button>
@@ -334,6 +337,7 @@ export function CostModuleList() {
                 }
               }}
               disabled={deleteMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
             >
               {deleteMutation.isPending ? (
                 <>
@@ -347,6 +351,6 @@ export function CostModuleList() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </div>
   );
 }
