@@ -1,5 +1,4 @@
 import React from "react";
-import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,87 +66,86 @@ export function ControlFiltersComponent({
           />
         </div>
 
-          <div>
-            <Label className="text-sm font-medium mb-2 block">Type</Label>
-            <Select
-              value={filters.type}
-              onValueChange={(value) =>
-                onFiltersChange({ ...filters, type: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="preventive">Preventive</SelectItem>
-                <SelectItem value="detective">Detective</SelectItem>
-                <SelectItem value="corrective">Corrective</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <Select
+          value={filters.type}
+          onValueChange={(value) =>
+            onFiltersChange({ ...filters, type: value })
+          }
+        >
+          <SelectTrigger className="w-32 bg-gray-600 border-gray-500 text-white">
+            <SelectValue placeholder="Type" />
+          </SelectTrigger>
+          <SelectContent className="bg-gray-700 border-gray-500">
+            <SelectItem value="all" className="text-white hover:bg-gray-600">All Types</SelectItem>
+            <SelectItem value="preventive" className="text-white hover:bg-gray-600">Preventive</SelectItem>
+            <SelectItem value="detective" className="text-white hover:bg-gray-600">Detective</SelectItem>
+            <SelectItem value="corrective" className="text-white hover:bg-gray-600">Corrective</SelectItem>
+          </SelectContent>
+        </Select>
 
-          <div>
-            <Label className="text-sm font-medium mb-2 block">Category</Label>
-            <Select
-              value={filters.category}
-              onValueChange={(value) =>
-                onFiltersChange({ ...filters, category: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="technical">Technical</SelectItem>
-                <SelectItem value="administrative">Administrative</SelectItem>
-                <SelectItem value="physical">Physical</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <Select
+          value={filters.category}
+          onValueChange={(value) =>
+            onFiltersChange({ ...filters, category: value })
+          }
+        >
+          <SelectTrigger className="w-36 bg-gray-600 border-gray-500 text-white">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
+          <SelectContent className="bg-gray-700 border-gray-500">
+            <SelectItem value="all" className="text-white hover:bg-gray-600">All Categories</SelectItem>
+            <SelectItem value="technical" className="text-white hover:bg-gray-600">Technical</SelectItem>
+            <SelectItem value="administrative" className="text-white hover:bg-gray-600">Administrative</SelectItem>
+            <SelectItem value="physical" className="text-white hover:bg-gray-600">Physical</SelectItem>
+          </SelectContent>
+        </Select>
 
-          <div>
-            <Label className="text-sm font-medium mb-2 block">Status</Label>
-            <Select
-              value={filters.status}
-              onValueChange={(value) =>
-                onFiltersChange({ ...filters, status: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Statuses" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="fully_implemented">Fully Implemented</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="not_implemented">Not Implemented</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <Select
+          value={filters.status}
+          onValueChange={(value) =>
+            onFiltersChange({ ...filters, status: value })
+          }
+        >
+          <SelectTrigger className="w-32 bg-gray-600 border-gray-500 text-white">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent className="bg-gray-700 border-gray-500">
+            <SelectItem value="all" className="text-white hover:bg-gray-600">All Statuses</SelectItem>
+            <SelectItem value="implemented" className="text-white hover:bg-gray-600">Implemented</SelectItem>
+            <SelectItem value="in_progress" className="text-white hover:bg-gray-600">In Progress</SelectItem>
+            <SelectItem value="planned" className="text-white hover:bg-gray-600">Planned</SelectItem>
+            <SelectItem value="not_implemented" className="text-white hover:bg-gray-600">Not Implemented</SelectItem>
+          </SelectContent>
+        </Select>
 
-          <div>
-            <Label className="text-sm font-medium mb-2 block">Framework</Label>
-            <Select
-              value={filters.framework}
-              onValueChange={(value) =>
-                onFiltersChange({ ...filters, framework: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Frameworks" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Frameworks</SelectItem>
-                <SelectItem value="ISO27001">ISO 27001</SelectItem>
-                <SelectItem value="NIST">NIST</SelectItem>
-                <SelectItem value="SOC2">SOC 2</SelectItem>
-                <SelectItem value="CIS">CIS Controls</SelectItem>
-                <SelectItem value="Custom">Custom</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        <Select
+          value={filters.framework}
+          onValueChange={(value) =>
+            onFiltersChange({ ...filters, framework: value })
+          }
+        >
+          <SelectTrigger className="w-36 bg-gray-600 border-gray-500 text-white">
+            <SelectValue placeholder="Framework" />
+          </SelectTrigger>
+          <SelectContent className="bg-gray-700 border-gray-500">
+            <SelectItem value="all" className="text-white hover:bg-gray-600">All Frameworks</SelectItem>
+            <SelectItem value="nist" className="text-white hover:bg-gray-600">NIST</SelectItem>
+            <SelectItem value="iso" className="text-white hover:bg-gray-600">ISO 27001</SelectItem>
+            <SelectItem value="cis" className="text-white hover:bg-gray-600">CIS Controls</SelectItem>
+          </SelectContent>
+        </Select>
+
+        {hasActiveFilters && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={clearFilters}
+            className="bg-gray-600 border-gray-500 text-white hover:bg-gray-500"
+          >
+            <X className="w-4 h-4 mr-1" />
+            Clear
+          </Button>
+        )}
       </div>
     </div>
   );
