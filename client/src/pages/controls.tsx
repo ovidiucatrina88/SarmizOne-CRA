@@ -174,80 +174,82 @@ export default function Controls() {
 
   return (
     <Layout>
-      <div className="container mx-auto p-6 space-y-6">
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold">Controls</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage and monitor security controls across frameworks
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/controls"] })}
-              className="gap-2"
-            >
-              <RefreshCw className="h-4 w-4" />
-              Refresh
-            </Button>
-            <Button onClick={() => setIsCreateModalOpen(true)} className="gap-2">
-              <PlusCircle className="h-4 w-4" />
-              Add New Control
-            </Button>
-          </div>
+      <div>
+        <div className="mb-6 flex items-center gap-2">
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={() => setIsCreateModalOpen(true)}
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add New Control
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => queryClient.invalidateQueries({ queryKey: ["/api/controls"] })}
+            className="ml-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
         </div>
-
-        {/* Enhanced Filters */}
-        <ControlFiltersComponent
-          filters={filters}
-          onFiltersChange={setFilters}
-          controlCounts={controlCounts}
-        />
-
-        {/* View Toggle */}
-        <div className="flex justify-between items-center">
-          <ControlViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
-          <div className="text-sm text-muted-foreground">
-            {controlCounts.filtered} of {controlCounts.total} controls
-          </div>
-        </div>
-
-        {/* Controls Display */}
-        {!Array.isArray(filteredControls) || filteredControls.length === 0 ? (
-          <Card className="p-8">
-            <div className="text-center">
-              <h3 className="text-lg font-medium mb-2">No Controls Found</h3>
-              <p className="text-gray-500 mb-4">
-                {allControls.length === 0 
-                  ? 'Click "Add New Control" to create a new control.'
-                  : 'No controls match your current filter criteria.'
-                }
-              </p>
+        
+        <div className="mb-6">
+          <div className="bg-gray-800 rounded-lg border border-gray-600">
+            {/* Search and Filter Controls */}
+            <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
+              <ControlFiltersComponent
+                filters={filters}
+                onFiltersChange={setFilters}
+                controlCounts={controlCounts}
+              />
             </div>
-          </Card>
-        ) : viewMode === 'risk' ? (
-          <RiskGroupedControlList
-            controls={filteredControls}
-            onControlEdit={handleEditControl}
-            onControlDelete={handleDeleteControl}
-          />
-        ) : viewMode === 'framework' ? (
-          <FrameworkGroupedControlList
-            controls={filteredControls}
-            onControlEdit={handleEditControl}
-            onControlDelete={handleDeleteControl}
-          />
-        ) : viewMode === 'list' ? (
-          <EnhancedControlTable
-            controls={filteredControls}
-            onControlEdit={handleEditControl}
-            onControlDelete={handleDeleteControl}
-          />
-        ) : (
-          <ControlList controls={filteredControls} onEdit={handleEditControl} />
-        )}
+
+            {/* View Toggle */}
+            <div className="bg-gray-700 px-6 py-3 border-b border-gray-600 flex justify-between items-center">
+              <ControlViewToggle viewMode={viewMode} onViewModeChange={setViewMode} />
+              <div className="text-sm text-gray-300">
+                {controlCounts.filtered} of {controlCounts.total} controls
+              </div>
+            </div>
+
+            {/* Controls Display */}
+            <div className="bg-gray-800 p-6 rounded-b-lg">
+              {!Array.isArray(filteredControls) || filteredControls.length === 0 ? (
+                <div className="text-center py-8">
+                  <h3 className="text-lg font-medium mb-2 text-white">No Controls Found</h3>
+                  <p className="text-gray-400 mb-4">
+                    {allControls.length === 0 
+                      ? 'Click "Add New Control" to create a new control.'
+                      : 'No controls match your current filter criteria.'
+                    }
+                  </p>
+                </div>
+              ) : viewMode === 'risk' ? (
+                <RiskGroupedControlList
+                  controls={filteredControls}
+                  onControlEdit={handleEditControl}
+                  onControlDelete={handleDeleteControl}
+                />
+              ) : viewMode === 'framework' ? (
+                <FrameworkGroupedControlList
+                  controls={filteredControls}
+                  onControlEdit={handleEditControl}
+                  onControlDelete={handleDeleteControl}
+                />
+              ) : viewMode === 'list' ? (
+                <EnhancedControlTable
+                  controls={filteredControls}
+                  onControlEdit={handleEditControl}
+                  onControlDelete={handleDeleteControl}
+                />
+              ) : (
+                <ControlList controls={filteredControls} onEdit={handleEditControl} />
+              )}
+            </div>
+          </div>
+        </div>
 
         {/* Control Form Dialog */}
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>

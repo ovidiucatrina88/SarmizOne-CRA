@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -52,23 +52,20 @@ export function ControlFiltersComponent({
   };
 
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <div>
-            <Label className="text-sm font-medium mb-2 block">Search</Label>
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search controls..."
-                value={filters.search}
-                onChange={(e) =>
-                  onFiltersChange({ ...filters, search: e.target.value })
-                }
-                className="pl-8"
-              />
-            </div>
-          </div>
+    <div className="space-y-4">
+      <div className="flex items-center space-x-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+          <Input
+            type="search"
+            placeholder="Search controls..."
+            value={filters.search}
+            onChange={(e) =>
+              onFiltersChange({ ...filters, search: e.target.value })
+            }
+            className="pl-8 bg-gray-600 border-gray-500 text-white placeholder-gray-400"
+          />
+        </div>
 
           <div>
             <Label className="text-sm font-medium mb-2 block">Type</Label>
@@ -151,27 +148,7 @@ export function ControlFiltersComponent({
               </SelectContent>
             </Select>
           </div>
-        </div>
-
-        {hasActiveFilters && (
-          <div className="flex items-center justify-between mt-4 pt-4 border-t">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearFilters}
-              className="h-8"
-            >
-              <X className="w-4 h-4 mr-1" />
-              Clear Filters
-            </Button>
-            {controlCounts && (
-              <span className="text-sm text-muted-foreground">
-                Showing {controlCounts.filtered} of {controlCounts.total} controls
-              </span>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
