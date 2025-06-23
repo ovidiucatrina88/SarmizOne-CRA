@@ -425,9 +425,9 @@ export function EnhancedAssetGroupedRiskList({
       {/* Risk Detail Dialog */}
       {selectedRisk && (
         <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-gray-800 border-gray-600">
             <DialogHeader>
-              <DialogTitle>{selectedRisk.name}</DialogTitle>
+              <DialogTitle className="text-white">{selectedRisk.name}</DialogTitle>
             </DialogHeader>
             <RiskDetailView risk={selectedRisk} onBack={() => setIsDetailDialogOpen(false)} />
           </DialogContent>
@@ -439,15 +439,15 @@ export function EnhancedAssetGroupedRiskList({
         open={!!riskToDelete} 
         onOpenChange={() => setRiskToDelete(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-gray-800 border-gray-600">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Risk</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-white">Delete Risk</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-400">
               Are you sure you want to delete "{riskToDelete?.name}"? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="bg-gray-600 text-white border-gray-500 hover:bg-gray-500">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (riskToDelete) {
