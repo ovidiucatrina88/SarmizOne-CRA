@@ -76,10 +76,7 @@ export function BackstageIntegration() {
   // Test connection mutation
   const testConnectionMutation = useMutation({
     mutationFn: async (config: BackstageConfig) => {
-      return apiRequest('/api/backstage/test-connection', {
-        method: 'POST',
-        body: JSON.stringify(config),
-      });
+      return apiRequest('POST', '/api/backstage/test-connection', config);
     },
     onSuccess: (data) => {
       toast({
@@ -99,10 +96,7 @@ export function BackstageIntegration() {
   // Sync mutation
   const syncMutation = useMutation({
     mutationFn: async ({ config, dryRun }: { config: BackstageConfig; dryRun: boolean }) => {
-      return apiRequest(`/api/backstage/sync?dryRun=${dryRun}`, {
-        method: 'POST',
-        body: JSON.stringify(config),
-      });
+      return apiRequest('POST', `/api/backstage/sync?dryRun=${dryRun}`, config);
     },
     onSuccess: (data: SyncResult) => {
       toast({
@@ -124,10 +118,7 @@ export function BackstageIntegration() {
   // Preview entities mutation
   const previewMutation = useMutation({
     mutationFn: async (config: BackstageConfig) => {
-      return apiRequest('/api/backstage/entities/preview?limit=20', {
-        method: 'POST',
-        body: JSON.stringify(config),
-      });
+      return apiRequest('POST', '/api/backstage/entities/preview?limit=20', config);
     },
     onSuccess: (data) => {
       setPreviewData(data);
@@ -145,13 +136,13 @@ export function BackstageIntegration() {
   // Fetch sync history
   const { data: syncHistory } = useQuery({
     queryKey: ['/api/backstage/sync-history'],
-    queryFn: () => apiRequest('/api/backstage/sync-history'),
+    queryFn: () => apiRequest('GET', '/api/backstage/sync-history'),
   });
 
   // Fetch Backstage assets
   const { data: backstageAssets } = useQuery({
     queryKey: ['/api/backstage/assets'],
-    queryFn: () => apiRequest('/api/backstage/assets'),
+    queryFn: () => apiRequest('GET', '/api/backstage/assets'),
   });
 
   const handleTestConnection = () => {

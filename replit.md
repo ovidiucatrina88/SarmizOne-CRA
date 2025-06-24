@@ -160,6 +160,7 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 - June 24, 2025. **RISK RESPONSE DISPLAY FIXED**: Resolved "Unknown Risk" display issue by fixing orphaned risk response record pointing to deleted risk - updated to reference existing risk for proper name resolution
 - June 24, 2025. **USER MANAGEMENT SYSTEM FIXED**: Created missing /api/auth/users endpoints with full CRUD operations, fixed cache invalidation issues preventing UI updates after user deletion, and resolved XSS vulnerability in confirm dialogs with input sanitization
 - June 24, 2025. **CORRECT LOGO RESTORED**: Fixed sidebar navigation to display proper SARMIZ-ONE logo with dragon emblem and company branding - replaced incorrect placeholder with authentic logo asset
+- June 24, 2025. **BACKSTAGE INTEGRATION FIXED**: Resolved API parameter order issue in backstage integration causing fetch errors - corrected apiRequest method/URL parameter sequence for proper HTTP requests
 
 ## User Preferences
 
