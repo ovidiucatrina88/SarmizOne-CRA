@@ -171,6 +171,7 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 - June 24, 2025. **DUPLICATE CONSTRAINT DEFINITIONS FIXED**: Eliminated duplicate CHECK constraints causing PostgreSQL execution errors - constraints now defined only once in constraints section
 - June 24, 2025. **ALL DUPLICATE CONSTRAINTS ELIMINATED**: Completed systematic removal of all duplicate foreign key and check constraints - schema dump now executes cleanly without constraint conflicts
 - June 24, 2025. **PRODUCTION DATA CONSTRAINT VIOLATION FIXED**: Corrected invalid impact_type value 'likelihood' to 'both' in control_risk_mappings data to satisfy CHECK constraint requirements
+- June 24, 2025. **PRODUCTION SCHEMA MISMATCH RESOLVED**: Updated users table schema definition to match production database structure with all required columns including first_name, last_name, and display_name
 
 ## User Preferences
 
