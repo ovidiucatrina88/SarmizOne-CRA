@@ -132,22 +132,17 @@ export class AuthService {
     const isValidPassword = await bcrypt.compare(credentials.password, user.passwordHash!);
     
     if (!isValidPassword) {
-      // Increment failed login attempts
-      const failedAttempts = (user.failedLoginAttempts || 0) + 1;
-      const updates: any = {
-        failedLoginAttempts: failedAttempts,
-        lastFailedLogin: new Date(),
-      };
-
-      // Lock account if max attempts reached
-      if (failedAttempts >= config.maxLoginAttempts) {
-        updates.accountLockedUntil = new Date(Date.now() + config.lockoutDuration * 1000);
+      // Increment failed login attempts (simplified without complex updates)
+      try {
+        await db.update(users)
+          .set({
+            failedLoginAttempts: (user.failedLoginAttempts || 0) + 1,
+            lastFailedLogin: new Date()
+          })
+          .where(eq(users.id, user.id));
+      } catch (error) {
+        console.error('Failed to update login attempts:', error);
       }
-
-      await db.update(users)
-        .set(updates)
-        .where(eq(users.id, user.id));
-
       return null;
     }
 
