@@ -194,8 +194,7 @@ CREATE TABLE control_asset_mappings (
     reasoning text,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT control_asset_mappings_pkey PRIMARY KEY (id),
-    CONSTRAINT control_asset_mappings_control_id_asset_type_key UNIQUE (control_id, asset_type),
-    CONSTRAINT control_asset_mappings_relevance_score_check CHECK ((relevance_score >= 0) AND (relevance_score <= 100))
+    CONSTRAINT control_asset_mappings_control_id_asset_type_key UNIQUE (control_id, asset_type)
 );
 
 -- Control library templates with CIS Controls integration
@@ -238,8 +237,7 @@ CREATE TABLE control_library (
     ownership_mapping text,
     service_models jsonb DEFAULT '[]'::jsonb,
     CONSTRAINT control_library_pkey PRIMARY KEY (id),
-    CONSTRAINT control_library_control_id_unique UNIQUE (control_id),
-    CONSTRAINT control_library_item_type_check CHECK (item_type = ANY (ARRAY['template'::text, 'instance'::text]))
+    CONSTRAINT control_library_control_id_unique UNIQUE (control_id)
 );
 
 -- Control to risk mappings for suggestion engine
@@ -254,9 +252,7 @@ CREATE TABLE control_risk_mappings (
     reasoning text,
     created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     risk_library_id text,
-    CONSTRAINT control_risk_mappings_pkey PRIMARY KEY (id),
-    CONSTRAINT control_risk_mappings_relevance_score_check CHECK ((relevance_score >= 0) AND (relevance_score <= 100)),
-    CONSTRAINT control_risk_mappings_impact_type_check CHECK (impact_type = ANY (ARRAY['inherent'::text, 'residual'::text, 'both'::text]))
+    CONSTRAINT control_risk_mappings_pkey PRIMARY KEY (id)
 );
 
 -- Control instances deployed from templates
@@ -318,9 +314,7 @@ CREATE TABLE enterprise_architecture (
     created_at timestamp without time zone NOT NULL DEFAULT now(),
     updated_at timestamp without time zone NOT NULL DEFAULT now(),
     CONSTRAINT enterprise_architecture_pkey PRIMARY KEY (id),
-    CONSTRAINT enterprise_architecture_asset_id_key UNIQUE (asset_id),
-    CONSTRAINT enterprise_architecture_level_check CHECK (level = ANY (ARRAY['L1'::text, 'L2'::text, 'L3'::text, 'L4'::text, 'L5'::text])),
-    CONSTRAINT enterprise_architecture_type_check CHECK (type = ANY (ARRAY['capability'::text, 'service'::text, 'component'::text]))
+    CONSTRAINT enterprise_architecture_asset_id_key UNIQUE (asset_id)
 );
 
 -- Industry insights and benchmarks (IRIS 2025 data)
