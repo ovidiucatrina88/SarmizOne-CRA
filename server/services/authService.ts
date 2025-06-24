@@ -264,7 +264,7 @@ export class AuthService {
   async upsertOidcUser(oidcProfile: any): Promise<UserWithoutPassword> {
     // Check if user exists with OIDC sub
     const [existingUser] = await db.select().from(users)
-      .where(eq(users.oidcSub, oidcProfile.sub))
+      .where(eq(users.ssoSubject, oidcProfile.sub))
       .limit(1);
 
     if (existingUser) {
@@ -289,13 +289,14 @@ export class AuthService {
     const [newUser] = await db.insert(users).values({
       username: oidcProfile.preferred_username || oidcProfile.email || `oidc_${oidcProfile.sub}`,
       email: oidcProfile.email,
+      displayName: oidcProfile.name || `${oidcProfile.given_name || ''} ${oidcProfile.family_name || ''}`.trim() || oidcProfile.email || 'OIDC User',
       firstName: oidcProfile.given_name || oidcProfile.first_name,
       lastName: oidcProfile.family_name || oidcProfile.last_name,
+      role: 'viewer',
       authType: 'oidc',
-      oidcSub: oidcProfile.sub,
-      role: 'viewer', // Default role for OIDC users
+      ssoSubject: oidcProfile.sub,
       isActive: true,
-      emailVerified: true,
+      isEmailVerified: true,
       lastLogin: new Date(),
       loginCount: 1,
     }).returning();
