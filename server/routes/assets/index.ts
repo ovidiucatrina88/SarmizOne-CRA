@@ -51,27 +51,27 @@ const assetSchema = z.object({
 router.get('/vulnerabilities', async (req, res) => {
   try {
     const { db } = await import('../../db');
-    const { vulnerabilities } = await import('../../../shared/schema');
+    const { sql } = await import('drizzle-orm');
     
-    const allVulnerabilities = await db.select({
-      id: vulnerabilities.id,
-      cve_id: vulnerabilities.cveId,
-      title: vulnerabilities.title,
-      description: vulnerabilities.description,
-      discovery_date: vulnerabilities.discoveryDate,
-      severity_cvss3: vulnerabilities.severityCvss3,
-      patchable: vulnerabilities.patchable,
-      source: vulnerabilities.source,
-      created_at: vulnerabilities.createdAt,
-      updated_at: vulnerabilities.updatedAt,
-      severity: vulnerabilities.severity,
-      status: vulnerabilities.status,
-      e_detect: vulnerabilities.eDetect,
-      e_resist: vulnerabilities.eResist,
-      remediation: vulnerabilities.remediation
-    }).from(vulnerabilities);
+    // Use raw query to avoid schema compatibility issues
+    const result = await db.execute(sql`
+      SELECT 
+        v.id,
+        v.title,
+        v.description,
+        v.severity,
+        v.status,
+        v.discovered_date as discovery_date,
+        v.created_at,
+        COUNT(va.id) as affected_assets
+      FROM vulnerabilities v
+      LEFT JOIN vulnerability_assets va ON v.id = va.vulnerability_id
+      GROUP BY v.id, v.title, v.description, v.severity, v.status, v.discovered_date, v.created_at
+      ORDER BY v.created_at DESC
+      LIMIT 50
+    `);
     
-    sendSuccess(res, allVulnerabilities);
+    sendSuccess(res, result.rows || []);
   } catch (error) {
     console.error('Error fetching asset vulnerabilities:', error);
     sendError(res, 'Failed to fetch asset vulnerabilities', 500);

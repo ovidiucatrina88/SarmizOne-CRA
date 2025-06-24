@@ -66,8 +66,8 @@ router.get('/summary', async (req, res) => {
     const assets = await assetService.getAllAssets();
     
     // Get recent activity
-    // Get recent activity logs using raw query to avoid syntax issues
-    const activityQuery = await db.execute(sql`SELECT action, entity_type, entity_id, user_id, "timestamp" FROM activity_logs ORDER BY "timestamp" DESC LIMIT 10`);
+    // Get recent activity logs using correct column names from database
+    const activityQuery = await db.execute(sql`SELECT activity, "user", entity, entity_type, entity_id, created_at FROM activity_logs ORDER BY created_at DESC LIMIT 10`);
     const recentLogs = activityQuery.rows || [];
     
     // Calculate exposure curve data from current risks
