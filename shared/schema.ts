@@ -537,7 +537,7 @@ export const authConfig = pgTable('auth_config', {
   oidcClientId: text('oidc_client_id'),
   oidcClientSecret: text('oidc_client_secret'),
   oidcRedirectUri: text('oidc_redirect_uri'),
-  oidcScope: text('oidc_scope').default('openid profile email'),
+  oidcScopes: json('oidc_scopes').$type<string[]>().default(['openid', 'profile', 'email']),
   allowLocalAuth: boolean('allow_local_auth').notNull().default(true),
   defaultRole: userRoleEnum('default_role').notNull().default('viewer'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
