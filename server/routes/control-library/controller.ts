@@ -103,6 +103,8 @@ export class ControlLibraryController {
         return sendError(res, { message: 'Control template not found' }, 404);
       }
       
+      console.log('Template data:', JSON.stringify(template, null, 2));
+      
       // Create a new control instance from the template
       const controlData = {
         controlId: `${template.controlId}-${Date.now().toString().substring(9)}`, // Create unique ID
@@ -111,15 +113,15 @@ export class ControlLibraryController {
         controlType: template.controlType,
         controlCategory: template.controlCategory,
         implementationStatus: 'not_implemented', // Default to not implemented
-        controlEffectiveness: template.controlEffectiveness,
-        implementationCost: template.implementationCost,
-        costPerAgent: template.costPerAgent,
-        isPerAgentPricing: template.isPerAgentPricing,
+        controlEffectiveness: parseFloat(template.controlEffectiveness) || 0.75, // Default effectiveness
+        implementationCost: template.implementationCost || 0,
+        costPerAgent: template.costPerAgent || 0,
+        isPerAgent: template.isPerAgentPricing || false,
         notes: template.notes,
         libraryItemId: templateId, // Reference to the source template
         itemType: 'instance',
         riskId: riskId || null,
-        associatedRisks: riskId ? [riskId.toString()] : null
+        // associatedRisks: riskId ? [riskId.toString()] : null // Temporarily removed due to PostgreSQL array handling
       };
       
       // Create the control instance
