@@ -112,22 +112,22 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
       const testResult = await db.execute(sql`SELECT COUNT(*) as count FROM control_library`);
       console.log(`[ControlSuggestions] Control library has ${testResult[0]?.count || 0} records`);
       
-      // Get the full risk library ID string from the risk_library table
+      // Get the full risk library ID string from the risk_library table using the risk's libraryItemId
       let riskLibraryStringId = null;
-      const riskLibraryId = riskData.libraryItemId;
+      const riskLibraryNumericId = riskData.libraryItemId;
       
-      if (riskLibraryId) {
+      if (riskLibraryNumericId) {
         const riskLibraryResult = await db.execute(sql`
-          SELECT risk_id FROM risk_library WHERE id = ${riskLibraryId}
+          SELECT risk_id FROM risk_library WHERE id = ${riskLibraryNumericId}
         `);
         if (riskLibraryResult && riskLibraryResult.length > 0) {
           riskLibraryStringId = riskLibraryResult[0].risk_id;
         }
       }
       
-      console.log(`[ControlSuggestions] Risk library mapping: ${riskLibraryId} -> ${riskLibraryStringId}`);
+      console.log(`[ControlSuggestions] Risk library mapping: numeric ID ${riskLibraryNumericId} -> string ID ${riskLibraryStringId}`);
       
-      // First try exact library string ID match
+      // Try to find controls mapped to this risk template using the library string ID
       let queryResult;
       if (riskLibraryStringId) {
         queryResult = await db.execute(sql`
@@ -143,7 +143,7 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
           ORDER BY crm.relevance_score DESC
           LIMIT 20
         `);
-        console.log(`[ControlSuggestions] Found ${queryResult.length || queryResult.rows?.length || 0} controls mapped to exact library ID ${riskLibraryStringId}`);
+        console.log(`[ControlSuggestions] Found ${queryResult.length || queryResult.rows?.length || 0} controls mapped to template library ID: ${riskLibraryStringId}`);
       }
       
       // If no exact match, try pattern matching for similar risks (like ORPHANED risks)

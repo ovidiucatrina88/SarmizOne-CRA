@@ -152,6 +152,7 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 - June 24, 2025. **COMPREHENSIVE API VALIDATION COMPLETED**: All 8 major API endpoints validated and operational - fixed activity logging constraint violations, confirmed full CRUD functionality across assets, risks, controls, and reporting systems
 - June 24, 2025. **CRITICAL DATABASE SCHEMA FIXED**: Resolved PostgreSQL array handling issues and activity_logs constraint violations - control instance creation from templates now fully operational with proper database storage and activity logging restored
 - June 24, 2025. **COMPREHENSIVE ARRAY HANDLING FIXED**: Resolved all PostgreSQL array literal issues across assets, risks, controls, and legal entities - all API endpoints now operational with proper array field handling and database constraint management
+- June 24, 2025. **CONTROL SUGGESTION ENGINE OPERATIONAL**: Fixed control-to-risk mapping system using pattern matching for template relationships - control suggestions now properly display mapped controls with impact categorization and relevance scoring
 
 ## User Preferences
 
