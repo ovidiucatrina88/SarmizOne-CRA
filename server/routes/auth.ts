@@ -43,15 +43,24 @@ const changePasswordSchema = z.object({
 // Login with username/password
 router.post('/auth/login/local', async (req, res) => {
   try {
-    const { username, password } = loginSchema.parse(req.body);
+    const { username, password } = req.body;
     
-    const user = await authService.authenticateLocal({ username, password });
+    if (!username || !password) {
+      return res.status(400).json({ success: false, error: 'Username and password required' });
+    }
+
+    // Direct database query bypassing AuthService
+    const [user] = await db.select().from(users).where(eq(users.username, username)).limit(1);
     
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: 'Invalid username or password'
-      });
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    }
+
+    // Verify password
+    const isValidPassword = await bcrypt.compare(password, user.passwordHash);
+    
+    if (!isValidPassword) {
+      return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
 
     // Set user session and save explicitly
@@ -61,7 +70,7 @@ router.post('/auth/login/local', async (req, res) => {
       role: user.role,
       username: user.username,
       email: user.email,
-      displayName: user.displayName
+      displayName: user.displayName || user.username
     };
 
     // Force session save before responding
@@ -77,7 +86,7 @@ router.post('/auth/login/local', async (req, res) => {
           id: user.id,
           username: user.username,
           email: user.email,
-          displayName: user.displayName,
+          displayName: user.displayName || user.username,
           role: user.role,
           authType: 'local'
         }
