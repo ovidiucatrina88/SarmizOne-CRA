@@ -112,21 +112,76 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
       const testResult = await db.execute(sql`SELECT COUNT(*) as count FROM control_library`);
       console.log(`[ControlSuggestions] Control library has ${testResult[0]?.count || 0} records`);
       
-      // Since control_risk_mappings is empty, use direct control library query based on control types and categories
-      console.log(`[ControlSuggestions] Using direct control library approach since mappings are empty`);
+      // Get the full risk library ID string from the risk_library table
+      let riskLibraryStringId = null;
+      const riskLibraryId = riskData.libraryItemId;
       
-      // Get relevant controls based on risk category and control effectiveness
-      queryResult = await db.execute(sql`
-        SELECT control_id, name, description, control_type, control_category,
-               implementation_status, control_effectiveness, implementation_cost, cost_per_agent
-        FROM control_library 
-        WHERE item_type = 'template'
-          AND control_type IN ('preventive', 'detective', 'corrective')
-          AND control_effectiveness > 0
-        ORDER BY control_effectiveness DESC, implementation_cost ASC
-        LIMIT 15
-      `);
-      console.log(`[ControlSuggestions] Found ${queryResult.length || queryResult.rows?.length || 0} controls from direct library query`);
+      if (riskLibraryId) {
+        const riskLibraryResult = await db.execute(sql`
+          SELECT risk_id FROM risk_library WHERE id = ${riskLibraryId}
+        `);
+        if (riskLibraryResult && riskLibraryResult.length > 0) {
+          riskLibraryStringId = riskLibraryResult[0].risk_id;
+        }
+      }
+      
+      console.log(`[ControlSuggestions] Risk library mapping: ${riskLibraryId} -> ${riskLibraryStringId}`);
+      
+      // First try exact library string ID match
+      let queryResult;
+      if (riskLibraryStringId) {
+        queryResult = await db.execute(sql`
+          SELECT cl.control_id, cl.name, cl.description, cl.control_type, cl.control_category,
+                 cl.implementation_status, cl.control_effectiveness, cl.implementation_cost, cl.cost_per_agent,
+                 crm.relevance_score as risk_relevance,
+                 crm.impact_type as risk_impact_type,
+                 crm.reasoning
+          FROM control_library cl
+          INNER JOIN control_risk_mappings crm ON cl.control_id = crm.control_id 
+          WHERE crm.risk_library_id = ${riskLibraryStringId}
+            AND crm.relevance_score > 0
+          ORDER BY crm.relevance_score DESC
+          LIMIT 20
+        `);
+        console.log(`[ControlSuggestions] Found ${queryResult.length || queryResult.rows?.length || 0} controls mapped to exact library ID ${riskLibraryStringId}`);
+      }
+      
+      // If no exact match, try pattern matching for similar risks (like ORPHANED risks)
+      if (!queryResult || (queryResult.length || queryResult.rows?.length || 0) === 0) {
+        const riskPattern = riskData.riskId.split('-')[1]; // Extract "ORPHANED" from "RISK-ORPHANED-30"
+        console.log(`[ControlSuggestions] Trying pattern match for risk type: ${riskPattern}`);
+        
+        queryResult = await db.execute(sql`
+          SELECT cl.control_id, cl.name, cl.description, cl.control_type, cl.control_category,
+                 cl.implementation_status, cl.control_effectiveness, cl.implementation_cost, cl.cost_per_agent,
+                 crm.relevance_score as risk_relevance,
+                 crm.impact_type as risk_impact_type,
+                 crm.reasoning
+          FROM control_library cl
+          INNER JOIN control_risk_mappings crm ON cl.control_id = crm.control_id 
+          WHERE crm.risk_library_id LIKE ${'%' + riskPattern + '%'}
+            AND crm.relevance_score > 0
+          ORDER BY crm.relevance_score DESC
+          LIMIT 20
+        `);
+        console.log(`[ControlSuggestions] Found ${queryResult.length || queryResult.rows?.length || 0} controls using pattern matching for ${riskPattern}`);
+      }
+      
+      // If still no results, fall back to general operational controls
+      if (!queryResult || (queryResult.length || queryResult.rows?.length || 0) === 0) {
+        console.log(`[ControlSuggestions] No specific mappings found, using general controls from library`);
+        queryResult = await db.execute(sql`
+          SELECT control_id, name, description, control_type, control_category,
+                 implementation_status, control_effectiveness, implementation_cost, cost_per_agent
+          FROM control_library 
+          WHERE item_type = 'template'
+            AND control_type IN ('preventive', 'detective', 'corrective')
+            AND control_effectiveness > 0
+          ORDER BY control_effectiveness DESC, implementation_cost ASC
+          LIMIT 10
+        `);
+        console.log(`[ControlSuggestions] Using fallback general controls: ${queryResult.length || queryResult.rows?.length || 0} found`);
+      }
       
       console.log(`[ControlSuggestions] Query result structure:`, { 
         isArray: Array.isArray(queryResult), 
@@ -166,12 +221,25 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
     const suggestions: ControlSuggestion[] = [];
     
     for (const control of relevantControls) {
-      // Since we don't have mapping data, categorize based on control properties
-      const impactCategory = categorizeControlImpact(control);
+      let impactCategory;
+      let baseScore;
       
-      // Use control effectiveness as base score since we don't have risk relevance mappings
-      const controlEffectiveness = parseFloat(control.control_effectiveness || '0');
-      const baseScore = Math.max(controlEffectiveness, impactCategory.score);
+      // Check if we have mapping data from control_risk_mappings
+      if (control.risk_impact_type && control.risk_relevance) {
+        impactCategory = {
+          category: control.risk_impact_type as 'likelihood' | 'magnitude' | 'both',
+          score: parseFloat(control.risk_relevance || '75'),
+          reasoning: control.reasoning || 'Control mapped based on risk characteristics'
+        };
+        baseScore = parseFloat(control.risk_relevance || '75');
+        console.log(`[ControlSuggestions] Using mapped data for control ${control.control_id}: ${control.risk_impact_type}, score: ${baseScore}`);
+      } else {
+        // Fall back to categorization based on control properties
+        impactCategory = categorizeControlImpact(control);
+        const controlEffectiveness = parseFloat(control.control_effectiveness || '0');
+        baseScore = Math.max(controlEffectiveness, impactCategory.score);
+        console.log(`[ControlSuggestions] Using categorized data for control ${control.control_id}: ${impactCategory.category}, score: ${baseScore}`);
+      }
       
       const suggestion: ControlSuggestion = {
         controlId: String(control.control_id || ''),
