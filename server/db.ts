@@ -41,11 +41,11 @@ pool.on('connect', (client) => {
 });
 
 pool.on('error', (err) => {
-  console.error('Database pool error:', err);
+  console.error('Database pool error:', err.message);
   isConnected = false;
   lastError = err;
   
-  // Try to clean up the pool if it's in a bad state
+  // Don't overwhelm with reconnection attempts
   if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
     reconnectAttempts++;
     console.log(`Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);

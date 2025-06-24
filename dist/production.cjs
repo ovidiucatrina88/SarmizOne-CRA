@@ -7216,7 +7216,7 @@ async function getControlSuggestions(riskId) {
         controlEffectiveness: Number(control.control_effectiveness || 70),
         implementationCost: String(control.implementation_cost || "1000"),
         costPerAgent: String(control.cost_per_agent || "100"),
-        isPerAgentPricing: Boolean(control.is_per_agent_pricing || false),
+        isPerAgentPricing: Boolean(control.is_per_agent_pricing || control.is_per_agent || false),
         impactCategory: impactCategory.category,
         matchScore: baseScore,
         priority: baseScore >= 80 ? "high" : baseScore >= 60 ? "medium" : "low",
