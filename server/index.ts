@@ -31,11 +31,11 @@ app.use(session({
   rolling: true, // Reset expiration on activity
   name: 'connect.sid',
   cookie: { 
-    secure: process.env.NODE_ENV === 'production', // Secure in production
+    secure: false, // Disable secure for testing
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'strict', // Lax for Cloudflare compatibility
-    domain: process.env.NODE_ENV === 'production' ? '.sarmiz-one.io' : undefined // Allow subdomains
+    sameSite: 'none', // Most permissive for Cloudflare
+    domain: undefined // Let browser handle domain
   }
 }));
 
