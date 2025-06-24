@@ -38,6 +38,14 @@ router.post('/auth/login/local', async (req, res) => {
       });
     }
 
+    // Ensure session exists before setting user
+    if (!(req as any).session) {
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Session not initialized' 
+      });
+    }
+
     (req as any).session.user = {
       id: user.id,
       username: user.username,
@@ -47,37 +55,48 @@ router.post('/auth/login/local', async (req, res) => {
       authType: 'local'
     };
 
-    // Log session creation details for debugging
-    console.log('Login session creation:', {
-      sessionId: (req as any).session.id,
-      host: req.headers.host,
-      protocol: req.protocol,
-      forwardedProto: req.get('x-forwarded-proto'),
-      isSecure: req.secure,
-      userAgent: req.get('user-agent')?.substring(0, 50)
-    });
-
-    (req as any).session.save((err: any) => {
+    // Force regenerate session to ensure it's properly created
+    (req as any).session.regenerate((err: any) => {
       if (err) {
-        console.error('Session save error:', err);
+        console.error('Session regenerate error:', err);
         return res.status(500).json({ 
           success: false, 
-          error: 'Session save failed' 
+          error: 'Session creation failed' 
         });
       }
 
-      console.log('Session saved successfully for user:', user.username);
-      
-      res.json({
-        success: true,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          displayName: user.displayName || user.username,
-          role: user.role,
-          authType: 'local'
+      // Set user data again after regeneration
+      (req as any).session.user = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        displayName: user.displayName || user.username,
+        role: user.role,
+        authType: 'local'
+      };
+
+      (req as any).session.save((saveErr: any) => {
+        if (saveErr) {
+          console.error('Session save error:', saveErr);
+          return res.status(500).json({ 
+            success: false, 
+            error: 'Session save failed' 
+          });
         }
+
+        console.log('Login successful for user:', user.username, 'Session ID:', (req as any).session.id);
+        
+        res.json({
+          success: true,
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            displayName: user.displayName || user.username,
+            role: user.role,
+            authType: 'local'
+          }
+        });
       });
     });
 

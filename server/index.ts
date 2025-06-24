@@ -27,15 +27,14 @@ app.use(session({
   store: sessionStore,
   secret: process.env.SESSION_SECRET || 'keyboard cat fallback secret',
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true, // Required for proper session creation
   rolling: true, // Reset expiration on activity
-  name: 'connect.sid', // Standard session name for compatibility
+  name: 'connect.sid',
   cookie: { 
-    secure: false, // Temporarily disable for debugging
+    secure: 'auto', // Auto-detect HTTPS
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax',
-    path: '/'
+    sameSite: 'lax' // Compatible with production domains
   }
 }));
 
