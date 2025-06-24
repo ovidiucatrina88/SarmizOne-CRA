@@ -38,7 +38,19 @@ router.post('/auth/login/local', async (req, res) => {
       });
     }
 
-    // Set user data directly in session
+    console.log('PRODUCTION LOGIN DEBUG - Before session creation:', {
+      hasSession: !!(req as any).session,
+      sessionId: (req as any).session?.id,
+      nodeEnv: process.env.NODE_ENV,
+      secure: req.secure,
+      protocol: req.protocol,
+      headers: {
+        host: req.headers.host,
+        'x-forwarded-proto': req.headers['x-forwarded-proto']
+      }
+    });
+
+    // Set user data directly in session without regeneration for production
     (req as any).session.user = {
       id: user.id,
       username: user.username,
@@ -48,52 +60,36 @@ router.post('/auth/login/local', async (req, res) => {
       authType: 'local'
     };
 
-    console.log('Session before save:', {
-      sessionId: (req as any).session.id,
-      userId: (req as any).session.user?.id,
-      username: (req as any).session.user?.username
-    });
-
-    // Regenerate session for production compatibility
-    (req as any).session.regenerate((regenerateErr: any) => {
-      if (regenerateErr) {
-        console.error('Session regenerate error:', regenerateErr);
-        // Continue without regeneration if it fails
+    // Save session explicitly
+    (req as any).session.save((saveErr: any) => {
+      if (saveErr) {
+        console.error('Session save error:', saveErr);
+        return res.status(500).json({ 
+          success: false, 
+          error: 'Session save failed' 
+        });
       }
 
-      // Set user data in session
-      (req as any).session.user = {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        displayName: user.displayName || user.username,
-        role: user.role,
-        authType: 'local'
-      };
-
-      // Save session
-      (req as any).session.save((saveErr: any) => {
-        if (saveErr) {
-          console.error('Session save error:', saveErr);
-          return res.status(500).json({ 
-            success: false, 
-            error: 'Session save failed' 
-          });
+      console.log('PRODUCTION LOGIN SUCCESS - Session saved:', {
+        sessionId: (req as any).session.id,
+        userId: (req as any).session.user?.id,
+        username: (req as any).session.user?.username,
+        cookieConfig: {
+          secure: req.secure,
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
         }
-
-        console.log('User authenticated successfully, session saved');
-        
-        res.json({
-          success: true,
-          user: {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            displayName: user.displayName || user.username,
-            role: user.role,
-            authType: 'local'
-          }
-        });
+      });
+      
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          displayName: user.displayName || user.username,
+          role: user.role,
+          authType: 'local'
+        }
       });
     });
 

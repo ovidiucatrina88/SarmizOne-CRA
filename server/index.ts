@@ -10,6 +10,7 @@ import { pool } from "./db";
 const app = express();
 
 // Trust proxy MUST be set BEFORE session middleware for secure cookies
+// For Cloudflare proxy setup, trust the first proxy
 app.set('trust proxy', 1);
 
 app.use(express.json({ limit: '10mb' }));
@@ -25,7 +26,8 @@ const sessionStore = new PgSession({
 
 console.log('PostgreSQL session store configured');
 
-// Configure session middleware
+// Configure session middleware with production-specific cookie settings
+const isProduction = process.env.NODE_ENV === 'production';
 const sessionConfig = {
   store: sessionStore,
   secret: process.env.SESSION_SECRET || 'keyboard cat fallback secret',
@@ -34,11 +36,13 @@ const sessionConfig = {
   rolling: true,
   name: 'connect.sid',
   cookie: { 
-    secure: process.env.NODE_ENV === 'production', 
+    secure: isProduction, 
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000,
-    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'strict',
-    path: '/'
+    sameSite: isProduction ? 'none' as const : 'strict' as const,
+    path: '/',
+    // Don't set domain in production to allow for subdomain flexibility
+    domain: undefined
   }
 };
 
@@ -46,6 +50,7 @@ console.log('Session configuration:', {
   nodeEnv: process.env.NODE_ENV,
   cookieSecure: sessionConfig.cookie.secure,
   sameSite: sessionConfig.cookie.sameSite,
+  domain: sessionConfig.cookie.domain,
   trustProxy: app.get('trust proxy')
 });
 
@@ -74,7 +79,7 @@ app.use((req, res, next) => {
     });
   }
 
-  // Intercept and log all Set-Cookie headers
+  // Intercept and log all Set-Cookie headers with production debugging
   const originalSetHeader = res.setHeader;
   res.setHeader = function(name: string, value: any) {
     if (name.toLowerCase() === 'set-cookie') {
@@ -85,7 +90,12 @@ app.use((req, res, next) => {
         protocol: req.protocol,
         secure: req.secure,
         isProduction: process.env.NODE_ENV === 'production',
-        trustProxy: req.app.get('trust proxy')
+        trustProxy: req.app.get('trust proxy'),
+        headers: {
+          host: req.headers.host,
+          'x-forwarded-proto': req.headers['x-forwarded-proto'],
+          'x-forwarded-for': req.headers['x-forwarded-for']
+        }
       });
     }
     return originalSetHeader.call(this, name, value);
