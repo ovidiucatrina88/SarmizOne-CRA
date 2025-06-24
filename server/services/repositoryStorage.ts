@@ -419,18 +419,23 @@ export class DatabaseStorage {
   }
 
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
-    // Temporarily disable activity logging to fix constraint violations
-    console.log('Activity log skipped:', log.action || 'system_action');
-    // Return a mock activity log object to satisfy the interface
-    return {
-      id: 0,
+    // Map to both old and new schema fields for compatibility
+    const processedLog = {
+      // New schema fields
       action: log.action || 'system_action',
       entityType: log.entityType || 'unknown',
       entityId: log.entityId || '',
       userId: log.userId || 1,
       details: log.details || null,
-      createdAt: log.createdAt || new Date()
-    } as ActivityLog;
+      createdAt: log.createdAt || new Date(),
+      // Old schema fields (required by current database structure)
+      activity: log.action || 'system_action',
+      user: 'System User',
+      entity: typeof log.details === 'object' && log.details?.message ? log.details.message : (log.entityType || 'Entity')
+    };
+    
+    const [createdLog] = await db.insert(activityLogs).values(processedLog).returning();
+    return createdLog;
   }
 
   /**

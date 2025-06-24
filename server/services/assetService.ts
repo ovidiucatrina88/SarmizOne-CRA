@@ -36,8 +36,8 @@ export class AssetService {
     // Create the asset
     const asset = await this.repository.createAsset(assetData);
     
-    // Skip activity logging to avoid constraint violations
-    console.log('Asset created successfully (activity logging disabled):', asset.id);
+    // Log the asset creation
+    await this.logAssetActivity(asset.id, 'create', 'Asset created');
     
     return asset;
   }

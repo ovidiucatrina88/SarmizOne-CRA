@@ -174,8 +174,12 @@ export class ControlService {
       }
     }
     
-    // Skip activity logging to avoid constraint violations
-    console.log('Control created successfully (activity logging disabled):', control.id);
+    // Log the control creation
+    try {
+      await this.logControlActivity(control.id, 'create', 'Control created');
+    } catch (error) {
+      console.warn('Failed to log control activity:', error);
+    }
     
     return control;
   }
@@ -265,8 +269,12 @@ export class ControlService {
     // Add control to risk
     await this.repository.addControlToRisk(riskId, controlId);
     
-    // Skip activity logging to avoid constraint violations
-    console.log('Control associated with risk successfully (activity logging disabled):', controlId, 'to', riskId);
+    // Log the association
+    await this.logControlActivity(
+      controlId, 
+      'associate', 
+      `Control associated with risk ID ${riskId}`
+    );
   }
   
   /**
@@ -313,8 +321,13 @@ export class ControlService {
       console.log('Could not get control details for logging, using default name');
     }
     
-    // Skip activity logging to avoid constraint violations
-    console.log('Activity log skipped for control:', controlId, actionType);
+    await this.repository.createActivityLog({
+      action: actionType,
+      entityType: 'control',
+      entityId: controlId.toString(),
+      userId: 1,
+      details: { message: controlName }
+    });
   }
 }
 
