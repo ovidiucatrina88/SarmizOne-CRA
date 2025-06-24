@@ -173,6 +173,7 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 - June 24, 2025. **PRODUCTION DATA CONSTRAINT VIOLATION FIXED**: Corrected invalid impact_type value 'likelihood' to 'both' in control_risk_mappings data to satisfy CHECK constraint requirements
 - June 24, 2025. **PRODUCTION SCHEMA MISMATCH RESOLVED**: Updated users table schema definition to match production database structure with all required columns including first_name, last_name, and display_name
 - June 24, 2025. **SCHEMA DUMP USERS TABLE CORRECTED**: Fixed COMPLETE_DATABASE_SCHEMA_DUMP.sql to include complete users table structure with all 33 columns matching production database
+- June 24, 2025. **AUTHENTICATION SERVICE FIELD MAPPING FIXED**: Corrected authService.ts to use proper database field names (isEmailVerified, ssoSubject, displayName) eliminating column not found errors
 
 ## User Preferences
 

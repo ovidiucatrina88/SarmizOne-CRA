@@ -97,12 +97,13 @@ export class AuthService {
       username: userData.username,
       email: userData.email,
       passwordHash,
+      displayName: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.username,
       firstName: userData.firstName,
       lastName: userData.lastName,
       role: userData.role,
       authType: 'local',
       isActive: true,
-      emailVerified: true, // Auto-verify for admin-created users
+      isEmailVerified: true, // Auto-verify for admin-created users
       createdBy,
     }).returning();
 

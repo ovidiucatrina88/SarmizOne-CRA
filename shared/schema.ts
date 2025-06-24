@@ -488,6 +488,11 @@ export const insertUserSchema = createInsertSchema(users).omit({
   createdAt: true,
   updatedAt: true,
   lastLogin: true,
+  failedLoginAttempts: true,
+  lockedUntil: true,
+  accountLockedUntil: true,
+  loginCount: true,
+  lastFailedLogin: true,
 });
 
 export type User = typeof users.$inferSelect;
