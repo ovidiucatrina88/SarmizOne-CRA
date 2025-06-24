@@ -22,7 +22,7 @@ const sessionStore = new PgSession({
   }
 });
 
-// Configure session with production-ready security settings
+// Configure session with Cloudflare-compatible settings
 app.use(session({
   store: sessionStore,
   secret: process.env.SESSION_SECRET || 'keyboard cat fallback secret',
@@ -31,10 +31,22 @@ app.use(session({
   rolling: true, // Reset expiration on activity
   name: 'connect.sid',
   cookie: { 
-    secure: 'auto', // Auto-detect HTTPS
+    secure: req => {
+      // For production domains behind Cloudflare, always use secure
+      const isProduction = process.env.NODE_ENV === 'production' || 
+                          req.get('x-forwarded-proto') === 'https' ||
+                          req.hostname?.includes('sarmiz-one.io');
+      return isProduction;
+    },
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax' // Compatible with production domains
+    sameSite: req => {
+      // Cloudflare domains need 'none' for proper cookie handling
+      const isCloudflare = req.hostname?.includes('sarmiz-one.io') || 
+                          req.get('cf-ray') || 
+                          process.env.NODE_ENV === 'production';
+      return isCloudflare ? 'none' : 'lax';
+    }
   }
 }));
 
@@ -42,8 +54,12 @@ app.use(session({
 // app.use(passport.initialize());
 // app.use(passport.session());
 
-// Trust proxy for proper HTTPS detection
+// Trust proxy for proper HTTPS detection (required for Cloudflare)
 app.set('trust proxy', 1);
+
+// Add Cloudflare session middleware
+import { cloudflareSessionFix } from './middleware/cloudflare-session';
+app.use(cloudflareSessionFix);
 
 app.use((req, res, next) => {
   const start = Date.now();

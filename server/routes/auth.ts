@@ -85,6 +85,14 @@ router.post('/auth/login/local', async (req, res) => {
         }
 
         console.log('Login successful for user:', user.username, 'Session ID:', (req as any).session.id);
+        console.log('Production cookie debug:', {
+          secure: req.sessionCookies?.secure || 'auto',
+          sameSite: req.sessionCookies?.sameSite || 'lax',
+          domain: req.sessionCookies?.domain || 'auto',
+          httpOnly: req.sessionCookies?.httpOnly || true,
+          host: req.headers.host,
+          userAgent: req.get('user-agent')?.substring(0, 50)
+        });
         
         res.json({
           success: true,
