@@ -232,21 +232,21 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
         <div className="p-3 border-b border-gray-700 pl-[0px] pr-[0px] pt-[0px] pb-[0px] mt-[-1px] mb-[-1px] ml-[0px] mr-[0px]">
           {!sidebarCollapsed && (
             <div className="flex items-center justify-center">
-              <div className="w-32 h-20 flex items-center justify-center">
+              <div className="w-40 h-24 flex items-center justify-center">
                 <img 
                   src="/logo.png" 
                   alt="SARMIZ-ONE Logo" 
-                  className="w-28 h-16 object-contain"
+                  className="w-36 h-20 object-contain"
                 />
               </div>
             </div>
           )}
           {sidebarCollapsed && (
-            <div className="w-10 h-10 flex items-center justify-center">
+            <div className="w-12 h-12 flex items-center justify-center">
               <img 
                 src="/logo.png" 
                 alt="SARMIZ-ONE" 
-                className="w-8 h-8 object-contain"
+                className="w-10 h-10 object-contain"
               />
             </div>
           )}
