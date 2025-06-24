@@ -140,6 +140,7 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 - June 24, 2025. Fixed Cloudflare cookie blocking issue by changing production sameSite from 'strict' to 'lax' - strict cookies were being blocked by Cloudflare proxy
 - June 24, 2025. Added domain configuration for session cookies to handle www.sarmiz-one.io subdomain access with .sarmiz-one.io cookie domain
 - June 24, 2025. Fixed session creation issue by restoring session.regenerate() call - sessions now properly create Set-Cookie headers in production environment
+- June 24, 2025. Added comprehensive session store error handling and fallback to memory store to diagnose production session middleware failures
 
 ## User Preferences
 

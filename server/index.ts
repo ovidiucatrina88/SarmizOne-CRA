@@ -13,30 +13,49 @@ app.use(express.urlencoded({ extended: true }));
 
 // Configure session store with error handling
 const PgSession = connectPgSimple(session);
-const sessionStore = new PgSession({
-  pool: pool,
-  tableName: 'sessions',
-  createTableIfMissing: true,
-  errorLog: (error: any) => {
-    console.error('Session store error:', error);
-  }
-});
 
-// Configure session with Cloudflare-compatible settings
-app.use(session({
+let sessionStore;
+try {
+  sessionStore = new PgSession({
+    pool: pool,
+    tableName: 'sessions',
+    createTableIfMissing: true,
+    errorLog: (error: any) => {
+      console.error('Session store database error:', error);
+    }
+  });
+  console.log('PostgreSQL session store initialized');
+} catch (error) {
+  console.error('Failed to create PostgreSQL session store:', error);
+  console.log('Falling back to memory store for session debugging');
+  sessionStore = new session.MemoryStore();
+}
+
+// Configure session middleware
+const sessionConfig = {
   store: sessionStore,
   secret: process.env.SESSION_SECRET || 'keyboard cat fallback secret',
   resave: false,
-  saveUninitialized: true, // Required for proper session creation
-  rolling: true, // Reset expiration on activity
+  saveUninitialized: true,
+  rolling: true,
   name: 'connect.sid',
   cookie: { 
     secure: process.env.NODE_ENV === 'production', 
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    maxAge: 24 * 60 * 60 * 1000,
     sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'strict'
   }
-}));
+};
+
+console.log('Initializing session middleware with config:', {
+  hasStore: !!sessionConfig.store,
+  storeType: sessionStore.constructor.name,
+  hasSecret: !!sessionConfig.secret,
+  nodeEnv: process.env.NODE_ENV,
+  cookieSecure: sessionConfig.cookie.secure
+});
+
+app.use(session(sessionConfig));
 
 // Initialize Passport (disabled for simplified auth)
 // app.use(passport.initialize());

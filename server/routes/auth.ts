@@ -54,13 +54,17 @@ router.post('/auth/login/local', async (req, res) => {
       username: (req as any).session.user?.username
     });
 
-    console.log('PRE-SESSION DEBUG:', {
-      hasSession: !!(req as any).session,
-      sessionId: (req as any).session?.id,
-      nodeEnv: process.env.NODE_ENV,
-      cookieSettings: (req as any).sessionStore?.options?.cookie
-    });
+    // Check if session exists at all
+    if (!(req as any).session) {
+      console.error('CRITICAL: No session object exists - middleware failed');
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Session middleware failed' 
+      });
+    }
 
+    console.log('Session exists, setting user data...');
+    
     // Set user data directly in existing session
     (req as any).session.user = {
       id: user.id,
@@ -71,28 +75,17 @@ router.post('/auth/login/local', async (req, res) => {
       authType: 'local'
     };
 
-    console.log('POST-USER-SET DEBUG:', {
-      sessionId: (req as any).session.id,
-      hasUser: !!(req as any).session.user,
-      userId: (req as any).session.user?.id
-    });
-
     // Force save session
     (req as any).session.save((saveErr: any) => {
       if (saveErr) {
-        console.error('Session save error:', saveErr);
+        console.error('Session save failed:', saveErr);
         return res.status(500).json({ 
           success: false, 
-          error: 'Session save failed' 
+          error: 'Session save failed: ' + saveErr.message 
         });
       }
 
-      console.log('SESSION SAVE SUCCESS:', {
-        sessionId: (req as any).session.id,
-        userId: (req as any).session.user?.id,
-        username: (req as any).session.user?.username,
-        responseHeaders: res.getHeaders()
-      });
+      console.log('Session saved successfully - user should be authenticated');
       
       res.json({
         success: true,
