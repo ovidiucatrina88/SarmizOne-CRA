@@ -11,23 +11,7 @@ router.get('/', async (req, res) => {
     const { db } = await import('../db');
     const { vulnerabilities } = await import('../../shared/schema');
     
-    const allVulnerabilities = await db.select({
-      id: vulnerabilities.id,
-      cve_id: vulnerabilities.cveId,
-      title: vulnerabilities.title,
-      description: vulnerabilities.description,
-      discovery_date: vulnerabilities.discoveryDate,
-      severity_cvss3: vulnerabilities.severityCvss3,
-      patchable: vulnerabilities.patchable,
-      source: vulnerabilities.source,
-      created_at: vulnerabilities.createdAt,
-      updated_at: vulnerabilities.updatedAt,
-      severity: vulnerabilities.severity,
-      status: vulnerabilities.status,
-      e_detect: vulnerabilities.eDetect,
-      e_resist: vulnerabilities.eResist,
-      remediation: vulnerabilities.remediation
-    }).from(vulnerabilities);
+    const allVulnerabilities = await db.select().from(vulnerabilities);
     
     sendSuccess(res, allVulnerabilities);
   } catch (error) {

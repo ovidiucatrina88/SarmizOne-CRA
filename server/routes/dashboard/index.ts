@@ -64,9 +64,8 @@ router.get('/summary', async (req, res) => {
     const assets = await assetService.getAllAssets();
     
     // Get recent activity
-    // Using repository directly for activity logs
-    const allLogs = await repository.getAllActivityLogs();
-    const recentLogs = allLogs.slice(0, 10);
+    // Get recent activity logs
+    const recentLogs = await db.select().from(activityLogs).orderBy(sql`${activityLogs.timestamp} DESC`).limit(10);
     
     // Calculate exposure curve data from current risks
     const exposureCurveData = [];
