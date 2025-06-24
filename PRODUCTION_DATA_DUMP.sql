@@ -43,8 +43,8 @@ INSERT INTO control_library (id, control_id, name, description, control_type, co
 -- =====================================================
 
 INSERT INTO control_risk_mappings (id, control_id, threat_community, risk_category, vulnerability_pattern, relevance_score, impact_type, reasoning, created_at, risk_library_id) VALUES
-(51, 'CIS-6-TPL', NULL, NULL, NULL, 50, 'likelihood', 'this is a test', '2025-06-24 20:10:50.830679', 'RISK-ORPHANED-ACCOUN-276-TPL'),
-(52, 'CIS-6-TPL', NULL, NULL, NULL, 50, 'likelihood', 'this is a test', '2025-06-24 20:10:50.837316', 'RISK-LACK-OF-VISIBIL-973-TPL');
+(51, 'CIS-6-TPL', NULL, NULL, NULL, 50, 'both', 'this is a test', '2025-06-24 20:10:50.830679', 'RISK-ORPHANED-ACCOUN-276-TPL'),
+(52, 'CIS-6-TPL', NULL, NULL, NULL, 50, 'both', 'this is a test', '2025-06-24 20:10:50.837316', 'RISK-LACK-OF-VISIBIL-973-TPL');
 
 -- =====================================================
 -- COST MODULES DATA (Risk Response Cost Calculation)
