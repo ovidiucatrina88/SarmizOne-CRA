@@ -38,14 +38,7 @@ router.post('/auth/login/local', async (req, res) => {
       });
     }
 
-    // Ensure session exists before setting user
-    if (!(req as any).session) {
-      return res.status(500).json({ 
-        success: false, 
-        error: 'Session not initialized' 
-      });
-    }
-
+    // Set user data directly in session
     (req as any).session.user = {
       id: user.id,
       username: user.username,
@@ -55,56 +48,38 @@ router.post('/auth/login/local', async (req, res) => {
       authType: 'local'
     };
 
-    // Force regenerate session to ensure it's properly created
-    (req as any).session.regenerate((err: any) => {
-      if (err) {
-        console.error('Session regenerate error:', err);
+    console.log('Session before save:', {
+      sessionId: (req as any).session.id,
+      userId: (req as any).session.user?.id,
+      username: (req as any).session.user?.username
+    });
+
+    // Force save session immediately
+    (req as any).session.save((saveErr: any) => {
+      if (saveErr) {
+        console.error('Session save error:', saveErr);
         return res.status(500).json({ 
           success: false, 
-          error: 'Session creation failed' 
+          error: 'Session save failed' 
         });
       }
 
-      // Set user data again after regeneration
-      (req as any).session.user = {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        displayName: user.displayName || user.username,
-        role: user.role,
-        authType: 'local'
-      };
-
-      (req as any).session.save((saveErr: any) => {
-        if (saveErr) {
-          console.error('Session save error:', saveErr);
-          return res.status(500).json({ 
-            success: false, 
-            error: 'Session save failed' 
-          });
+      console.log('Session saved successfully:', {
+        sessionId: (req as any).session.id,
+        userId: (req as any).session.user?.id,
+        username: (req as any).session.user?.username
+      });
+      
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          displayName: user.displayName || user.username,
+          role: user.role,
+          authType: 'local'
         }
-
-        console.log('Login successful for user:', user.username, 'Session ID:', (req as any).session.id);
-        console.log('Production cookie debug:', {
-          secure: req.sessionCookies?.secure || 'auto',
-          sameSite: req.sessionCookies?.sameSite || 'lax',
-          domain: req.sessionCookies?.domain || 'auto',
-          httpOnly: req.sessionCookies?.httpOnly || true,
-          host: req.headers.host,
-          userAgent: req.get('user-agent')?.substring(0, 50)
-        });
-        
-        res.json({
-          success: true,
-          user: {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            displayName: user.displayName || user.username,
-            role: user.role,
-            authType: 'local'
-          }
-        });
       });
     });
 
