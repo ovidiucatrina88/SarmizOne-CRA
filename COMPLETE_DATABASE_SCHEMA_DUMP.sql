@@ -105,7 +105,7 @@ CREATE TABLE activity_logs (
     CONSTRAINT activity_logs_pkey PRIMARY KEY (id)
 );
 
--- Asset relationships mapping
+-- Asset relationships mapping (foreign keys added later)
 CREATE TABLE asset_relationships (
     id integer NOT NULL DEFAULT nextval('asset_relationships_id_seq'::regclass),
     source_asset_id integer NOT NULL,
@@ -113,9 +113,7 @@ CREATE TABLE asset_relationships (
     relationship_type relationship_type NOT NULL,
     created_at timestamp without time zone NOT NULL DEFAULT now(),
     CONSTRAINT asset_relationships_pkey PRIMARY KEY (id),
-    CONSTRAINT asset_relationships_source_asset_id_target_asset_id_relatio_key UNIQUE (source_asset_id, target_asset_id, relationship_type),
-    CONSTRAINT asset_relationships_source_asset_id_fkey FOREIGN KEY (source_asset_id) REFERENCES assets(id),
-    CONSTRAINT asset_relationships_target_asset_id_fkey FOREIGN KEY (target_asset_id) REFERENCES assets(id)
+    CONSTRAINT asset_relationships_source_asset_id_target_asset_id_relatio_key UNIQUE (source_asset_id, target_asset_id, relationship_type)
 );
 
 -- Core assets table with enterprise architecture support
@@ -146,8 +144,7 @@ CREATE TABLE assets (
     backstage_metadata jsonb,
     last_backstage_sync timestamp without time zone,
     CONSTRAINT assets_pkey PRIMARY KEY (id),
-    CONSTRAINT assets_asset_id_unique UNIQUE (asset_id),
-    CONSTRAINT assets_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES assets(id)
+    CONSTRAINT assets_asset_id_unique UNIQUE (asset_id)
 );
 
 -- Authentication configuration
@@ -308,7 +305,7 @@ CREATE TABLE cost_modules (
     CONSTRAINT cost_modules_pkey PRIMARY KEY (id)
 );
 
--- Enterprise architecture mapping
+-- Enterprise architecture mapping (foreign keys added later)
 CREATE TABLE enterprise_architecture (
     id integer NOT NULL DEFAULT nextval('enterprise_architecture_id_seq'::regclass),
     asset_id text NOT NULL,
@@ -322,7 +319,6 @@ CREATE TABLE enterprise_architecture (
     updated_at timestamp without time zone NOT NULL DEFAULT now(),
     CONSTRAINT enterprise_architecture_pkey PRIMARY KEY (id),
     CONSTRAINT enterprise_architecture_asset_id_key UNIQUE (asset_id),
-    CONSTRAINT enterprise_architecture_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES enterprise_architecture(id),
     CONSTRAINT enterprise_architecture_level_check CHECK (level = ANY (ARRAY['L1'::text, 'L2'::text, 'L3'::text, 'L4'::text, 'L5'::text])),
     CONSTRAINT enterprise_architecture_type_check CHECK (type = ANY (ARRAY['capability'::text, 'service'::text, 'component'::text]))
 );
@@ -368,7 +364,7 @@ CREATE TABLE production_schema_version (
     CONSTRAINT production_schema_version_pkey PRIMARY KEY (version)
 );
 
--- Response cost module associations
+-- Response cost module associations (foreign keys added later)
 CREATE TABLE response_cost_modules (
     id integer NOT NULL DEFAULT nextval('response_cost_modules_id_seq'::regclass),
     response_id integer NOT NULL,
@@ -376,12 +372,10 @@ CREATE TABLE response_cost_modules (
     multiplier numeric DEFAULT 1.0,
     created_at timestamp without time zone NOT NULL DEFAULT now(),
     CONSTRAINT response_cost_modules_pkey PRIMARY KEY (id),
-    CONSTRAINT response_cost_modules_response_id_cost_module_id_key UNIQUE (response_id, cost_module_id),
-    CONSTRAINT response_cost_modules_response_id_fkey FOREIGN KEY (response_id) REFERENCES risk_responses(id),
-    CONSTRAINT response_cost_modules_cost_module_id_fkey FOREIGN KEY (cost_module_id) REFERENCES cost_modules(id)
+    CONSTRAINT response_cost_modules_response_id_cost_module_id_key UNIQUE (response_id, cost_module_id)
 );
 
--- Risk to control effectiveness mappings
+-- Risk to control effectiveness mappings (foreign keys added later)
 CREATE TABLE risk_controls (
     id integer NOT NULL DEFAULT nextval('risk_controls_id_seq'::regclass),
     risk_id integer NOT NULL,
@@ -390,12 +384,10 @@ CREATE TABLE risk_controls (
     notes text NOT NULL DEFAULT ''::text,
     created_at timestamp without time zone NOT NULL DEFAULT now(),
     updated_at timestamp without time zone NOT NULL DEFAULT now(),
-    CONSTRAINT risk_controls_pkey PRIMARY KEY (id),
-    CONSTRAINT risk_controls_risk_id_fkey FOREIGN KEY (risk_id) REFERENCES risks(id),
-    CONSTRAINT risk_controls_control_id_fkey FOREIGN KEY (control_id) REFERENCES controls(id)
+    CONSTRAINT risk_controls_pkey PRIMARY KEY (id)
 );
 
--- Risk cost associations
+-- Risk cost associations (foreign keys added later)
 CREATE TABLE risk_costs (
     id integer NOT NULL DEFAULT nextval('risk_costs_id_seq'::regclass),
     risk_id integer NOT NULL,
@@ -403,9 +395,7 @@ CREATE TABLE risk_costs (
     weight numeric NOT NULL DEFAULT 1.0,
     created_at timestamp without time zone NOT NULL DEFAULT now(),
     CONSTRAINT risk_costs_pkey PRIMARY KEY (id),
-    CONSTRAINT risk_costs_risk_id_cost_module_id_key UNIQUE (risk_id, cost_module_id),
-    CONSTRAINT risk_costs_risk_id_fkey FOREIGN KEY (risk_id) REFERENCES risks(id),
-    CONSTRAINT risk_costs_cost_module_id_fkey FOREIGN KEY (cost_module_id) REFERENCES cost_modules(id)
+    CONSTRAINT risk_costs_risk_id_cost_module_id_key UNIQUE (risk_id, cost_module_id)
 );
 
 -- Risk library templates with FAIR methodology parameters
@@ -459,7 +449,7 @@ CREATE TABLE risk_library (
     CONSTRAINT risk_library_pkey PRIMARY KEY (id)
 );
 
--- Risk response strategies and implementations
+-- Risk response strategies and implementations (foreign keys added later)
 CREATE TABLE risk_responses (
     id integer NOT NULL DEFAULT nextval('risk_responses_id_seq'::regclass),
     risk_id text NOT NULL,
@@ -477,8 +467,7 @@ CREATE TABLE risk_responses (
     expected_effectiveness real,
     responsible_party text,
     target_date timestamp without time zone,
-    CONSTRAINT risk_responses_pkey PRIMARY KEY (id),
-    CONSTRAINT risk_responses_risk_id_risks_risk_id_fk FOREIGN KEY (risk_id) REFERENCES risks(risk_id)
+    CONSTRAINT risk_responses_pkey PRIMARY KEY (id)
 );
 
 -- Risk exposure summaries for dashboard analytics
@@ -519,7 +508,7 @@ CREATE TABLE risk_summaries (
     CONSTRAINT risk_summaries_pkey PRIMARY KEY (id)
 );
 
--- Core risks table with FAIR methodology support
+-- Core risks table with FAIR methodology support (foreign keys added later)
 CREATE TABLE risks (
     id integer NOT NULL DEFAULT nextval('risks_id_seq'::regclass),
     risk_id text NOT NULL,
@@ -546,8 +535,7 @@ CREATE TABLE risks (
     library_item_id integer,
     item_type item_type DEFAULT 'instance'::item_type,
     CONSTRAINT risks_pkey PRIMARY KEY (id),
-    CONSTRAINT risks_risk_id_unique UNIQUE (risk_id),
-    CONSTRAINT risks_library_item_id_fkey FOREIGN KEY (library_item_id) REFERENCES risk_library(id)
+    CONSTRAINT risks_risk_id_unique UNIQUE (risk_id)
 );
 
 -- User management and authentication
@@ -612,7 +600,7 @@ CREATE TABLE vulnerabilities (
     CONSTRAINT vulnerabilities_pkey PRIMARY KEY (id)
 );
 
--- Vulnerability to asset associations
+-- Vulnerability to asset associations (foreign keys added later)
 CREATE TABLE vulnerability_assets (
     id integer NOT NULL DEFAULT nextval('vulnerability_assets_id_seq'::regclass),
     vulnerability_id integer NOT NULL,
@@ -624,9 +612,7 @@ CREATE TABLE vulnerability_assets (
     service text,
     affected_component text,
     created_at timestamp without time zone NOT NULL DEFAULT now(),
-    CONSTRAINT vulnerability_assets_pkey PRIMARY KEY (id),
-    CONSTRAINT vulnerability_assets_vulnerability_id_vulnerabilities_id_fk FOREIGN KEY (vulnerability_id) REFERENCES vulnerabilities(id) ON DELETE CASCADE,
-    CONSTRAINT vulnerability_assets_asset_id_assets_id_fk FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE
+    CONSTRAINT vulnerability_assets_pkey PRIMARY KEY (id)
 );
 
 -- =====================================================
@@ -703,6 +689,52 @@ ALTER SEQUENCE risks_id_seq OWNED BY risks.id;
 ALTER SEQUENCE users_id_seq OWNED BY "users".id;
 ALTER SEQUENCE vulnerabilities_id_seq OWNED BY vulnerabilities.id;
 ALTER SEQUENCE vulnerability_assets_id_seq OWNED BY vulnerability_assets.id;
+
+-- Add foreign key constraints after all tables are created
+ALTER TABLE asset_relationships 
+ADD CONSTRAINT asset_relationships_source_asset_id_fkey FOREIGN KEY (source_asset_id) REFERENCES assets(id);
+
+ALTER TABLE asset_relationships 
+ADD CONSTRAINT asset_relationships_target_asset_id_fkey FOREIGN KEY (target_asset_id) REFERENCES assets(id);
+
+ALTER TABLE assets 
+ADD CONSTRAINT assets_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES assets(id);
+
+ALTER TABLE controls 
+ADD CONSTRAINT controls_library_item_id_fkey FOREIGN KEY (library_item_id) REFERENCES control_library(id);
+
+ALTER TABLE enterprise_architecture 
+ADD CONSTRAINT enterprise_architecture_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES enterprise_architecture(id);
+
+ALTER TABLE response_cost_modules 
+ADD CONSTRAINT response_cost_modules_response_id_fkey FOREIGN KEY (response_id) REFERENCES risk_responses(id);
+
+ALTER TABLE response_cost_modules 
+ADD CONSTRAINT response_cost_modules_cost_module_id_fkey FOREIGN KEY (cost_module_id) REFERENCES cost_modules(id);
+
+ALTER TABLE risk_controls 
+ADD CONSTRAINT risk_controls_risk_id_fkey FOREIGN KEY (risk_id) REFERENCES risks(id);
+
+ALTER TABLE risk_controls 
+ADD CONSTRAINT risk_controls_control_id_fkey FOREIGN KEY (control_id) REFERENCES controls(id);
+
+ALTER TABLE risk_costs 
+ADD CONSTRAINT risk_costs_risk_id_fkey FOREIGN KEY (risk_id) REFERENCES risks(id);
+
+ALTER TABLE risk_costs 
+ADD CONSTRAINT risk_costs_cost_module_id_fkey FOREIGN KEY (cost_module_id) REFERENCES cost_modules(id);
+
+ALTER TABLE risk_responses 
+ADD CONSTRAINT risk_responses_risk_id_risks_risk_id_fk FOREIGN KEY (risk_id) REFERENCES risks(risk_id);
+
+ALTER TABLE risks 
+ADD CONSTRAINT risks_library_item_id_fkey FOREIGN KEY (library_item_id) REFERENCES risk_library(id);
+
+ALTER TABLE vulnerability_assets 
+ADD CONSTRAINT vulnerability_assets_vulnerability_id_vulnerabilities_id_fk FOREIGN KEY (vulnerability_id) REFERENCES vulnerabilities(id) ON DELETE CASCADE;
+
+ALTER TABLE vulnerability_assets 
+ADD CONSTRAINT vulnerability_assets_asset_id_assets_id_fk FOREIGN KEY (asset_id) REFERENCES assets(id) ON DELETE CASCADE;
 
 -- Insert schema version after table creation
 INSERT INTO production_schema_version (version, description) VALUES 
