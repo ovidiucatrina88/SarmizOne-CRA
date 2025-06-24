@@ -63,9 +63,7 @@ export default function VulnerabilitiesPage() {
   // Delete vulnerability mutation
   const deleteMutation = useMutation({
     mutationFn: (vulnerabilityId: number) => 
-      apiRequest(`/api/vulnerabilities/${vulnerabilityId}`, {
-        method: 'DELETE',
-      }),
+      apiRequest('DELETE', `/api/vulnerabilities/${vulnerabilityId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/assets/vulnerabilities'] });
       toast({
