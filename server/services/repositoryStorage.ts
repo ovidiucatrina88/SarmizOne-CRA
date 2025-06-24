@@ -428,10 +428,10 @@ export class DatabaseStorage {
       userId: log.userId || 1,
       details: log.details || null,
       createdAt: log.createdAt || new Date(),
-      // Old schema fields for compatibility
+      // Old schema fields for compatibility (required by database)
       activity: log.action || 'system_action',
       user: 'System User',
-      entity: log.entityType || 'Entity'
+      entity: typeof log.details === 'object' && log.details?.message ? log.details.message : (log.entityType || 'Entity')
     };
     
     const [createdLog] = await db.insert(activityLogs).values(processedLog).returning();
