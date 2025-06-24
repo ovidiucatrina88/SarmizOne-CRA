@@ -1,7 +1,6 @@
 
 // Production build compatibility
-const __dirname = process.cwd();
-const __filename = 'production.cjs';
+// __dirname and __filename are already available in CommonJS
 
 "use strict";
 var __create = Object.create;
