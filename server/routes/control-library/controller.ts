@@ -119,7 +119,7 @@ export class ControlLibraryController {
         libraryItemId: templateId, // Reference to the source template
         itemType: 'instance',
         riskId: riskId || null,
-        associatedRisks: riskId ? [riskId.toString()] : ['']
+        associatedRisks: []
       };
       
       // Create the control instance
