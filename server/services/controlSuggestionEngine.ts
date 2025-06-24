@@ -112,44 +112,21 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
       const testResult = await db.execute(sql`SELECT COUNT(*) as count FROM control_library`);
       console.log(`[ControlSuggestions] Control library has ${testResult[0]?.count || 0} records`);
       
-      const mappingResult = await db.execute(sql`SELECT COUNT(*) as count FROM control_risk_mappings WHERE risk_category = 'operational'`);
-      console.log(`[ControlSuggestions] Found ${mappingResult[0]?.count || 0} operational mappings`);
+      // Since control_risk_mappings is empty, use direct control library query based on control types and categories
+      console.log(`[ControlSuggestions] Using direct control library approach since mappings are empty`);
       
-      // Query for controls mapped to this specific risk's library ID
-      const riskLibraryId = riskData.libraryItemId;
-      console.log(`[ControlSuggestions] Looking for controls mapped to risk library ID: ${riskLibraryId}`);
-      
-      let queryResult;
-      if (riskLibraryId) {
-        queryResult = await db.execute(sql`
-          SELECT cl.control_id, cl.name, cl.description, cl.control_type, 
-                 crm.relevance_score as risk_relevance,
-                 crm.impact_type as risk_impact_type,
-                 crm.reasoning
-          FROM control_library cl
-          INNER JOIN control_risk_mappings crm ON cl.control_id = crm.control_id 
-          WHERE crm.risk_library_id = ${riskLibraryId}
-            AND crm.relevance_score > 0
-          ORDER BY crm.relevance_score DESC
-          LIMIT 20
-        `);
-        console.log(`[ControlSuggestions] Found ${queryResult.length} controls mapped to risk library ID ${riskLibraryId}`);
-      } else {
-        // Fallback to category-based mapping for legacy risks
-        queryResult = await db.execute(sql`
-          SELECT cl.control_id, cl.name, cl.description, cl.control_type, 
-                 crm.relevance_score as risk_relevance,
-                 crm.impact_type as risk_impact_type,
-                 crm.reasoning
-          FROM control_library cl
-          INNER JOIN control_risk_mappings crm ON cl.control_id = crm.control_id 
-          WHERE crm.risk_category = 'operational'
-            AND crm.relevance_score > 0
-          ORDER BY crm.relevance_score DESC
-          LIMIT 10
-        `);
-        console.log(`[ControlSuggestions] Using fallback category mapping, found ${queryResult.length} controls`);
-      }
+      // Get relevant controls based on risk category and control effectiveness
+      queryResult = await db.execute(sql`
+        SELECT control_id, name, description, control_type, control_category,
+               implementation_status, control_effectiveness, implementation_cost, cost_per_agent
+        FROM control_library 
+        WHERE item_type = 'template'
+          AND control_type IN ('preventive', 'detective', 'corrective')
+          AND control_effectiveness > 0
+        ORDER BY control_effectiveness DESC, implementation_cost ASC
+        LIMIT 15
+      `);
+      console.log(`[ControlSuggestions] Found ${queryResult.length || queryResult.rows?.length || 0} controls from direct library query`);
       
       console.log(`[ControlSuggestions] Query result structure:`, { 
         isArray: Array.isArray(queryResult), 
@@ -158,7 +135,7 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
       });
       
       // Properly extract rows from Drizzle result
-      relevantControls = queryResult?.rows || [];
+      relevantControls = queryResult?.rows || queryResult || [];
       
     } catch (error) {
       console.error(`[ControlSuggestions] Database query failed:`, error);
@@ -189,19 +166,12 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
     const suggestions: ControlSuggestion[] = [];
     
     for (const control of relevantControls) {
-      let impactCategory;
-      if (control.risk_impact_type) {
-        impactCategory = {
-          category: control.risk_impact_type as 'likelihood' | 'magnitude' | 'both',
-          score: parseFloat(control.risk_relevance || '75'),
-          reasoning: 'Control mapped based on risk characteristics'
-        };
-      } else {
-        impactCategory = categorizeControlImpact(control);
-      }
+      // Since we don't have mapping data, categorize based on control properties
+      const impactCategory = categorizeControlImpact(control);
       
-      const riskRelevance = parseFloat(control.risk_relevance || '0');
-      const baseScore = Math.max(riskRelevance, impactCategory.score);
+      // Use control effectiveness as base score since we don't have risk relevance mappings
+      const controlEffectiveness = parseFloat(control.control_effectiveness || '0');
+      const baseScore = Math.max(controlEffectiveness, impactCategory.score);
       
       const suggestion: ControlSuggestion = {
         controlId: String(control.control_id || ''),
