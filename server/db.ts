@@ -17,14 +17,15 @@ const MAX_RECONNECT_ATTEMPTS = 5;
 // Create connection pool for standard PostgreSQL
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  connectionTimeoutMillis: 10000, // 10 seconds timeout
-  max: 20, // Maximum 20 connections in the pool
-  min: 2, // Minimum 2 connections always available
-  idleTimeoutMillis: 60000, // 60 seconds idle timeout
-  statement_timeout: 60000, // 60 seconds statement timeout
-  query_timeout: 60000, // 60 seconds query timeout
+  connectionTimeoutMillis: 15000, // 15 seconds timeout
+  max: 10, // Reduce max connections to prevent overwhelming
+  min: 1, // Minimum 1 connection
+  idleTimeoutMillis: 30000, // 30 seconds idle timeout
+  statement_timeout: 30000, // 30 seconds statement timeout
+  query_timeout: 30000, // 30 seconds query timeout
   keepAlive: true,
-  keepAliveInitialDelayMillis: 10000,
+  keepAliveInitialDelayMillis: 5000, // Reduce initial delay
+  application_name: 'risk-platform-prod', // Identify connections
 });
 
 // Log database connection status
