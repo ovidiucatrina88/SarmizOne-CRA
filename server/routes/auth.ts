@@ -54,57 +54,46 @@ router.post('/auth/login/local', async (req, res) => {
       username: (req as any).session.user?.username
     });
 
-    console.log('PRODUCTION LOGIN DEBUG:', {
-      hasSession: !!(req as any).session,
-      sessionID: (req as any).session?.id,
-      cookies: req.headers.cookie,
-      userAgent: req.headers['user-agent']
-    });
-
-    // Check if session exists at all
-    if (!(req as any).session) {
-      console.error('CRITICAL: No session object exists - middleware failed');
-      return res.status(500).json({ 
-        success: false, 
-        error: 'Session middleware failed' 
-      });
-    }
-
-    // Set user data and force cookie creation
-    (req as any).session.user = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      displayName: user.displayName || user.username,
-      role: user.role,
-      authType: 'local'
-    };
-
-    // Manually set Set-Cookie header to debug
-    const sessionId = (req as any).session.id;
-    const cookieValue = `connect.sid=s%3A${sessionId}.signature; Path=/; HttpOnly; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
-    
-    console.log('MANUAL COOKIE SET:', cookieValue);
-    res.setHeader('Set-Cookie', cookieValue);
-
-    // Also try session save
-    (req as any).session.save((saveErr: any) => {
-      if (saveErr) {
-        console.error('Session save failed:', saveErr);
-      } else {
-        console.log('Session save succeeded');
+    // Regenerate session for production compatibility
+    (req as any).session.regenerate((regenerateErr: any) => {
+      if (regenerateErr) {
+        console.error('Session regenerate error:', regenerateErr);
+        // Continue without regeneration if it fails
       }
-      
-      res.json({
-        success: true,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          displayName: user.displayName || user.username,
-          role: user.role,
-          authType: 'local'
+
+      // Set user data in session
+      (req as any).session.user = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        displayName: user.displayName || user.username,
+        role: user.role,
+        authType: 'local'
+      };
+
+      // Save session
+      (req as any).session.save((saveErr: any) => {
+        if (saveErr) {
+          console.error('Session save error:', saveErr);
+          return res.status(500).json({ 
+            success: false, 
+            error: 'Session save failed' 
+          });
         }
+
+        console.log('User authenticated successfully, session saved');
+        
+        res.json({
+          success: true,
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            displayName: user.displayName || user.username,
+            role: user.role,
+            authType: 'local'
+          }
+        });
       });
     });
 

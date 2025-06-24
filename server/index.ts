@@ -11,21 +11,15 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Configure session store with error handling
+// Configure PostgreSQL session store
 const PgSession = connectPgSimple(session);
-
-// Force memory store for production debugging to isolate session issue
-console.log('PRODUCTION DEBUG: Using memory store to test session functionality');
-const sessionStore = new session.MemoryStore();
-
-// Test session store functionality
-sessionStore.on('connect', () => {
-  console.log('Memory session store connected');
+const sessionStore = new PgSession({
+  pool: pool,
+  tableName: 'sessions',
+  createTableIfMissing: true
 });
 
-sessionStore.on('disconnect', () => {
-  console.log('Memory session store disconnected');  
-});
+console.log('PostgreSQL session store configured');
 
 // Configure session middleware
 const sessionConfig = {
@@ -43,12 +37,10 @@ const sessionConfig = {
   }
 };
 
-console.log('Initializing session middleware with config:', {
-  hasStore: !!sessionConfig.store,
-  storeType: sessionStore.constructor.name,
-  hasSecret: !!sessionConfig.secret,
+console.log('Session configuration:', {
   nodeEnv: process.env.NODE_ENV,
-  cookieSecure: sessionConfig.cookie.secure
+  cookieSecure: sessionConfig.cookie.secure,
+  sameSite: sessionConfig.cookie.sameSite
 });
 
 app.use(session(sessionConfig));
