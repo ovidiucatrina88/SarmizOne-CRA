@@ -19,20 +19,19 @@ const sessionStore = new PgSession({
   createTableIfMissing: true
 });
 
-// Configure session with fixed settings for production
+// Configure session with production-ready security settings
 app.use(session({
   store: sessionStore,
   secret: process.env.SESSION_SECRET || 'keyboard cat fallback secret',
   resave: false,
   saveUninitialized: false,
-  rolling: true,
-  name: 'connect.sid', // Standard session name
+  rolling: true, // Reset expiration on activity
+  name: 'riskapp.sid', // Custom session name
   cookie: { 
-    secure: false, // Disable secure for debugging - will work on both HTTP/HTTPS
+    secure: process.env.NODE_ENV === 'production' && process.env.HTTPS_ENABLED === 'true',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax', // More permissive for production debugging
-    domain: undefined // Let browser set domain automatically
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
   }
 }));
 
