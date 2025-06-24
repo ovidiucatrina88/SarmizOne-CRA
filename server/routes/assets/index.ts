@@ -283,7 +283,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', validateId, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const asset = req.body;
+    const updates = req.body;
     
     // Check if asset exists
     const existingAsset = await assetService.getAsset(id);
@@ -292,14 +292,21 @@ router.put('/:id', validateId, async (req, res) => {
     }
     
     // Check if assetId is changed and if it conflicts with another asset
-    if (asset.assetId !== existingAsset.assetId) {
-      const conflictingAsset = await assetService.getAssetByAssetId(asset.assetId);
+    if (updates.assetId && updates.assetId !== existingAsset.assetId) {
+      const conflictingAsset = await assetService.getAssetByAssetId(updates.assetId);
       if (conflictingAsset) {
-        return sendError(res, { message: `Asset ID ${asset.assetId} already exists` }, 400);
+        return sendError(res, { message: `Asset ID ${updates.assetId} already exists` }, 400);
       }
     }
     
-    const updatedAsset = await assetService.updateAsset(id, asset);
+    // Merge updates with existing asset data
+    const assetData = {
+      ...existingAsset,
+      ...updates,
+      id // Ensure ID stays the same
+    };
+    
+    const updatedAsset = await assetService.updateAsset(id, assetData);
     return sendSuccess(res, updatedAsset);
   } catch (error) {
     return sendError(res, error);
