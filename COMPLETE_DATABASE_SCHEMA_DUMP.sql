@@ -65,7 +65,7 @@ CREATE TYPE compliance_framework AS ENUM (
 CREATE TABLE activity_logs (
     id integer NOT NULL DEFAULT nextval('activity_logs_id_seq'::regclass),
     activity text NOT NULL DEFAULT 'system_action'::text,
-    user text NOT NULL DEFAULT 'System User'::text,
+    "user" text NOT NULL DEFAULT 'System User'::text,
     entity text NOT NULL DEFAULT 'Entity'::text,
     entity_type text NOT NULL,
     entity_id text NOT NULL,
@@ -73,7 +73,7 @@ CREATE TABLE activity_logs (
     action text,
     user_id integer,
     details jsonb,
-    timestamp timestamp without time zone DEFAULT now(),
+    "timestamp" timestamp without time zone DEFAULT now(),
     CONSTRAINT activity_logs_pkey PRIMARY KEY (id)
 );
 
@@ -523,13 +523,13 @@ CREATE TABLE risks (
 );
 
 -- User management and authentication
-CREATE TABLE users (
+CREATE TABLE "users" (
     id integer NOT NULL DEFAULT nextval('users_id_seq'::regclass),
     username text,
     email text NOT NULL,
     password_hash text,
     display_name text NOT NULL,
-    role text NOT NULL DEFAULT 'viewer'::text,
+    "role" text NOT NULL DEFAULT 'viewer'::text,
     auth_type text NOT NULL DEFAULT 'local'::text,
     is_active boolean NOT NULL DEFAULT true,
     last_login timestamp without time zone,
@@ -541,7 +541,7 @@ CREATE TABLE users (
 );
 
 -- Session management
-CREATE TABLE sessions (
+CREATE TABLE "sessions" (
     sid character varying NOT NULL,
     sess json NOT NULL,
     expire timestamp(6) without time zone NOT NULL,
@@ -619,7 +619,7 @@ CREATE INDEX idx_risks_risk_id ON risks(risk_id);
 CREATE INDEX idx_controls_control_id ON controls(control_id);
 
 -- Session management index
-CREATE INDEX "IDX_session_expire" ON sessions(expire);
+CREATE INDEX "IDX_session_expire" ON "sessions"(expire);
 
 -- =====================================================
 -- CONSTRAINTS AND CHECKS
@@ -651,8 +651,9 @@ ALTER TABLE enterprise_architecture ADD CONSTRAINT enterprise_architecture_type_
 -- SCHEMA METADATA AND VERSIONING
 -- =====================================================
 
-INSERT INTO production_schema_version (version, description) VALUES 
-(1, 'Initial production schema with complete FAIR risk quantification support');
+-- Insert schema version after table creation
+-- INSERT INTO production_schema_version (version, description) VALUES 
+-- (1, 'Initial production schema with complete FAIR risk quantification support');
 
 -- =====================================================
 -- SCHEMA SUMMARY
