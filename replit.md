@@ -144,6 +144,7 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 - June 24, 2025. Created production deployment script to ensure latest session fixes are properly deployed - production was running outdated code without session debugging
 - June 24, 2025. Switched to memory store and manual cookie setting to isolate session middleware issues in production environment
 - June 24, 2025. Identified session storage working correctly (225 sessions in database) - restored PostgreSQL session store and proper session.regenerate() flow
+- June 24, 2025. Fixed session cookie delivery to browsers by moving trust proxy configuration before session middleware - cookies now properly reach client browsers
 
 ## User Preferences
 
