@@ -1,23 +1,10 @@
 import { Router } from 'express';
-import { authService } from '../services/authService';
-import { validatePasswordStrength } from '@shared/utils/passwordUtils';
-import { z } from 'zod';
 import { db } from '../db';
-import { authConfig } from '@shared/schema';
+import { users } from '../../shared/schema';
 import { eq } from 'drizzle-orm';
+import bcrypt from 'bcryptjs';
 
 const router = Router();
-
-// Validation schemas
-const createUserSchema = z.object({
-  username: z.string().min(3).max(50),
-  email: z.string().email(),
-  password: z.string().min(8),
-  confirmPassword: z.string(),
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  role: z.enum(['user', 'admin']).default('user')
-}).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
 });
