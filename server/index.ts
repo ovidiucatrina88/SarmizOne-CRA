@@ -14,22 +14,18 @@ app.use(express.urlencoded({ extended: true }));
 // Configure session store with error handling
 const PgSession = connectPgSimple(session);
 
-let sessionStore;
-try {
-  sessionStore = new PgSession({
-    pool: pool,
-    tableName: 'sessions',
-    createTableIfMissing: true,
-    errorLog: (error: any) => {
-      console.error('Session store database error:', error);
-    }
-  });
-  console.log('PostgreSQL session store initialized');
-} catch (error) {
-  console.error('Failed to create PostgreSQL session store:', error);
-  console.log('Falling back to memory store for session debugging');
-  sessionStore = new session.MemoryStore();
-}
+// Force memory store for production debugging to isolate session issue
+console.log('PRODUCTION DEBUG: Using memory store to test session functionality');
+const sessionStore = new session.MemoryStore();
+
+// Test session store functionality
+sessionStore.on('connect', () => {
+  console.log('Memory session store connected');
+});
+
+sessionStore.on('disconnect', () => {
+  console.log('Memory session store disconnected');  
+});
 
 // Configure session middleware
 const sessionConfig = {
