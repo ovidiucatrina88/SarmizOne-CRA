@@ -31,22 +31,10 @@ app.use(session({
   rolling: true, // Reset expiration on activity
   name: 'connect.sid',
   cookie: { 
-    secure: req => {
-      // For production domains behind Cloudflare, always use secure
-      const isProduction = process.env.NODE_ENV === 'production' || 
-                          req.get('x-forwarded-proto') === 'https' ||
-                          req.hostname?.includes('sarmiz-one.io');
-      return isProduction;
-    },
+    secure: process.env.NODE_ENV === 'production', // Secure in production
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: req => {
-      // Cloudflare domains need 'none' for proper cookie handling
-      const isCloudflare = req.hostname?.includes('sarmiz-one.io') || 
-                          req.get('cf-ray') || 
-                          process.env.NODE_ENV === 'production';
-      return isCloudflare ? 'none' : 'lax';
-    }
+    sameSite: 'strict' // Strict security for same-site application
   }
 }));
 
@@ -57,9 +45,27 @@ app.use(session({
 // Trust proxy for proper HTTPS detection (required for Cloudflare)
 app.set('trust proxy', 1);
 
-// Add Cloudflare session middleware
-import { cloudflareSessionFix } from './middleware/cloudflare-session';
-app.use(cloudflareSessionFix);
+// Production session debugging middleware
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV === 'production') {
+    const originalSetHeader = res.setHeader;
+    res.setHeader = function(name: string, value: any) {
+      if (name.toLowerCase() === 'set-cookie' && typeof value === 'string' && value.includes('connect.sid')) {
+        console.log('Production session cookie set:', {
+          cookie: value,
+          secure: value.includes('Secure'),
+          httpOnly: value.includes('HttpOnly'),
+          sameSite: value.match(/SameSite=([^;]*)/)?.[1] || 'none',
+          domain: req.hostname,
+          protocol: req.protocol,
+          forwardedProto: req.get('x-forwarded-proto')
+        });
+      }
+      return originalSetHeader.call(this, name, value);
+    };
+  }
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
