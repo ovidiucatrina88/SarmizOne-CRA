@@ -45,25 +45,22 @@ app.use(session({
 // Trust proxy for proper HTTPS detection (required for Cloudflare)
 app.set('trust proxy', 1);
 
-// Production session debugging middleware
+// Session debugging middleware
 app.use((req, res, next) => {
-  if (process.env.NODE_ENV === 'production') {
-    const originalSetHeader = res.setHeader;
-    res.setHeader = function(name: string, value: any) {
-      if (name.toLowerCase() === 'set-cookie' && typeof value === 'string' && value.includes('connect.sid')) {
-        console.log('Production session cookie set:', {
-          cookie: value,
-          secure: value.includes('Secure'),
-          httpOnly: value.includes('HttpOnly'),
-          sameSite: value.match(/SameSite=([^;]*)/)?.[1] || 'none',
-          domain: req.hostname,
-          protocol: req.protocol,
-          forwardedProto: req.get('x-forwarded-proto')
-        });
-      }
-      return originalSetHeader.call(this, name, value);
-    };
-  }
+  const originalSetHeader = res.setHeader;
+  res.setHeader = function(name: string, value: any) {
+    if (name.toLowerCase() === 'set-cookie' && typeof value === 'string' && value.includes('connect.sid')) {
+      console.log('Session cookie details:', {
+        cookie: value.substring(0, 80) + '...',
+        secure: value.includes('Secure'),
+        httpOnly: value.includes('HttpOnly'),
+        sameSite: value.match(/SameSite=([^;]*)/)?.[1] || 'lax',
+        domain: req.hostname,
+        isProduction: process.env.NODE_ENV === 'production'
+      });
+    }
+    return originalSetHeader.call(this, name, value);
+  };
   next();
 });
 
