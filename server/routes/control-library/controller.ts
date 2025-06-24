@@ -121,7 +121,7 @@ export class ControlLibraryController {
         libraryItemId: templateId, // Reference to the source template
         itemType: 'instance',
         riskId: riskId || null,
-        // associatedRisks: riskId ? [riskId.toString()] : null // Temporarily removed due to PostgreSQL array handling
+        associatedRisks: riskId ? [riskId.toString()] : []
       };
       
       // Create the control instance
