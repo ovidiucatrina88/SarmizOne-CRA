@@ -119,22 +119,36 @@ router.post('/', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { db } = await import('../db');
-    const { vulnerabilities, vulnerabilityAssets } = await import('../../shared/schema');
-    const { eq } = await import('drizzle-orm');
+    const { sql } = await import('drizzle-orm');
     
     const vulnerabilityId = parseInt(req.params.id);
     
-    // First delete associated assets using correct column name
-    await db.execute(sql`DELETE FROM vulnerability_assets WHERE vulnerability_id = ${vulnerabilityId}`);
+    if (isNaN(vulnerabilityId)) {
+      return sendError(res, 'Invalid vulnerability ID', 400);
+    }
     
-    // Then delete the vulnerability
-    const deleted = await db.delete(vulnerabilities).where(eq(vulnerabilities.id, vulnerabilityId)).returning();
+    // Check if vulnerability exists first
+    const checkResult = await db.execute(sql`SELECT id FROM vulnerabilities WHERE id = ${vulnerabilityId}`);
     
-    if (deleted.length === 0) {
+    if (checkResult.rows.length === 0) {
       return sendError(res, 'Vulnerability not found', 404);
     }
     
-    sendSuccess(res, { message: 'Vulnerability deleted successfully', id: vulnerabilityId });
+    // Delete associated assets first (if any exist)
+    await db.execute(sql`DELETE FROM vulnerability_assets WHERE vulnerability_id = ${vulnerabilityId}`);
+    
+    // Delete the vulnerability itself
+    const deleteResult = await db.execute(sql`DELETE FROM vulnerabilities WHERE id = ${vulnerabilityId} RETURNING *`);
+    
+    if (deleteResult.rows.length === 0) {
+      return sendError(res, 'Failed to delete vulnerability', 500);
+    }
+    
+    sendSuccess(res, { 
+      message: 'Vulnerability deleted successfully', 
+      id: vulnerabilityId,
+      deletedVulnerability: deleteResult.rows[0]
+    });
   } catch (error) {
     console.error('Error deleting vulnerability:', error);
     sendError(res, 'Failed to delete vulnerability', 500);
