@@ -1,16 +1,6 @@
 import React from 'react';
 import { Link } from 'wouter';
 import { formatCurrency } from '@shared/utils/calculations';
-import { Pie } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  ArcElement,
-  Tooltip,
-  Legend,
-} from 'chart.js';
-
-// Register Chart.js components
-ChartJS.register(ArcElement, Tooltip, Legend);
 
 interface RiskResponseStatusProps {
   responseTypeData: {
@@ -83,60 +73,9 @@ export function RiskOverviewCombined({
     }
   };
 
-  // Prepare pie chart data
-  const pieChartData = {
-    labels: ['Mitigate', 'Accept', 'Transfer', 'Avoid'],
-    datasets: [
-      {
-        data: [
-          responseTypeData.mitigate.percentage || 0,
-          responseTypeData.accept.percentage || 0,
-          responseTypeData.transfer.percentage || 0,
-          responseTypeData.avoid.percentage || 0,
-        ],
-        backgroundColor: [
-          'rgba(37, 99, 235, 0.8)', // Blue for Mitigate
-          'rgba(245, 158, 11, 0.8)', // Amber for Accept
-          'rgba(147, 51, 234, 0.8)', // Purple for Transfer
-          'rgba(220, 38, 38, 0.8)',  // Red for Avoid
-        ],
-        borderColor: [
-          'rgba(37, 99, 235, 1)',
-          'rgba(245, 158, 11, 1)',
-          'rgba(147, 51, 234, 1)',
-          'rgba(220, 38, 38, 1)',
-        ],
-        borderWidth: 1,
-      },
-    ],
-  };
-
-  const pieChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'right' as const,
-        labels: {
-          color: 'rgba(255, 255, 255, 0.8)',
-          font: {
-            size: 12,
-          },
-          padding: 15,
-        },
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context: any) {
-            const label = context.label || '';
-            const value = context.parsed || 0;
-            const count = responseTypeData[label.toLowerCase() as keyof typeof responseTypeData]?.count || 0;
-            return `${label}: ${count} (${value.toFixed(1)}%)`;
-          },
-        },
-      },
-    },
-  };
+  // Calculate totals for visualization
+  const totalResponses = responseTypeData.mitigate.count + responseTypeData.accept.count + 
+                         responseTypeData.transfer.count + responseTypeData.avoid.count;
 
   return (
     <div className="bg-gray-800 rounded-lg border border-gray-600">
@@ -204,7 +143,28 @@ export function RiskOverviewCombined({
               <div className="flex-1">
                 <div className="text-sm font-medium text-white/80 mb-3">By Response Type</div>
                 <div className="h-48 flex items-center justify-center">
-                  <Pie data={pieChartData} options={pieChartOptions} />
+                  {/* Simple bar chart visualization */}
+              <div className="space-y-3">
+                {[
+                  { name: 'Mitigate', count: responseTypeData.mitigate.count, color: 'bg-blue-500', percentage: responseTypeData.mitigate.percentage },
+                  { name: 'Accept', count: responseTypeData.accept.count, color: 'bg-yellow-500', percentage: responseTypeData.accept.percentage },
+                  { name: 'Transfer', count: responseTypeData.transfer.count, color: 'bg-purple-500', percentage: responseTypeData.transfer.percentage },
+                  { name: 'Avoid', count: responseTypeData.avoid.count, color: 'bg-red-500', percentage: responseTypeData.avoid.percentage }
+                ].map((type) => (
+                  <div key={type.name} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-400">{type.name}:</span>
+                      <span className="text-white font-medium">{type.count} ({type.percentage.toFixed(1)}%)</span>
+                    </div>
+                    <div className="w-full bg-gray-700 rounded-full h-2">
+                      <div 
+                        className={`${type.color} h-2 rounded-full transition-all duration-300`}
+                        style={{ width: `${type.percentage}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
                 </div>
               </div>
 
