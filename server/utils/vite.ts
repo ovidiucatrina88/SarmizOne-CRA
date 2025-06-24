@@ -74,12 +74,34 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  // Check multiple possible locations for the client build files
+  // Simplified production static file serving
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  if (isProduction) {
+    // Production: serve from known Docker paths
+    const productionPaths = ["/app/dist/public", "/app/public"];
+    
+    for (const staticPath of productionPaths) {
+      if (fs.existsSync(staticPath)) {
+        console.log(`Serving static files from: ${staticPath}`);
+        app.use(express.static(staticPath));
+        return;
+      }
+    }
+    
+    // Fallback: serve minimal static content for production
+    console.log("Static files not found, serving minimal content");
+    app.get('*', (req, res) => {
+      if (req.path.startsWith('/api/')) return; // Skip API routes
+      res.send('<!DOCTYPE html><html><head><title>Risk Platform</title></head><body><div id="root">Loading...</div></body></html>');
+    });
+    return;
+  }
+  
+  // Development: check multiple paths
   const possiblePaths = [
-    path.resolve(import.meta.dirname, "../..", "dist", "public"), // Vite build output
-    path.resolve(import.meta.dirname, "../..", "public"),
-    "/app/public", // Docker container path
-    path.resolve(import.meta.dirname, "../..", "dist", "client")
+    path.resolve(process.cwd(), "dist", "public"),
+    path.resolve(process.cwd(), "public")
   ];
   
   let distPath = null;
