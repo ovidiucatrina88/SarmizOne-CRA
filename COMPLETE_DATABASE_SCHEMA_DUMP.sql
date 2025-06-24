@@ -285,8 +285,7 @@ CREATE TABLE controls (
     pci_mappings jsonb DEFAULT '[]'::jsonb,
     cis_mappings jsonb DEFAULT '[]'::jsonb,
     CONSTRAINT controls_pkey PRIMARY KEY (id),
-    CONSTRAINT controls_control_id_unique UNIQUE (control_id),
-    CONSTRAINT controls_library_item_id_fkey FOREIGN KEY (library_item_id) REFERENCES control_library(id)
+    CONSTRAINT controls_control_id_unique UNIQUE (control_id)
 );
 
 -- Cost calculation modules for risk responses
@@ -684,7 +683,7 @@ ALTER SEQUENCE users_id_seq OWNED BY "users".id;
 ALTER SEQUENCE vulnerabilities_id_seq OWNED BY vulnerabilities.id;
 ALTER SEQUENCE vulnerability_assets_id_seq OWNED BY vulnerability_assets.id;
 
--- Add foreign key constraints after all tables are created
+-- Foreign key constraints (all defined here to avoid duplicates)
 ALTER TABLE asset_relationships 
 ADD CONSTRAINT asset_relationships_source_asset_id_fkey FOREIGN KEY (source_asset_id) REFERENCES assets(id);
 
