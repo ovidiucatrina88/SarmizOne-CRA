@@ -47,16 +47,24 @@ app.set('trust proxy', 1);
 
 // Session debugging middleware
 app.use((req, res, next) => {
+  if (req.path.includes('/auth/login/local')) {
+    console.log('LOGIN REQUEST DEBUG:', {
+      hasSession: !!(req as any).session,
+      sessionId: (req as any).session?.id,
+      cookies: req.headers.cookie,
+      host: req.headers.host,
+      nodeEnv: process.env.NODE_ENV
+    });
+  }
+
   const originalSetHeader = res.setHeader;
   res.setHeader = function(name: string, value: any) {
-    if (name.toLowerCase() === 'set-cookie' && typeof value === 'string' && value.includes('connect.sid')) {
-      console.log('Session cookie being set:', {
-        fullCookie: value,
+    if (name.toLowerCase() === 'set-cookie') {
+      console.log('COOKIE BEING SET:', {
+        header: name,
+        value: Array.isArray(value) ? value : [value],
         hostname: req.hostname,
-        host: req.headers.host,
-        isProduction: process.env.NODE_ENV === 'production',
-        protocol: req.protocol,
-        forwardedProto: req.get('x-forwarded-proto')
+        isProduction: process.env.NODE_ENV === 'production'
       });
     }
     return originalSetHeader.call(this, name, value);
