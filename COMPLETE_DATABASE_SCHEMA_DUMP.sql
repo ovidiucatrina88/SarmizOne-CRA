@@ -58,6 +58,34 @@ CREATE TYPE compliance_framework AS ENUM (
 );
 
 -- =====================================================
+-- SEQUENCES (Required before table creation)
+-- =====================================================
+
+CREATE SEQUENCE IF NOT EXISTS activity_logs_id_seq;
+CREATE SEQUENCE IF NOT EXISTS asset_relationships_id_seq;
+CREATE SEQUENCE IF NOT EXISTS assets_id_seq;
+CREATE SEQUENCE IF NOT EXISTS auth_config_id_seq;
+CREATE SEQUENCE IF NOT EXISTS backstage_sync_logs_id_seq;
+CREATE SEQUENCE IF NOT EXISTS control_asset_mappings_id_seq;
+CREATE SEQUENCE IF NOT EXISTS control_library_id_seq;
+CREATE SEQUENCE IF NOT EXISTS control_risk_mappings_id_seq;
+CREATE SEQUENCE IF NOT EXISTS controls_id_seq;
+CREATE SEQUENCE IF NOT EXISTS cost_modules_id_seq;
+CREATE SEQUENCE IF NOT EXISTS enterprise_architecture_id_seq;
+CREATE SEQUENCE IF NOT EXISTS industry_insights_id_seq;
+CREATE SEQUENCE IF NOT EXISTS legal_entities_id_seq;
+CREATE SEQUENCE IF NOT EXISTS response_cost_modules_id_seq;
+CREATE SEQUENCE IF NOT EXISTS risk_controls_id_seq;
+CREATE SEQUENCE IF NOT EXISTS risk_costs_id_seq;
+CREATE SEQUENCE IF NOT EXISTS risk_library_id_seq;
+CREATE SEQUENCE IF NOT EXISTS risk_responses_id_seq;
+CREATE SEQUENCE IF NOT EXISTS risk_summaries_id_seq;
+CREATE SEQUENCE IF NOT EXISTS risks_id_seq;
+CREATE SEQUENCE IF NOT EXISTS users_id_seq;
+CREATE SEQUENCE IF NOT EXISTS vulnerabilities_id_seq;
+CREATE SEQUENCE IF NOT EXISTS vulnerability_assets_id_seq;
+
+-- =====================================================
 -- CORE TABLES
 -- =====================================================
 
@@ -651,9 +679,34 @@ ALTER TABLE enterprise_architecture ADD CONSTRAINT enterprise_architecture_type_
 -- SCHEMA METADATA AND VERSIONING
 -- =====================================================
 
+-- Set sequence ownership and current values
+ALTER SEQUENCE activity_logs_id_seq OWNED BY activity_logs.id;
+ALTER SEQUENCE asset_relationships_id_seq OWNED BY asset_relationships.id;
+ALTER SEQUENCE assets_id_seq OWNED BY assets.id;
+ALTER SEQUENCE auth_config_id_seq OWNED BY auth_config.id;
+ALTER SEQUENCE backstage_sync_logs_id_seq OWNED BY backstage_sync_logs.id;
+ALTER SEQUENCE control_asset_mappings_id_seq OWNED BY control_asset_mappings.id;
+ALTER SEQUENCE control_library_id_seq OWNED BY control_library.id;
+ALTER SEQUENCE control_risk_mappings_id_seq OWNED BY control_risk_mappings.id;
+ALTER SEQUENCE controls_id_seq OWNED BY controls.id;
+ALTER SEQUENCE cost_modules_id_seq OWNED BY cost_modules.id;
+ALTER SEQUENCE enterprise_architecture_id_seq OWNED BY enterprise_architecture.id;
+ALTER SEQUENCE industry_insights_id_seq OWNED BY industry_insights.id;
+ALTER SEQUENCE legal_entities_id_seq OWNED BY legal_entities.id;
+ALTER SEQUENCE response_cost_modules_id_seq OWNED BY response_cost_modules.id;
+ALTER SEQUENCE risk_controls_id_seq OWNED BY risk_controls.id;
+ALTER SEQUENCE risk_costs_id_seq OWNED BY risk_costs.id;
+ALTER SEQUENCE risk_library_id_seq OWNED BY risk_library.id;
+ALTER SEQUENCE risk_responses_id_seq OWNED BY risk_responses.id;
+ALTER SEQUENCE risk_summaries_id_seq OWNED BY risk_summaries.id;
+ALTER SEQUENCE risks_id_seq OWNED BY risks.id;
+ALTER SEQUENCE users_id_seq OWNED BY "users".id;
+ALTER SEQUENCE vulnerabilities_id_seq OWNED BY vulnerabilities.id;
+ALTER SEQUENCE vulnerability_assets_id_seq OWNED BY vulnerability_assets.id;
+
 -- Insert schema version after table creation
--- INSERT INTO production_schema_version (version, description) VALUES 
--- (1, 'Initial production schema with complete FAIR risk quantification support');
+INSERT INTO production_schema_version (version, description) VALUES 
+(1, 'Initial production schema with complete FAIR risk quantification support');
 
 -- =====================================================
 -- SCHEMA SUMMARY
