@@ -54,7 +54,7 @@ router.post('/auth/login/local', async (req, res) => {
       });
     }
 
-    // Set user session
+    // Set user session and save explicitly
     (req as any).session.user = {
       id: user.id,
       authType: 'local',
@@ -64,16 +64,24 @@ router.post('/auth/login/local', async (req, res) => {
       displayName: user.displayName
     };
 
-    res.json({
-      success: true,
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        displayName: user.displayName,
-        role: user.role,
-        authType: 'local'
+    // Force session save before responding
+    (req as any).session.save((err: any) => {
+      if (err) {
+        console.error('Session save error:', err);
+        return res.status(500).json({ success: false, error: 'Session save failed' });
       }
+
+      res.json({
+        success: true,
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          displayName: user.displayName,
+          role: user.role,
+          authType: 'local'
+        }
+      });
     });
   } catch (error) {
     console.error('Local login error:', error);

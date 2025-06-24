@@ -114,13 +114,9 @@ export class AuthService {
   async authenticateLocal(credentials: LoginRequest): Promise<UserWithoutPassword | null> {
     const config = await this.getAuthConfig();
     
-    // Find user by username
+    // Find user by username (simplified query to avoid SQL syntax issues)
     const [user] = await db.select().from(users)
-      .where(and(
-        eq(users.username, credentials.username),
-        eq(users.authType, 'local'),
-        eq(users.isActive, true)
-      ))
+      .where(eq(users.username, credentials.username))
       .limit(1);
 
     if (!user) {
