@@ -240,10 +240,7 @@ export class DatabaseStorage {
   }
 
   async createRisk(risk: InsertRisk): Promise<Risk> {
-    // Skip associatedAssets field during creation to avoid array handling issues
-    const { associatedAssets, ...riskWithoutArrays } = risk;
-    
-    const [createdRisk] = await db.insert(risks).values(riskWithoutArrays).returning();
+    const [createdRisk] = await db.insert(risks).values(risk).returning();
     return createdRisk;
   }
 
