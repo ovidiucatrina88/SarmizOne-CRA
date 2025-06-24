@@ -286,6 +286,8 @@ function UserTable() {
   const { data: users, isLoading } = useQuery<{ success: boolean; users: User[] }>({
     queryKey: ["/api/auth/users"],
     retry: false,
+    staleTime: 0, // Always consider data stale
+    cacheTime: 0, // Don't cache responses
   });
 
   const updateRoleMutation = useMutation({
@@ -294,6 +296,7 @@ function UserTable() {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
         },
         body: JSON.stringify({ role }),
       });
@@ -312,6 +315,7 @@ function UserTable() {
       });
       
       queryClient.invalidateQueries({ queryKey: ["/api/auth/users"] });
+      queryClient.refetchQueries({ queryKey: ["/api/auth/users"] });
     },
     onError: (error: Error) => {
       toast({
@@ -326,6 +330,10 @@ function UserTable() {
     mutationFn: async (userId: number) => {
       const response = await fetch(`/api/auth/users/${userId}/deactivate`, {
         method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
       });
 
       if (!response.ok) {
@@ -342,6 +350,7 @@ function UserTable() {
       });
       
       queryClient.invalidateQueries({ queryKey: ["/api/auth/users"] });
+      queryClient.refetchQueries({ queryKey: ["/api/auth/users"] });
     },
     onError: (error: Error) => {
       toast({
@@ -356,6 +365,10 @@ function UserTable() {
     mutationFn: async (userId: number) => {
       const response = await fetch(`/api/auth/users/${userId}`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
       });
 
       if (!response.ok) {
@@ -371,7 +384,9 @@ function UserTable() {
         description: "User has been permanently deleted",
       });
       
+      // Force cache invalidation and refetch
       queryClient.invalidateQueries({ queryKey: ["/api/auth/users"] });
+      queryClient.refetchQueries({ queryKey: ["/api/auth/users"] });
     },
     onError: (error: Error) => {
       toast({
@@ -505,7 +520,9 @@ function UserTable() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    if (window.confirm(`Are you sure you want to permanently delete ${user.displayName}? This action cannot be undone.`)) {
+                    // Sanitize display name to prevent XSS in confirm dialog
+                    const safeName = user.displayName?.replace(/[<>&"']/g, '') || 'this user';
+                    if (window.confirm(`Are you sure you want to permanently delete ${safeName}? This action cannot be undone.`)) {
                       deleteUserMutation.mutate(user.id);
                     }
                   }}

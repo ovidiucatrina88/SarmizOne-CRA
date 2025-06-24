@@ -211,6 +211,245 @@ router.get('/auth/user', async (req, res) => {
   }
 });
 
+// Create user endpoint
+router.post('/auth/users', async (req, res) => {
+  try {
+    const session = (req as any).session;
+    
+    if (!session?.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Not authenticated'
+      });
+    }
+
+    const { username, email, password, firstName, lastName, role } = req.body;
+    
+    if (!username || !email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Username, email and password are required'
+      });
+    }
+
+    // Hash password
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    // Insert new user
+    const [newUser] = await db.insert(users).values({
+      username,
+      email,
+      firstName: firstName || null,
+      lastName: lastName || null,
+      passwordHash,
+      role: role || 'user',
+      authType: 'local',
+      isActive: true
+    }).returning();
+
+    res.json({
+      success: true,
+      user: {
+        id: newUser.id,
+        username: newUser.username,
+        email: newUser.email,
+        displayName: newUser.firstName && newUser.lastName 
+          ? `${newUser.firstName} ${newUser.lastName}`.trim()
+          : newUser.username || newUser.email,
+        role: newUser.role,
+        authType: newUser.authType,
+        isActive: newUser.isActive,
+        createdAt: newUser.createdAt.toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Create user error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to create user'
+    });
+  }
+});
+
+// Delete user endpoint
+router.delete('/auth/users/:userId', async (req, res) => {
+  try {
+    const session = (req as any).session;
+    const userId = parseInt(req.params.userId);
+    
+    console.log('AUTH REQUEST DEBUG:', {
+      method: req.method,
+      path: req.path,
+      hasSession: !!session,
+      sessionId: session?.id,
+      cookies: req.headers.cookie ? 'present' : 'missing',
+      host: req.headers.host,
+      userAgent: req.headers['user-agent']?.substring(0, 50),
+      protocol: req.protocol,
+      secure: req.secure,
+      forwardedProto: req.get('x-forwarded-proto'),
+      nodeEnv: process.env.NODE_ENV
+    });
+    
+    if (!session?.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Not authenticated'
+      });
+    }
+
+    if (isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid user ID'
+      });
+    }
+
+    // Prevent users from deleting themselves
+    if (userId === session.user.id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot delete your own account'
+      });
+    }
+
+    // Delete the user
+    const result = await db.delete(users).where(eq(users.id, userId)).returning();
+    
+    if (result.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    console.log('AUTH RESPONSE COMPLETE:', {
+      path: req.path,
+      statusCode: 200,
+      hasSetCookie: 'yes'
+    });
+
+    res.json({
+      success: true,
+      message: 'User deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete user error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to delete user'
+    });
+  }
+});
+
+// Update user role endpoint
+router.patch('/auth/users/:userId/role', async (req, res) => {
+  try {
+    const session = (req as any).session;
+    const userId = parseInt(req.params.userId);
+    const { role } = req.body;
+    
+    if (!session?.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Not authenticated'
+      });
+    }
+
+    if (isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid user ID'
+      });
+    }
+
+    if (!role || !['user', 'admin'].includes(role)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Valid role is required'
+      });
+    }
+
+    // Update user role
+    const result = await db.update(users)
+      .set({ role })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    if (result.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'User role updated successfully'
+    });
+  } catch (error) {
+    console.error('Update user role error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update user role'
+    });
+  }
+});
+
+// Deactivate user endpoint
+router.patch('/auth/users/:userId/deactivate', async (req, res) => {
+  try {
+    const session = (req as any).session;
+    const userId = parseInt(req.params.userId);
+    
+    if (!session?.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Not authenticated'
+      });
+    }
+
+    if (isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid user ID'
+      });
+    }
+
+    // Prevent users from deactivating themselves
+    if (userId === session.user.id) {
+      return res.status(400).json({
+        success: false,
+        error: 'Cannot deactivate your own account'
+      });
+    }
+
+    // Deactivate user
+    const result = await db.update(users)
+      .set({ isActive: false })
+      .where(eq(users.id, userId))
+      .returning();
+    
+    if (result.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'User deactivated successfully'
+    });
+  } catch (error) {
+    console.error('Deactivate user error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to deactivate user'
+    });
+  }
+});
+
 // Logout
 router.post('/auth/logout', (req, res) => {
   (req as any).session.destroy((err: any) => {
