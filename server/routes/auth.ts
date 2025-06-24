@@ -102,6 +102,74 @@ router.post('/auth/login/local', async (req, res) => {
   }
 });
 
+// Get all users for admin management
+router.get('/auth/users', async (req, res) => {
+  try {
+    const session = (req as any).session;
+    
+    console.log('AUTH REQUEST DEBUG:', {
+      method: req.method,
+      path: req.path,
+      hasSession: !!session,
+      sessionId: session?.id,
+      cookies: req.headers.cookie ? 'present' : 'missing',
+      host: req.headers.host,
+      userAgent: req.headers['user-agent']?.substring(0, 50),
+      protocol: req.protocol,
+      secure: req.secure,
+      forwardedProto: req.get('x-forwarded-proto'),
+      nodeEnv: process.env.NODE_ENV
+    });
+    
+    if (!session?.user) {
+      return res.status(401).json({
+        success: false,
+        error: 'Not authenticated'
+      });
+    }
+
+    // Get all users from database
+    const allUsers = await db.select({
+      id: users.id,
+      username: users.username,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      role: users.role,
+      authType: users.authType,
+      isActive: users.isActive,
+      lastLogin: users.lastLogin,
+      createdAt: users.createdAt
+    }).from(users);
+
+    // Transform users to match frontend interface
+    const transformedUsers = allUsers.map(user => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      displayName: user.firstName && user.lastName 
+        ? `${user.firstName} ${user.lastName}`.trim()
+        : user.username || user.email,
+      role: user.role,
+      authType: user.authType || 'local',
+      isActive: user.isActive,
+      lastLogin: user.lastLogin?.toISOString(),
+      createdAt: user.createdAt.toISOString()
+    }));
+
+    res.json({
+      success: true,
+      users: transformedUsers
+    });
+  } catch (error) {
+    console.error('Get users error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get users'
+    });
+  }
+});
+
 // Get current user with production debugging
 router.get('/auth/user', async (req, res) => {
   try {

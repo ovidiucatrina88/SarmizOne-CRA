@@ -34,6 +34,20 @@ interface User {
   createdAt: string;
 }
 
+// Utility function for date formatting
+const formatDate = (dateString: string | Date | undefined): string => {
+  if (!dateString) return 'N/A';
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'Invalid date';
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+};
+
 const createUserSchema = z.object({
   username: z.string().min(3).max(50),
   email: z.string().email(),
@@ -384,6 +398,14 @@ function UserTable() {
     );
   }
 
+  if (!users?.users || users.users.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No users found
+      </div>
+    );
+  }
+
   return (
     <Table>
       <TableHeader>
@@ -398,7 +420,7 @@ function UserTable() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {users?.users?.map((user) => (
+        {users.users.map((user) => (
           <TableRow key={user.id}>
             <TableCell>
               <div>
