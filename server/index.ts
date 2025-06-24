@@ -8,6 +8,10 @@ import { configurePassport } from "./auth";
 import { pool } from "./db";
 
 const app = express();
+
+// Trust proxy MUST be set BEFORE session middleware for secure cookies
+app.set('trust proxy', 1);
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -33,14 +37,16 @@ const sessionConfig = {
     secure: process.env.NODE_ENV === 'production', 
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000,
-    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'strict'
+    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'strict',
+    path: '/'
   }
 };
 
 console.log('Session configuration:', {
   nodeEnv: process.env.NODE_ENV,
   cookieSecure: sessionConfig.cookie.secure,
-  sameSite: sessionConfig.cookie.sameSite
+  sameSite: sessionConfig.cookie.sameSite,
+  trustProxy: app.get('trust proxy')
 });
 
 app.use(session(sessionConfig));
@@ -49,33 +55,53 @@ app.use(session(sessionConfig));
 // app.use(passport.initialize());
 // app.use(passport.session());
 
-// Trust proxy for proper HTTPS detection (required for Cloudflare)
-app.set('trust proxy', 1);
-
-// Session debugging middleware
+// Enhanced session debugging middleware
 app.use((req, res, next) => {
-  if (req.path.includes('/auth/login/local')) {
-    console.log('LOGIN REQUEST DEBUG:', {
+  // Debug all authentication-related requests
+  if (req.path.includes('/auth/')) {
+    console.log('AUTH REQUEST DEBUG:', {
+      method: req.method,
+      path: req.path,
       hasSession: !!(req as any).session,
       sessionId: (req as any).session?.id,
-      cookies: req.headers.cookie,
+      cookies: req.headers.cookie ? 'present' : 'missing',
       host: req.headers.host,
+      userAgent: req.headers['user-agent']?.substring(0, 50),
+      protocol: req.protocol,
+      secure: req.secure,
+      forwardedProto: req.get('x-forwarded-proto'),
       nodeEnv: process.env.NODE_ENV
     });
   }
 
+  // Intercept and log all Set-Cookie headers
   const originalSetHeader = res.setHeader;
   res.setHeader = function(name: string, value: any) {
     if (name.toLowerCase() === 'set-cookie') {
-      console.log('COOKIE BEING SET:', {
-        header: name,
-        value: Array.isArray(value) ? value : [value],
+      console.log('SET-COOKIE HEADER:', {
+        path: req.path,
+        cookieValue: Array.isArray(value) ? value : [value],
         hostname: req.hostname,
-        isProduction: process.env.NODE_ENV === 'production'
+        protocol: req.protocol,
+        secure: req.secure,
+        isProduction: process.env.NODE_ENV === 'production',
+        trustProxy: req.app.get('trust proxy')
       });
     }
     return originalSetHeader.call(this, name, value);
   };
+
+  // Debug response completion
+  res.on('finish', () => {
+    if (req.path.includes('/auth/')) {
+      console.log('AUTH RESPONSE COMPLETE:', {
+        path: req.path,
+        statusCode: res.statusCode,
+        hasSetCookie: res.getHeaders()['set-cookie'] ? 'yes' : 'no'
+      });
+    }
+  });
+
   next();
 });
 
