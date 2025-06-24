@@ -11,12 +11,15 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Configure session store
+// Configure session store with error handling
 const PgSession = connectPgSimple(session);
 const sessionStore = new PgSession({
   pool: pool,
   tableName: 'sessions',
-  createTableIfMissing: true
+  createTableIfMissing: true,
+  errorLog: (error: any) => {
+    console.error('Session store error:', error);
+  }
 });
 
 // Configure session with production-ready security settings
@@ -26,26 +29,13 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   rolling: true, // Reset expiration on activity
-  name: 'riskapp.sid', // Custom session name
+  name: 'connect.sid', // Standard session name for compatibility
   cookie: { 
-    secure: req => {
-      // Auto-detect HTTPS from request headers for production domains
-      const isHttps = req.get('x-forwarded-proto') === 'https' || 
-                     req.get('x-forwarded-ssl') === 'on' ||
-                     req.protocol === 'https' ||
-                     req.hostname?.includes('.replit.app') ||
-                     req.hostname?.includes('sarmiz-one.io');
-      return isHttps;
-    },
+    secure: false, // Temporarily disable for debugging
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: req => {
-      // Use strict for production domains, lax for development
-      const isProd = req.hostname?.includes('.replit.app') || 
-                    req.hostname?.includes('sarmiz-one.io') ||
-                    process.env.NODE_ENV === 'production';
-      return isProd ? 'strict' : 'lax';
-    }
+    sameSite: 'lax',
+    path: '/'
   }
 }));
 
@@ -53,7 +43,8 @@ app.use(session({
 // app.use(passport.initialize());
 // app.use(passport.session());
 
-// Passport will be configured in the main function
+// Trust proxy for proper HTTPS detection
+app.set('trust proxy', 1);
 
 app.use((req, res, next) => {
   const start = Date.now();
