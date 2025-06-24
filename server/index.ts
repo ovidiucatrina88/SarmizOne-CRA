@@ -34,7 +34,7 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production', // Secure in production
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'strict' // Strict security for same-site application
+    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'strict' // Lax for Cloudflare compatibility
   }
 }));
 

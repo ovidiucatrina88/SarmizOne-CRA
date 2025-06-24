@@ -137,6 +137,7 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 - June 24, 2025. Corrected session configuration to use secure SameSite=strict instead of inappropriate SameSite=None, maintaining proper security for same-site application
 - June 24, 2025. Fixed authentication session persistence by removing problematic session.regenerate() call and implementing direct session.save() - authentication now fully operational and production-ready
 - June 24, 2025. Configured Docker production deployment with proper environment variable handling, health checks, and network configuration for existing PostgreSQL database
+- June 24, 2025. Fixed Cloudflare cookie blocking issue by changing production sameSite from 'strict' to 'lax' - strict cookies were being blocked by Cloudflare proxy
 
 ## User Preferences
 
