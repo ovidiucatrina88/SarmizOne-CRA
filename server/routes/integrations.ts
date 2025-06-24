@@ -36,6 +36,13 @@ router.get('/', async (req, res) => {
         description: 'Automated vulnerability assessment integration',
         status: 'available',
         configured: false
+      },
+      {
+        id: 'backstage',
+        name: 'Backstage Integration',
+        description: 'Import service catalog from on-premise Backstage deployment',
+        status: 'available',
+        configured: false
       }
     ];
     sendSuccess(res, integrations);
