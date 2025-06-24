@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
     const { db } = await import('../db');
     const { vulnerabilities } = await import('../../shared/schema');
     
-    const allVulnerabilities = await db.select().from(vulnerabilities);
+    const allVulnerabilities = await db.query.vulnerabilities.findMany();
     
     sendSuccess(res, allVulnerabilities);
   } catch (error) {
