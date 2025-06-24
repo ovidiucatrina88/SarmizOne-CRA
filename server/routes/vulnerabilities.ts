@@ -124,8 +124,8 @@ router.delete('/:id', async (req, res) => {
     
     const vulnerabilityId = parseInt(req.params.id);
     
-    // First delete associated assets
-    await db.delete(vulnerabilityAssets).where(eq(vulnerabilityAssets.vulnerabilityId, vulnerabilityId));
+    // First delete associated assets using correct column name
+    await db.execute(sql`DELETE FROM vulnerability_assets WHERE vulnerability_id = ${vulnerabilityId}`);
     
     // Then delete the vulnerability
     const deleted = await db.delete(vulnerabilities).where(eq(vulnerabilities.id, vulnerabilityId)).returning();

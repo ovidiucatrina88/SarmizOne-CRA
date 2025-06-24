@@ -161,6 +161,7 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 - June 24, 2025. **USER MANAGEMENT SYSTEM FIXED**: Created missing /api/auth/users endpoints with full CRUD operations, fixed cache invalidation issues preventing UI updates after user deletion, and resolved XSS vulnerability in confirm dialogs with input sanitization
 - June 24, 2025. **CORRECT LOGO RESTORED**: Fixed sidebar navigation to display proper SARMIZ-ONE logo with dragon emblem and company branding - replaced incorrect placeholder with authentic logo asset
 - June 24, 2025. **API PARAMETER ORDER FIXED**: Resolved API parameter order issues across all components causing fetch errors - corrected apiRequest method/URL parameter sequence in backstage integration, vulnerability management, and vulnerability import pages
+- June 24, 2025. **DATABASE CONNECTION STABILITY IMPROVED**: Optimized connection pool settings to prevent frequent connection cycling in production - reduced max connections, increased idle timeout, and fixed vulnerability deletion schema mismatch
 
 ## User Preferences
 

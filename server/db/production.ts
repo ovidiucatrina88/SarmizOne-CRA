@@ -13,9 +13,9 @@ const connectionConfig = {
   password: process.env.PGPASSWORD || process.env.DB_PASSWORD,
   database: process.env.PGDATABASE || process.env.DB_NAME,
   ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
-  max: parseInt(process.env.DB_POOL_MAX || '20'),
-  idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '30000'),
-  connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT || '15000'),
+  max: parseInt(process.env.DB_POOL_MAX || '8'), // Reduced for stability
+  idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '120000'), // 2 minutes
+  connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT || '30000'), // Increased
   keepAlive: true,
   keepAliveInitialDelayMillis: 10000,
 };
