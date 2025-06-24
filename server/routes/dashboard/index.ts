@@ -6,6 +6,8 @@ import { optimizedRiskCalculation } from '../../services/optimizedRiskCalculatio
 import { DatabaseStorage } from '../../services/repositoryStorage';
 import { sendError, sendSuccess } from '../common/responses/apiResponse';
 import irisBenchmarksRouter from './iris-benchmarks';
+import { db } from '../../db';
+import { sql } from 'drizzle-orm';
 
 const router = express.Router();
 const repository = new DatabaseStorage();
@@ -64,8 +66,9 @@ router.get('/summary', async (req, res) => {
     const assets = await assetService.getAllAssets();
     
     // Get recent activity
-    // Get recent activity logs - simplified for now
-    const recentLogs = [];
+    // Get recent activity logs using raw query to avoid syntax issues
+    const activityQuery = await db.execute(sql`SELECT action, entity_type, entity_id, user_id, timestamp FROM activity_logs ORDER BY timestamp DESC LIMIT 10`);
+    const recentLogs = activityQuery.rows || [];
     
     // Calculate exposure curve data from current risks
     const exposureCurveData = [];

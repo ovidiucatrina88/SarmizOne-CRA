@@ -1,5 +1,6 @@
 import express from 'express';
 import { sendError, sendSuccess } from './common/responses/apiResponse';
+import { sql } from 'drizzle-orm';
 
 const router = express.Router();
 
@@ -11,9 +12,10 @@ router.get('/', async (req, res) => {
     const { db } = await import('../db');
     const { vulnerabilities } = await import('../../shared/schema');
     
-    const allVulnerabilities = await db.query.vulnerabilities.findMany();
+    // Get vulnerabilities using basic query to avoid schema issues
+    const result = await db.execute(sql`SELECT id, title, description, severity, status, discovered_date as discoveredDate, created_at as createdAt FROM vulnerabilities LIMIT 50`);
     
-    sendSuccess(res, allVulnerabilities);
+    sendSuccess(res, result.rows || []);
   } catch (error) {
     console.error('Error fetching vulnerabilities:', error);
     sendError(res, 'Failed to fetch vulnerabilities', 500);
