@@ -142,9 +142,9 @@ export const assets = pgTable('assets', {
   availability: ciaRatingEnum('availability').notNull(),
   assetValue: numeric('asset_value', { precision: 38, scale: 2 }).notNull(), // Monetary value with high precision
   currency: currencyEnum('currency').notNull().default('USD'), // USD or EUR
-  regulatoryImpact: text('regulatory_impact').array().notNull().default(['none']), // GDPR, HIPAA, etc.
+  regulatoryImpact: text('regulatory_impact').array().default(sql`ARRAY['none']`), // GDPR, HIPAA, etc.
   externalInternal: externalInternalEnum('external_internal').notNull(),
-  dependencies: text('dependencies').array().notNull().default([]),
+  dependencies: text('dependencies').array().default(sql`ARRAY[]::text[]`),
   agentCount: integer('agent_count').notNull().default(1), // Number of agents required for this asset
   description: text('description').notNull().default(''),
   // Enterprise architecture fields
@@ -206,7 +206,7 @@ export const risks = pgTable('risks', {
   severity: severityEnum('severity').notNull(),
   inherentRisk: numeric('inherent_risk', { precision: 15, scale: 2 }),
   residualRisk: numeric('residual_risk', { precision: 15, scale: 2 }),
-  associatedAssets: json('associated_assets').default([]),
+  associatedAssets: text('associated_assets').array().default(sql`ARRAY[]::text[]`),
   libraryItemId: integer('library_item_id'), // Reference to risk library template
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -319,7 +319,7 @@ export const legalEntities = pgTable('legal_entities', {
   name: text('name').notNull(),
   type: text('type').notNull(),
   jurisdiction: text('jurisdiction').notNull(),
-  regulatoryFramework: text('regulatory_framework').array().notNull(),
+  regulatoryFramework: text('regulatory_framework').array().default(sql`ARRAY[]::text[]`),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
