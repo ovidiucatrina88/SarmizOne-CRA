@@ -280,7 +280,7 @@ router.post('/', async (req, res) => {
 });
 
 // Update an asset
-router.put('/:id', validateId, validate(assetSchema), async (req, res) => {
+router.put('/:id', validateId, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const asset = req.body;

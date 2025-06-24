@@ -733,7 +733,7 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
                       <SelectItem value="Unknown">No legal entities found</SelectItem>
                     ) : (
                       legalEntities.map((entity) => (
-                        <SelectItem key={entity.entityId} value={entity.name}>
+                        <SelectItem key={`${entity.entityId}-${entity.id}`} value={entity.name}>
                           {entity.name}
                         </SelectItem>
                       ))
