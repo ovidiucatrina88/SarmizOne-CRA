@@ -54,32 +54,53 @@ router.post('/auth/login/local', async (req, res) => {
       username: (req as any).session.user?.username
     });
 
-    // Force save session immediately
-    (req as any).session.save((saveErr: any) => {
-      if (saveErr) {
-        console.error('Session save error:', saveErr);
+    // Ensure session is created before saving
+    (req as any).session.regenerate((regenerateErr: any) => {
+      if (regenerateErr) {
+        console.error('Session regenerate error:', regenerateErr);
         return res.status(500).json({ 
           success: false, 
-          error: 'Session save failed' 
+          error: 'Session creation failed' 
         });
       }
 
-      console.log('Session saved successfully:', {
-        sessionId: (req as any).session.id,
-        userId: (req as any).session.user?.id,
-        username: (req as any).session.user?.username
-      });
-      
-      res.json({
-        success: true,
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          displayName: user.displayName || user.username,
-          role: user.role,
-          authType: 'local'
+      // Set user data after regeneration
+      (req as any).session.user = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        displayName: user.displayName || user.username,
+        role: user.role,
+        authType: 'local'
+      };
+
+      // Force save session immediately
+      (req as any).session.save((saveErr: any) => {
+        if (saveErr) {
+          console.error('Session save error:', saveErr);
+          return res.status(500).json({ 
+            success: false, 
+            error: 'Session save failed' 
+          });
         }
+
+        console.log('Session saved successfully:', {
+          sessionId: (req as any).session.id,
+          userId: (req as any).session.user?.id,
+          username: (req as any).session.user?.username
+        });
+        
+        res.json({
+          success: true,
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            displayName: user.displayName || user.username,
+            role: user.role,
+            authType: 'local'
+          }
+        });
       });
     });
 

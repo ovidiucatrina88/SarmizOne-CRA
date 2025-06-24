@@ -31,11 +31,10 @@ app.use(session({
   rolling: true, // Reset expiration on activity
   name: 'connect.sid',
   cookie: { 
-    secure: false, // Disable secure for testing
+    secure: process.env.NODE_ENV === 'production', 
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'none', // Most permissive for Cloudflare
-    domain: undefined // Let browser handle domain
+    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'strict'
   }
 }));
 
