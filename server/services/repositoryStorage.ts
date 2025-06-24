@@ -419,7 +419,22 @@ export class DatabaseStorage {
   }
 
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
-    const [createdLog] = await db.insert(activityLogs).values(log).returning();
+    // Map to both old and new schema fields for compatibility
+    const processedLog = {
+      // New schema fields
+      action: log.action || 'system_action',
+      entityType: log.entityType || 'unknown',
+      entityId: log.entityId || '',
+      userId: log.userId || 1,
+      details: log.details || null,
+      createdAt: log.createdAt || new Date(),
+      // Old schema fields for compatibility
+      activity: log.action || 'system_action',
+      user: 'System User',
+      entity: log.entityType || 'Entity'
+    };
+    
+    const [createdLog] = await db.insert(activityLogs).values(processedLog).returning();
     return createdLog;
   }
 
