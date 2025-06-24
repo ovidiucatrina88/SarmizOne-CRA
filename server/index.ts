@@ -34,7 +34,8 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production', // Secure in production
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'strict' // Lax for Cloudflare compatibility
+    sameSite: process.env.NODE_ENV === 'production' ? 'lax' : 'strict', // Lax for Cloudflare compatibility
+    domain: process.env.NODE_ENV === 'production' ? '.sarmiz-one.io' : undefined // Allow subdomains
   }
 }));
 
@@ -50,13 +51,13 @@ app.use((req, res, next) => {
   const originalSetHeader = res.setHeader;
   res.setHeader = function(name: string, value: any) {
     if (name.toLowerCase() === 'set-cookie' && typeof value === 'string' && value.includes('connect.sid')) {
-      console.log('Session cookie details:', {
-        cookie: value.substring(0, 80) + '...',
-        secure: value.includes('Secure'),
-        httpOnly: value.includes('HttpOnly'),
-        sameSite: value.match(/SameSite=([^;]*)/)?.[1] || 'lax',
-        domain: req.hostname,
-        isProduction: process.env.NODE_ENV === 'production'
+      console.log('Session cookie being set:', {
+        fullCookie: value,
+        hostname: req.hostname,
+        host: req.headers.host,
+        isProduction: process.env.NODE_ENV === 'production',
+        protocol: req.protocol,
+        forwardedProto: req.get('x-forwarded-proto')
       });
     }
     return originalSetHeader.call(this, name, value);
