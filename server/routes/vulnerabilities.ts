@@ -113,4 +113,32 @@ router.post('/', async (req, res) => {
   }
 });
 
+/**
+ * DELETE /api/vulnerabilities/:id - Delete vulnerability
+ */
+router.delete('/:id', async (req, res) => {
+  try {
+    const { db } = await import('../db');
+    const { vulnerabilities, vulnerabilityAssets } = await import('../../shared/schema');
+    const { eq } = await import('drizzle-orm');
+    
+    const vulnerabilityId = parseInt(req.params.id);
+    
+    // First delete associated assets
+    await db.delete(vulnerabilityAssets).where(eq(vulnerabilityAssets.vulnerabilityId, vulnerabilityId));
+    
+    // Then delete the vulnerability
+    const deleted = await db.delete(vulnerabilities).where(eq(vulnerabilities.id, vulnerabilityId)).returning();
+    
+    if (deleted.length === 0) {
+      return sendError(res, 'Vulnerability not found', 404);
+    }
+    
+    sendSuccess(res, { message: 'Vulnerability deleted successfully', id: vulnerabilityId });
+  } catch (error) {
+    console.error('Error deleting vulnerability:', error);
+    sendError(res, 'Failed to delete vulnerability', 500);
+  }
+});
+
 export default router;
