@@ -95,15 +95,15 @@ export class AuthService {
 
     const [newUser] = await db.insert(users).values({
       username: userData.username,
-      email: userData.email,
+      email: userData.email || `${userData.username}@local.dev`,
       passwordHash,
       displayName: userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : userData.username,
-      firstName: userData.firstName,
-      lastName: userData.lastName,
+      firstName: userData.firstName || userData.username,
+      lastName: userData.lastName || '',
       role: userData.role,
       authType: 'local',
       isActive: true,
-      isEmailVerified: true, // Auto-verify for admin-created users
+      isEmailVerified: true,
       createdBy,
     }).returning();
 

@@ -239,6 +239,9 @@ router.post('/auth/users', async (req, res) => {
     const [newUser] = await db.insert(users).values({
       username,
       email,
+      displayName: firstName && lastName 
+        ? `${firstName} ${lastName}`.trim()
+        : firstName || username,
       firstName: firstName || null,
       lastName: lastName || null,
       passwordHash,
