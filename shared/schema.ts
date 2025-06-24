@@ -291,8 +291,14 @@ export const riskControls = pgTable('risk_controls', {
 // Risk Response Management
 export const riskResponses = pgTable('risk_responses', {
   id: serial('id').primaryKey(),
-  riskId: integer('risk_id').notNull().references(() => risks.id, { onDelete: 'cascade' }),
+  riskId: text('risk_id'),
   responseType: riskResponseTypeEnum('response_type').notNull(),
+  justification: text('justification').default(''),
+  assignedControls: text('assigned_controls').array().default([]),
+  transferMethod: text('transfer_method').default(''),
+  avoidanceStrategy: text('avoidance_strategy').default(''),
+  acceptanceReason: text('acceptance_reason').default(''),
+  costModuleIds: integer('cost_module_ids').array().default([]),
   description: text('description'),
   implementationCost: numeric('implementation_cost', { precision: 15, scale: 2 }),
   expectedEffectiveness: real('expected_effectiveness'),
