@@ -167,20 +167,10 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
         console.log(`[ControlSuggestions] Found ${queryResult.length || queryResult.rows?.length || 0} controls using pattern matching for ${riskPattern}`);
       }
       
-      // If still no results, fall back to general operational controls
+      // If no specific mappings found, return empty results (no fallback)
       if (!queryResult || (queryResult.length || queryResult.rows?.length || 0) === 0) {
-        console.log(`[ControlSuggestions] No specific mappings found, using general controls from library`);
-        queryResult = await db.execute(sql`
-          SELECT control_id, name, description, control_type, control_category,
-                 implementation_status, control_effectiveness, implementation_cost, cost_per_agent
-          FROM control_library 
-          WHERE item_type = 'template'
-            AND control_type IN ('preventive', 'detective', 'corrective')
-            AND control_effectiveness > 0
-          ORDER BY control_effectiveness DESC, implementation_cost ASC
-          LIMIT 10
-        `);
-        console.log(`[ControlSuggestions] Using fallback general controls: ${queryResult.length || queryResult.rows?.length || 0} found`);
+        console.log(`[ControlSuggestions] No specific mappings found for this risk type - returning empty suggestions`);
+        queryResult = [];
       }
       
       console.log(`[ControlSuggestions] Query result structure:`, { 
@@ -221,25 +211,20 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
     const suggestions: ControlSuggestion[] = [];
     
     for (const control of relevantControls) {
-      let impactCategory;
-      let baseScore;
-      
-      // Check if we have mapping data from control_risk_mappings
-      if (control.risk_impact_type && control.risk_relevance) {
-        impactCategory = {
-          category: control.risk_impact_type as 'likelihood' | 'magnitude' | 'both',
-          score: parseFloat(control.risk_relevance || '75'),
-          reasoning: control.reasoning || 'Control mapped based on risk characteristics'
-        };
-        baseScore = parseFloat(control.risk_relevance || '75');
-        console.log(`[ControlSuggestions] Using mapped data for control ${control.control_id}: ${control.risk_impact_type}, score: ${baseScore}`);
-      } else {
-        // Fall back to categorization based on control properties
-        impactCategory = categorizeControlImpact(control);
-        const controlEffectiveness = parseFloat(control.control_effectiveness || '0');
-        baseScore = Math.max(controlEffectiveness, impactCategory.score);
-        console.log(`[ControlSuggestions] Using categorized data for control ${control.control_id}: ${impactCategory.category}, score: ${baseScore}`);
+      // Only process controls that have explicit mapping data
+      if (!control.risk_impact_type || !control.risk_relevance) {
+        console.log(`[ControlSuggestions] Skipping control ${control.control_id} - no explicit mapping data`);
+        continue;
       }
+      
+      const impactCategory = {
+        category: control.risk_impact_type as 'likelihood' | 'magnitude' | 'both',
+        score: parseFloat(control.risk_relevance || '0'),
+        reasoning: control.reasoning || 'Control mapped based on risk characteristics'
+      };
+      const baseScore = parseFloat(control.risk_relevance || '0');
+      
+      console.log(`[ControlSuggestions] Using explicit mapping for control ${control.control_id}: ${control.risk_impact_type}, score: ${baseScore}`);
       
       const suggestion: ControlSuggestion = {
         controlId: String(control.control_id || ''),
