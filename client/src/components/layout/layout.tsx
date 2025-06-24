@@ -234,9 +234,9 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
             <div className="flex items-center justify-center">
               <div className="w-32 h-20 flex items-center justify-center">
                 <img 
-                  src="/generated-icon.png" 
-                  alt="Risk Quantification Platform Logo" 
-                  className="w-24 h-16 object-contain"
+                  src="/logo.png" 
+                  alt="SARMIZ-ONE Logo" 
+                  className="w-28 h-16 object-contain"
                 />
               </div>
             </div>
@@ -244,8 +244,8 @@ export default function Layout({ children, pageTitle, pageDescription, pageIcon,
           {sidebarCollapsed && (
             <div className="w-10 h-10 flex items-center justify-center">
               <img 
-                src="/generated-icon.png" 
-                alt="Logo" 
+                src="/logo.png" 
+                alt="SARMIZ-ONE" 
                 className="w-8 h-8 object-contain"
               />
             </div>
