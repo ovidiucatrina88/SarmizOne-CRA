@@ -40,55 +40,60 @@ const changePasswordSchema = z.object({
  * Local Authentication Routes
  */
 
-// Login with username/password
+// Simple login endpoint
 router.post('/auth/login/local', async (req, res) => {
   try {
     const { username, password } = req.body;
     
     if (!username || !password) {
-      return res.status(400).json({ success: false, error: 'Username and password required' });
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Username and password required' 
+      });
     }
 
-    // Direct database query bypassing AuthService
-    const [user] = await db.select().from(users).where(eq(users.username, username)).limit(1);
+    // Find user
+    const [user] = await db.select().from(users)
+      .where(eq(users.username, username))
+      .limit(1);
     
     if (!user) {
-      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Invalid credentials' 
+      });
     }
 
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.passwordHash);
     
     if (!isValidPassword) {
-      return res.status(401).json({ success: false, error: 'Invalid credentials' });
+      return res.status(401).json({ 
+        success: false, 
+        error: 'Invalid credentials' 
+      });
     }
 
-    // Set user session and save explicitly
+    // Set session
     (req as any).session.user = {
       id: user.id,
-      authType: 'local',
-      role: user.role,
       username: user.username,
       email: user.email,
-      displayName: user.displayName || user.username
+      displayName: user.displayName || user.username,
+      role: user.role,
+      authType: 'local'
     };
 
-    // Debug session before saving
-    console.log('Setting session user:', {
-      userId: user.id,
-      username: user.username,
-      sessionId: (req as any).session.id
-    });
-
-    // Force session save before responding
+    // Save session and respond
     (req as any).session.save((err: any) => {
       if (err) {
         console.error('Session save error:', err);
-        return res.status(500).json({ success: false, error: 'Session save failed' });
+        return res.status(500).json({ 
+          success: false, 
+          error: 'Session save failed' 
+        });
       }
 
-      console.log('Session saved successfully for user:', user.username);
-      
       res.json({
         success: true,
         user: {
@@ -101,11 +106,12 @@ router.post('/auth/login/local', async (req, res) => {
         }
       });
     });
+
   } catch (error) {
-    console.error('Local login error:', error);
-    res.status(400).json({
-      success: false,
-      error: 'Invalid login request'
+    console.error('Login error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Login failed' 
     });
   }
 });

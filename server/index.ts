@@ -35,9 +35,9 @@ app.use(session({
   }
 }));
 
-// Initialize Passport
-app.use(passport.initialize());
-app.use(passport.session());
+// Initialize Passport (disabled for simplified auth)
+// app.use(passport.initialize());
+// app.use(passport.session());
 
 // Passport will be configured in the main function
 
