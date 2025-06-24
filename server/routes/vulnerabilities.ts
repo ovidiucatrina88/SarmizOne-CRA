@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
     const { vulnerabilities } = await import('../../shared/schema');
     
     // Get vulnerabilities using basic query to avoid schema issues
-    const result = await db.execute(sql`SELECT id, title, description, severity, status, discovered_date as discoveredDate, created_at as createdAt FROM vulnerabilities LIMIT 50`);
+    const result = await db.execute(sql`SELECT id, title, description, severity, status, discovered_date as "discoveredDate", created_at as "createdAt" FROM vulnerabilities LIMIT 50`);
     
     sendSuccess(res, result.rows || []);
   } catch (error) {
