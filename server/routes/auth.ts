@@ -73,6 +73,13 @@ router.post('/auth/login/local', async (req, res) => {
       displayName: user.displayName || user.username
     };
 
+    // Debug session before saving
+    console.log('Setting session user:', {
+      userId: user.id,
+      username: user.username,
+      sessionId: (req as any).session.id
+    });
+
     // Force session save before responding
     (req as any).session.save((err: any) => {
       if (err) {
@@ -80,6 +87,8 @@ router.post('/auth/login/local', async (req, res) => {
         return res.status(500).json({ success: false, error: 'Session save failed' });
       }
 
+      console.log('Session saved successfully for user:', user.username);
+      
       res.json({
         success: true,
         user: {
