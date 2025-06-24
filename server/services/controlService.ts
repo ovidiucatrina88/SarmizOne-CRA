@@ -175,7 +175,11 @@ export class ControlService {
     }
     
     // Log the control creation
-    await this.logControlActivity(control.id, 'create', 'Control created');
+    try {
+      await this.logControlActivity(control.id, 'create', 'Control created');
+    } catch (error) {
+      console.warn('Failed to log control activity:', error);
+    }
     
     return control;
   }

@@ -103,7 +103,7 @@ export class ControlLibraryController {
         return sendError(res, { message: 'Control template not found' }, 404);
       }
       
-      console.log('Template data:', JSON.stringify(template, null, 2));
+      // console.log('Template data:', JSON.stringify(template, null, 2));
       
       // Create a new control instance from the template
       const controlData = {

@@ -148,6 +148,7 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 - June 24, 2025. Built production server with session cookie fixes and created deployment script - production ready for restart to apply session authentication fixes
 - June 24, 2025. Completed comprehensive session cookie fix with trust proxy configuration, production cookie settings, and simplified session creation - session authentication system ready for production deployment
 - June 24, 2025. Created production schema alignment scripts (production_schema_aligned.sql, production_data_dump.sql) to fix database schema mismatch between development Neon and production PostgreSQL causing API failures
+- June 24, 2025. **FIXED CRITICAL BUG**: Control instance creation from templates now working correctly - fixed PostgreSQL array handling and schema mismatches causing browser errors
 
 ## User Preferences
 
