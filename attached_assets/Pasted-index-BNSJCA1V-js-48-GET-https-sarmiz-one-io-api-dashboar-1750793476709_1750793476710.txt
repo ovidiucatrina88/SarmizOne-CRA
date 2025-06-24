@@ -1,0 +1,424 @@
+index-BNSJCA1V.js:48 
+            
+            
+           GET https://sarmiz-one.io/api/dashboard/summary 500 (Internal Server Error)
+(anonymous) @ index-BNSJCA1V.js:48
+s @ index-BNSJCA1V.js:48
+v @ index-BNSJCA1V.js:48
+start @ index-BNSJCA1V.js:48
+fetch @ index-BNSJCA1V.js:48
+A1 @ index-BNSJCA1V.js:48
+onSubscribe @ index-BNSJCA1V.js:48
+subscribe @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+PQ @ index-BNSJCA1V.js:38
+jC @ index-BNSJCA1V.js:40
+zg @ index-BNSJCA1V.js:40
+sye @ index-BNSJCA1V.js:40
+Bp @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+(anonymous) @ index-BNSJCA1V.js:40
+setTimeout
+i @ index-BNSJCA1V.js:48
+o @ index-BNSJCA1V.js:48
+batch @ index-BNSJCA1V.js:48
+Sd @ index-BNSJCA1V.js:48
+setData @ index-BNSJCA1V.js:48
+onSuccess @ index-BNSJCA1V.js:48
+f @ index-BNSJCA1V.js:48
+Promise.then
+v @ index-BNSJCA1V.js:48
+start @ index-BNSJCA1V.js:48
+fetch @ index-BNSJCA1V.js:48
+A1 @ index-BNSJCA1V.js:48
+onSubscribe @ index-BNSJCA1V.js:48
+subscribe @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+PQ @ index-BNSJCA1V.js:38
+jC @ index-BNSJCA1V.js:40
+zg @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+sye @ index-BNSJCA1V.js:40
+Bp @ index-BNSJCA1V.js:40
+lZ @ index-BNSJCA1V.js:40
+w @ index-BNSJCA1V.js:25
+P @ index-BNSJCA1V.js:25
+index-BNSJCA1V.js:48 
+            
+            
+           GET https://sarmiz-one.io/api/risk-summary/latest 404 (Not Found)
+(anonymous) @ index-BNSJCA1V.js:48
+s @ index-BNSJCA1V.js:48
+v @ index-BNSJCA1V.js:48
+start @ index-BNSJCA1V.js:48
+fetch @ index-BNSJCA1V.js:48
+A1 @ index-BNSJCA1V.js:48
+onSubscribe @ index-BNSJCA1V.js:48
+subscribe @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+PQ @ index-BNSJCA1V.js:38
+jC @ index-BNSJCA1V.js:40
+zg @ index-BNSJCA1V.js:40
+sye @ index-BNSJCA1V.js:40
+Bp @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+(anonymous) @ index-BNSJCA1V.js:40
+setTimeout
+i @ index-BNSJCA1V.js:48
+o @ index-BNSJCA1V.js:48
+batch @ index-BNSJCA1V.js:48
+Sd @ index-BNSJCA1V.js:48
+setData @ index-BNSJCA1V.js:48
+onSuccess @ index-BNSJCA1V.js:48
+f @ index-BNSJCA1V.js:48
+Promise.then
+v @ index-BNSJCA1V.js:48
+start @ index-BNSJCA1V.js:48
+fetch @ index-BNSJCA1V.js:48
+A1 @ index-BNSJCA1V.js:48
+onSubscribe @ index-BNSJCA1V.js:48
+subscribe @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+PQ @ index-BNSJCA1V.js:38
+jC @ index-BNSJCA1V.js:40
+zg @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+sye @ index-BNSJCA1V.js:40
+Bp @ index-BNSJCA1V.js:40
+lZ @ index-BNSJCA1V.js:40
+w @ index-BNSJCA1V.js:25
+P @ index-BNSJCA1V.js:25
+index-BNSJCA1V.js:48 
+            
+            
+           GET https://sarmiz-one.io/api/risk-responses 500 (Internal Server Error)
+(anonymous) @ index-BNSJCA1V.js:48
+s @ index-BNSJCA1V.js:48
+v @ index-BNSJCA1V.js:48
+start @ index-BNSJCA1V.js:48
+fetch @ index-BNSJCA1V.js:48
+A1 @ index-BNSJCA1V.js:48
+onSubscribe @ index-BNSJCA1V.js:48
+subscribe @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+PQ @ index-BNSJCA1V.js:38
+jC @ index-BNSJCA1V.js:40
+zg @ index-BNSJCA1V.js:40
+sye @ index-BNSJCA1V.js:40
+Bp @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+(anonymous) @ index-BNSJCA1V.js:40
+setTimeout
+i @ index-BNSJCA1V.js:48
+o @ index-BNSJCA1V.js:48
+batch @ index-BNSJCA1V.js:48
+Sd @ index-BNSJCA1V.js:48
+setData @ index-BNSJCA1V.js:48
+onSuccess @ index-BNSJCA1V.js:48
+f @ index-BNSJCA1V.js:48
+Promise.then
+v @ index-BNSJCA1V.js:48
+start @ index-BNSJCA1V.js:48
+fetch @ index-BNSJCA1V.js:48
+A1 @ index-BNSJCA1V.js:48
+onSubscribe @ index-BNSJCA1V.js:48
+subscribe @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+PQ @ index-BNSJCA1V.js:38
+jC @ index-BNSJCA1V.js:40
+zg @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+sye @ index-BNSJCA1V.js:40
+Bp @ index-BNSJCA1V.js:40
+lZ @ index-BNSJCA1V.js:40
+w @ index-BNSJCA1V.js:25
+P @ index-BNSJCA1V.js:25
+index-BNSJCA1V.js:48 
+            
+            
+           GET https://sarmiz-one.io/api/legal-entities 500 (Internal Server Error)
+(anonymous) @ index-BNSJCA1V.js:48
+s @ index-BNSJCA1V.js:48
+v @ index-BNSJCA1V.js:48
+start @ index-BNSJCA1V.js:48
+fetch @ index-BNSJCA1V.js:48
+A1 @ index-BNSJCA1V.js:48
+onSubscribe @ index-BNSJCA1V.js:48
+subscribe @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+PQ @ index-BNSJCA1V.js:38
+jC @ index-BNSJCA1V.js:40
+zg @ index-BNSJCA1V.js:40
+sye @ index-BNSJCA1V.js:40
+Bp @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+(anonymous) @ index-BNSJCA1V.js:40
+setTimeout
+i @ index-BNSJCA1V.js:48
+o @ index-BNSJCA1V.js:48
+batch @ index-BNSJCA1V.js:48
+Sd @ index-BNSJCA1V.js:48
+setData @ index-BNSJCA1V.js:48
+onSuccess @ index-BNSJCA1V.js:48
+f @ index-BNSJCA1V.js:48
+Promise.then
+v @ index-BNSJCA1V.js:48
+start @ index-BNSJCA1V.js:48
+fetch @ index-BNSJCA1V.js:48
+A1 @ index-BNSJCA1V.js:48
+onSubscribe @ index-BNSJCA1V.js:48
+subscribe @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+PQ @ index-BNSJCA1V.js:38
+jC @ index-BNSJCA1V.js:40
+zg @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+sye @ index-BNSJCA1V.js:40
+Bp @ index-BNSJCA1V.js:40
+lZ @ index-BNSJCA1V.js:40
+w @ index-BNSJCA1V.js:25
+P @ index-BNSJCA1V.js:25
+index-BNSJCA1V.js:48 
+            
+            
+           GET https://sarmiz-one.io/api/assets 500 (Internal Server Error)
+(anonymous) @ index-BNSJCA1V.js:48
+s @ index-BNSJCA1V.js:48
+v @ index-BNSJCA1V.js:48
+start @ index-BNSJCA1V.js:48
+fetch @ index-BNSJCA1V.js:48
+A1 @ index-BNSJCA1V.js:48
+onSubscribe @ index-BNSJCA1V.js:48
+subscribe @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+PQ @ index-BNSJCA1V.js:38
+jC @ index-BNSJCA1V.js:40
+zg @ index-BNSJCA1V.js:40
+sye @ index-BNSJCA1V.js:40
+Bp @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+(anonymous) @ index-BNSJCA1V.js:40
+setTimeout
+i @ index-BNSJCA1V.js:48
+o @ index-BNSJCA1V.js:48
+batch @ index-BNSJCA1V.js:48
+Sd @ index-BNSJCA1V.js:48
+setData @ index-BNSJCA1V.js:48
+onSuccess @ index-BNSJCA1V.js:48
+f @ index-BNSJCA1V.js:48
+Promise.then
+v @ index-BNSJCA1V.js:48
+start @ index-BNSJCA1V.js:48
+fetch @ index-BNSJCA1V.js:48
+A1 @ index-BNSJCA1V.js:48
+onSubscribe @ index-BNSJCA1V.js:48
+subscribe @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+PQ @ index-BNSJCA1V.js:38
+jC @ index-BNSJCA1V.js:40
+zg @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+sye @ index-BNSJCA1V.js:40
+Bp @ index-BNSJCA1V.js:40
+lZ @ index-BNSJCA1V.js:40
+w @ index-BNSJCA1V.js:25
+P @ index-BNSJCA1V.js:25
+index-BNSJCA1V.js:525 Dashboard error: Error: 500: column "is_per_agent" does not exist
+    at GZ (index-BNSJCA1V.js:48:43380)
+    at async index-BNSJCA1V.js:48:44045
+NJe @ index-BNSJCA1V.js:525
+YR @ index-BNSJCA1V.js:38
+Tk @ index-BNSJCA1V.js:40
+pZ @ index-BNSJCA1V.js:40
+dZ @ index-BNSJCA1V.js:40
+nye @ index-BNSJCA1V.js:40
+YN @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+(anonymous) @ index-BNSJCA1V.js:40
+setTimeout
+i @ index-BNSJCA1V.js:48
+o @ index-BNSJCA1V.js:48
+batch @ index-BNSJCA1V.js:48
+Sd @ index-BNSJCA1V.js:48
+l @ index-BNSJCA1V.js:48
+h @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+Promise.catch
+v @ index-BNSJCA1V.js:48
+start @ index-BNSJCA1V.js:48
+fetch @ index-BNSJCA1V.js:48
+A1 @ index-BNSJCA1V.js:48
+onSubscribe @ index-BNSJCA1V.js:48
+subscribe @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+PQ @ index-BNSJCA1V.js:38
+jC @ index-BNSJCA1V.js:40
+zg @ index-BNSJCA1V.js:40
+sye @ index-BNSJCA1V.js:40
+Bp @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+(anonymous) @ index-BNSJCA1V.js:40
+setTimeout
+i @ index-BNSJCA1V.js:48
+o @ index-BNSJCA1V.js:48
+batch @ index-BNSJCA1V.js:48
+Sd @ index-BNSJCA1V.js:48
+setData @ index-BNSJCA1V.js:48
+onSuccess @ index-BNSJCA1V.js:48
+f @ index-BNSJCA1V.js:48
+Promise.then
+v @ index-BNSJCA1V.js:48
+start @ index-BNSJCA1V.js:48
+fetch @ index-BNSJCA1V.js:48
+A1 @ index-BNSJCA1V.js:48
+onSubscribe @ index-BNSJCA1V.js:48
+subscribe @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+PQ @ index-BNSJCA1V.js:38
+jC @ index-BNSJCA1V.js:40
+zg @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+sye @ index-BNSJCA1V.js:40
+Bp @ index-BNSJCA1V.js:40
+lZ @ index-BNSJCA1V.js:40
+w @ index-BNSJCA1V.js:25
+P @ index-BNSJCA1V.js:25
+index-BNSJCA1V.js:525 Dashboard error: Error: 500: column "is_per_agent" does not exist
+    at GZ (index-BNSJCA1V.js:48:43380)
+    at async index-BNSJCA1V.js:48:44045
+NJe @ index-BNSJCA1V.js:525
+YR @ index-BNSJCA1V.js:38
+Tk @ index-BNSJCA1V.js:40
+pZ @ index-BNSJCA1V.js:40
+dZ @ index-BNSJCA1V.js:40
+nye @ index-BNSJCA1V.js:40
+YN @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+(anonymous) @ index-BNSJCA1V.js:40
+setTimeout
+i @ index-BNSJCA1V.js:48
+o @ index-BNSJCA1V.js:48
+batch @ index-BNSJCA1V.js:48
+Sd @ index-BNSJCA1V.js:48
+l @ index-BNSJCA1V.js:48
+h @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+Promise.catch
+v @ index-BNSJCA1V.js:48
+start @ index-BNSJCA1V.js:48
+fetch @ index-BNSJCA1V.js:48
+A1 @ index-BNSJCA1V.js:48
+onSubscribe @ index-BNSJCA1V.js:48
+subscribe @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+PQ @ index-BNSJCA1V.js:38
+jC @ index-BNSJCA1V.js:40
+zg @ index-BNSJCA1V.js:40
+sye @ index-BNSJCA1V.js:40
+Bp @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+(anonymous) @ index-BNSJCA1V.js:40
+setTimeout
+i @ index-BNSJCA1V.js:48
+o @ index-BNSJCA1V.js:48
+batch @ index-BNSJCA1V.js:48
+Sd @ index-BNSJCA1V.js:48
+setData @ index-BNSJCA1V.js:48
+onSuccess @ index-BNSJCA1V.js:48
+f @ index-BNSJCA1V.js:48
+Promise.then
+v @ index-BNSJCA1V.js:48
+start @ index-BNSJCA1V.js:48
+fetch @ index-BNSJCA1V.js:48
+A1 @ index-BNSJCA1V.js:48
+onSubscribe @ index-BNSJCA1V.js:48
+subscribe @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+PQ @ index-BNSJCA1V.js:38
+jC @ index-BNSJCA1V.js:40
+zg @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+sye @ index-BNSJCA1V.js:40
+Bp @ index-BNSJCA1V.js:40
+lZ @ index-BNSJCA1V.js:40
+w @ index-BNSJCA1V.js:25
+P @ index-BNSJCA1V.js:25
+index-BNSJCA1V.js:525 Dashboard error: Error: 500: column "is_per_agent" does not exist
+    at GZ (index-BNSJCA1V.js:48:43380)
+    at async index-BNSJCA1V.js:48:44045
+NJe @ index-BNSJCA1V.js:525
+YR @ index-BNSJCA1V.js:38
+Tk @ index-BNSJCA1V.js:40
+pZ @ index-BNSJCA1V.js:40
+dZ @ index-BNSJCA1V.js:40
+nye @ index-BNSJCA1V.js:40
+YN @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+(anonymous) @ index-BNSJCA1V.js:40
+setTimeout
+i @ index-BNSJCA1V.js:48
+o @ index-BNSJCA1V.js:48
+batch @ index-BNSJCA1V.js:48
+Sd @ index-BNSJCA1V.js:48
+setData @ index-BNSJCA1V.js:48
+onSuccess @ index-BNSJCA1V.js:48
+f @ index-BNSJCA1V.js:48
+Promise.then
+v @ index-BNSJCA1V.js:48
+start @ index-BNSJCA1V.js:48
+fetch @ index-BNSJCA1V.js:48
+A1 @ index-BNSJCA1V.js:48
+onSubscribe @ index-BNSJCA1V.js:48
+subscribe @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+PQ @ index-BNSJCA1V.js:38
+jC @ index-BNSJCA1V.js:40
+zg @ index-BNSJCA1V.js:40
+sye @ index-BNSJCA1V.js:40
+Bp @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+(anonymous) @ index-BNSJCA1V.js:40
+setTimeout
+i @ index-BNSJCA1V.js:48
+o @ index-BNSJCA1V.js:48
+batch @ index-BNSJCA1V.js:48
+Sd @ index-BNSJCA1V.js:48
+setData @ index-BNSJCA1V.js:48
+onSuccess @ index-BNSJCA1V.js:48
+f @ index-BNSJCA1V.js:48
+Promise.then
+v @ index-BNSJCA1V.js:48
+start @ index-BNSJCA1V.js:48
+fetch @ index-BNSJCA1V.js:48
+A1 @ index-BNSJCA1V.js:48
+onSubscribe @ index-BNSJCA1V.js:48
+subscribe @ index-BNSJCA1V.js:48
+(anonymous) @ index-BNSJCA1V.js:48
+PQ @ index-BNSJCA1V.js:38
+jC @ index-BNSJCA1V.js:40
+zg @ index-BNSJCA1V.js:40
+Y8 @ index-BNSJCA1V.js:40
+up @ index-BNSJCA1V.js:38
+sye @ index-BNSJCA1V.js:40
+Bp @ index-BNSJCA1V.js:40
+lZ @ index-BNSJCA1V.js:40
+w @ index-BNSJCA1V.js:25
+P @ index-BNSJCA1V.js:25
