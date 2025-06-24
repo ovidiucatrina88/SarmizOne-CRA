@@ -225,7 +225,7 @@ export const controls = pgTable('controls', {
   implementationCost: numeric('implementation_cost', { precision: 15, scale: 2 }),
   isPerAgent: boolean('is_per_agent').default(false),
   costPerAgent: numeric('cost_per_agent', { precision: 15, scale: 2 }),
-  associatedRisks: text('associated_risks').array(),
+  associatedRisks: text('associated_risks').array().default(sql`NULL`),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
   libraryItemId: integer('library_item_id'), // Reference to control library template

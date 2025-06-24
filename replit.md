@@ -150,6 +150,7 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 - June 24, 2025. Created production schema alignment scripts (production_schema_aligned.sql, production_data_dump.sql) to fix database schema mismatch between development Neon and production PostgreSQL causing API failures
 - June 24, 2025. **FIXED CRITICAL BUG**: Control instance creation from templates now working correctly - fixed PostgreSQL array handling and schema mismatches causing browser errors
 - June 24, 2025. **COMPREHENSIVE API VALIDATION COMPLETED**: All 8 major API endpoints validated and operational - fixed activity logging constraint violations, confirmed full CRUD functionality across assets, risks, controls, and reporting systems
+- June 24, 2025. **CRITICAL DATABASE SCHEMA FIXED**: Resolved PostgreSQL array handling issues and activity_logs constraint violations - control instance creation from templates now fully operational with proper database storage and activity logging restored
 
 ## User Preferences
 
