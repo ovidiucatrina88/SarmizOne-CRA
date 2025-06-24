@@ -2,9 +2,9 @@
 import esbuild from 'esbuild';
 
 esbuild.build({
-  entryPoints: ['server/production.ts'],
+  entryPoints: ['server/index.ts'],
   bundle: true,
-  outfile: 'dist/production.cjs',
+  outfile: 'dist/server.cjs',
   platform: 'node',
   format: 'cjs',
   target: 'node18',
@@ -20,7 +20,11 @@ esbuild.build({
     'uuid',
     'ws',
     'openai',
-    'axios'
+    'axios',
+    'passport',
+    'passport-local',
+    'passport-openidconnect',
+    'tsx'
   ],
   define: {
     'process.env.NODE_ENV': '"production"'
