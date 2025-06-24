@@ -107,32 +107,21 @@ router.get('/auth/user', async (req, res) => {
   }
 });
 
-export default router;
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
+// Logout
+router.post('/auth/logout', (req, res) => {
+  (req as any).session.destroy((err: any) => {
+    if (err) {
+      console.error('Logout error:', err);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Logout failed' 
+      });
+    }
+    res.json({ success: true });
+  });
 });
 
-const loginSchema = z.object({
-  username: z.string().min(1),
-  password: z.string().min(1)
-});
-
-const changePasswordSchema = z.object({
-  currentPassword: z.string().min(1),
-  newPassword: z.string().min(8),
-  confirmPassword: z.string().min(8)
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "New passwords don't match",
-  path: ["confirmPassword"],
-});
-
-/**
- * Local Authentication Routes
- */
-
-// Simple login endpoint
-router.post('/auth/login/local', async (req, res) => {
-  try {
+export default router; {
     const { username, password } = req.body;
     
     if (!username || !password) {
