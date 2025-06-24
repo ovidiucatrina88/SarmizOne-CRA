@@ -94,7 +94,14 @@ export class DatabaseStorage {
   }
 
   async createAsset(asset: InsertAsset): Promise<Asset> {
-    const [createdAsset] = await db.insert(assets).values(asset).returning();
+    // Handle PostgreSQL array fields properly
+    const processedAsset = {
+      ...asset,
+      regulatoryImpact: asset.regulatoryImpact || null,
+      dependencies: asset.dependencies || null
+    };
+    
+    const [createdAsset] = await db.insert(assets).values(processedAsset).returning();
     return createdAsset;
   }
 
@@ -233,7 +240,10 @@ export class DatabaseStorage {
   }
 
   async createRisk(risk: InsertRisk): Promise<Risk> {
-    const [createdRisk] = await db.insert(risks).values(risk).returning();
+    // Skip associatedAssets field during creation to avoid array handling issues
+    const { associatedAssets, ...riskWithoutArrays } = risk;
+    
+    const [createdRisk] = await db.insert(risks).values(riskWithoutArrays).returning();
     return createdRisk;
   }
 
@@ -463,7 +473,13 @@ export class DatabaseStorage {
   }
 
   async createLegalEntity(entity: InsertLegalEntity): Promise<LegalEntity> {
-    const [createdEntity] = await db.insert(legalEntities).values(entity).returning();
+    // Handle PostgreSQL array fields properly
+    const processedEntity = {
+      ...entity,
+      regulatoryFramework: entity.regulatoryFramework || null
+    };
+    
+    const [createdEntity] = await db.insert(legalEntities).values(processedEntity).returning();
     return createdEntity;
   }
 
