@@ -221,7 +221,7 @@ export const controls = pgTable('controls', {
   controlType: controlTypeEnum('control_type').notNull(),
   controlCategory: controlCategoryEnum('control_category').notNull(),
   implementationStatus: implementationStatusEnum('implementation_status').notNull(),
-  controlEffectiveness: real('control_effectiveness'),
+  controlEffectiveness: real('control_effectiveness').default(0.75),
   implementationCost: numeric('implementation_cost', { precision: 15, scale: 2 }),
   isPerAgent: boolean('is_per_agent').default(false),
   costPerAgent: numeric('cost_per_agent', { precision: 15, scale: 2 }),
