@@ -47,6 +47,16 @@ router.post('/auth/login/local', async (req, res) => {
       authType: 'local'
     };
 
+    // Log session creation details for debugging
+    console.log('Login session creation:', {
+      sessionId: (req as any).session.id,
+      host: req.headers.host,
+      protocol: req.protocol,
+      forwardedProto: req.get('x-forwarded-proto'),
+      isSecure: req.secure,
+      userAgent: req.get('user-agent')?.substring(0, 50)
+    });
+
     (req as any).session.save((err: any) => {
       if (err) {
         console.error('Session save error:', err);
@@ -56,6 +66,8 @@ router.post('/auth/login/local', async (req, res) => {
         });
       }
 
+      console.log('Session saved successfully for user:', user.username);
+      
       res.json({
         success: true,
         user: {
@@ -78,10 +90,22 @@ router.post('/auth/login/local', async (req, res) => {
   }
 });
 
-// Get current user
+// Get current user with production debugging
 router.get('/auth/user', async (req, res) => {
   try {
     const session = (req as any).session;
+    
+    // Production debugging - log session details
+    console.log('Production /auth/user check:', {
+      sessionExists: !!session,
+      sessionId: session?.id,
+      hasUser: !!session?.user,
+      cookies: req.headers.cookie ? 'present' : 'missing',
+      host: req.headers.host,
+      protocol: req.protocol,
+      forwardedProto: req.get('x-forwarded-proto'),
+      isSecure: req.secure
+    });
     
     if (!session?.user) {
       return res.status(401).json({

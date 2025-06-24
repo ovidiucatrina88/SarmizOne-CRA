@@ -28,10 +28,24 @@ app.use(session({
   rolling: true, // Reset expiration on activity
   name: 'riskapp.sid', // Custom session name
   cookie: { 
-    secure: process.env.NODE_ENV === 'production' && process.env.HTTPS_ENABLED === 'true',
+    secure: req => {
+      // Auto-detect HTTPS from request headers for production domains
+      const isHttps = req.get('x-forwarded-proto') === 'https' || 
+                     req.get('x-forwarded-ssl') === 'on' ||
+                     req.protocol === 'https' ||
+                     req.hostname?.includes('.replit.app') ||
+                     req.hostname?.includes('sarmiz-one.io');
+      return isHttps;
+    },
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax'
+    sameSite: req => {
+      // Use strict for production domains, lax for development
+      const isProd = req.hostname?.includes('.replit.app') || 
+                    req.hostname?.includes('sarmiz-one.io') ||
+                    process.env.NODE_ENV === 'production';
+      return isProd ? 'strict' : 'lax';
+    }
   }
 }));
 
