@@ -285,7 +285,13 @@ export class DatabaseStorage {
   }
 
   async createControl(control: InsertControl): Promise<Control> {
-    const [createdControl] = await db.insert(controls).values(control).returning();
+    // Handle PostgreSQL array conversion for associated_risks
+    const processedControl = {
+      ...control,
+      associatedRisks: control.associatedRisks ? control.associatedRisks : null
+    };
+    
+    const [createdControl] = await db.insert(controls).values(processedControl).returning();
     return createdControl;
   }
 
