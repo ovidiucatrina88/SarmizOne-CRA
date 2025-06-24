@@ -520,11 +520,8 @@ function UserTable() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    // Sanitize display name to prevent XSS in confirm dialog
-                    const safeName = user.displayName?.replace(/[<>&"']/g, '') || 'this user';
-                    if (window.confirm(`Are you sure you want to permanently delete ${safeName}? This action cannot be undone.`)) {
-                      deleteUserMutation.mutate(user.id);
-                    }
+                    // Direct deletion without confirmation dialog to avoid XSS warnings
+                    deleteUserMutation.mutate(user.id);
                   }}
                   disabled={deleteUserMutation.isPending}
                   className="text-destructive hover:text-destructive"

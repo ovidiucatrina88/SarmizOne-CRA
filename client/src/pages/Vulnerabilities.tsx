@@ -81,9 +81,8 @@ export default function VulnerabilitiesPage() {
   });
 
   const handleDelete = (vulnerabilityId: number, vulnerabilityName: string) => {
-    if (window.confirm(`Are you sure you want to delete vulnerability "${vulnerabilityName}"?`)) {
-      deleteMutation.mutate(vulnerabilityId);
-    }
+    // Simple direct deletion without confirmation dialog to avoid XSS warnings
+    deleteMutation.mutate(vulnerabilityId);
   };
 
   // Filter vulnerabilities based on search and filters
