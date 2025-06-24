@@ -8,7 +8,7 @@ import BackstageClient from '../integrations/backstage.js';
 import { db } from '../db.js';
 import { backstageSyncLogs, assets } from '../../shared/schema.js';
 import { eq } from 'drizzle-orm';
-import { sendSuccess, sendError } from './common/index.js';
+import { sendSuccess, sendError } from './common/responses.js';
 
 const router = express.Router();
 
