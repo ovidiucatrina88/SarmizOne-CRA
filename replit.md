@@ -154,6 +154,7 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 - June 24, 2025. **COMPREHENSIVE ARRAY HANDLING FIXED**: Resolved all PostgreSQL array literal issues across assets, risks, controls, and legal entities - all API endpoints now operational with proper array field handling and database constraint management
 - June 24, 2025. **CONTROL SUGGESTION ENGINE OPERATIONAL**: Fixed control-to-risk mapping system using pattern matching for template relationships - control suggestions now properly display mapped controls with impact categorization and relevance scoring
 - June 24, 2025. **REMOVED FALLBACK CATEGORIZATION**: Control suggestions now rely exclusively on explicit database mappings - no more incorrect fallback suggestions for unmapped risk types
+- June 24, 2025. **FIXED ASSET CREATION DATABASE CONSTRAINT**: Resolved NOT NULL constraint on legal_entity column preventing asset creation - all CRUD operations now functional
 
 ## User Preferences
 
