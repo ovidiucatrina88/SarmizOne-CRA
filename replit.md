@@ -156,6 +156,7 @@ This is a sophisticated enterprise cybersecurity risk quantification platform bu
 - June 24, 2025. **REMOVED FALLBACK CATEGORIZATION**: Control suggestions now rely exclusively on explicit database mappings - no more incorrect fallback suggestions for unmapped risk types
 - June 24, 2025. **FIXED ASSET CREATION DATABASE CONSTRAINT**: Resolved NOT NULL constraint on legal_entity column preventing asset creation - all CRUD operations now functional
 - June 24, 2025. **RESOLVED ALL REMAINING ISSUES**: Fixed React duplicate key warnings in SelectItem components and PUT endpoint validation for partial asset updates - all API endpoints fully operational
+- June 24, 2025. **VULNERABILITY DELETE FUNCTIONALITY ADDED**: Implemented missing delete handlers and mutation for vulnerability management with confirmation dialog and success/error notifications
 
 ## User Preferences
 

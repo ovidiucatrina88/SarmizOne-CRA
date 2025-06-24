@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -48,16 +48,45 @@ import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function VulnerabilitiesPage() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [severityFilter, setSeverityFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
-  const { toast } = useToast();
 
   const { data: vulnerabilities, isLoading } = useQuery({
     queryKey: ['/api/assets/vulnerabilities'],
   });
 
   const vulns = vulnerabilities?.data || [];
+
+  // Delete vulnerability mutation
+  const deleteMutation = useMutation({
+    mutationFn: (vulnerabilityId: number) => 
+      apiRequest(`/api/vulnerabilities/${vulnerabilityId}`, {
+        method: 'DELETE',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/assets/vulnerabilities'] });
+      toast({
+        title: "Success",
+        description: "Vulnerability deleted successfully",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to delete vulnerability",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDelete = (vulnerabilityId: number, vulnerabilityName: string) => {
+    if (window.confirm(`Are you sure you want to delete vulnerability "${vulnerabilityName}"?`)) {
+      deleteMutation.mutate(vulnerabilityId);
+    }
+  };
 
   // Filter vulnerabilities based on search and filters
   const filteredVulns = vulns.filter((vuln: any) => {
@@ -325,7 +354,12 @@ export default function VulnerabilitiesPage() {
                               <Button variant="ghost" size="sm">
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="sm">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleDelete(vuln.id, vuln.title)}
+                                disabled={deleteMutation.isPending}
+                              >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
