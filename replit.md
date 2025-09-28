@@ -1,181 +1,57 @@
 # Risk Quantification Platform
 
 ## Overview
+This project is an enterprise cybersecurity risk quantification platform utilizing the FAIR (Factor Analysis of Information Risk) methodology. It incorporates advanced risk calculation models, including FAIR-CAM (Controls Assessment Model), and integrates with IRIS 2025 actuarial data for industry-backed risk assessments. The platform provides comprehensive capabilities for managing assets, risks, controls, and generating reports, with all core functionalities operational and over 18 API endpoints supporting full CRUD operations. The business vision is to provide a sophisticated tool for organizations to understand, measure, and manage their cybersecurity risks effectively, offering significant market potential in the enterprise risk management sector.
 
-This is a sophisticated enterprise cybersecurity risk quantification platform built using the FAIR (Factor Analysis of Information Risk) methodology. The platform implements advanced risk calculation models including FAIR-CAM (Controls Assessment Model) with IRIS 2025 actuarial data integration for industry-backed risk assessments.
-
-**Current Status**: All core functionality operational with comprehensive API validation completed. 18+ working API endpoints supporting full CRUD operations across assets, risks, controls, and reporting capabilities.
+## User Preferences
+Preferred communication style: Simple, everyday language.
 
 ## System Architecture
 
-### Frontend Architecture
+### Frontend
 - **Framework**: React with TypeScript
-- **UI Components**: Radix UI with shadcn/ui design system
-- **Styling**: Tailwind CSS with custom theming
-- **Data Visualization**: D3.js for risk charts and dashboards
-- **State Management**: TanStack Query for server state management
-- **Build Tool**: Vite with custom configuration
+- **UI/UX**: Radix UI with shadcn/ui design system, Tailwind CSS for styling, D3.js for data visualization.
+- **State Management**: TanStack Query.
+- **Build Tool**: Vite.
 
-### Backend Architecture
-- **Runtime**: Node.js 18+ with Express.js framework
-- **Language**: TypeScript with ESM module support
-- **ORM**: Drizzle ORM for type-safe database operations
-- **Authentication**: Passport.js with local and OIDC strategies (bypassed in production)
-- **Session Management**: Express-session with PostgreSQL store
+### Backend
+- **Runtime**: Node.js 18+ with Express.js.
+- **Language**: TypeScript (ESM modules).
+- **ORM**: Drizzle ORM.
+- **Authentication**: Passport.js (local and OIDC strategies, bypassable in production).
+- **Session Management**: Express-session with PostgreSQL store.
 
-### Database Architecture
-- **Primary Database**: PostgreSQL 15+ with 20+ tables
-- **Schema Management**: Drizzle Kit for migrations
-- **Key Tables**: risks, assets, controls, risk_library, control_library, cost_modules
-- **Relationships**: Complex foreign key relationships with cascade deletion support
+### Database
+- **Type**: PostgreSQL 15+ (20+ tables).
+- **Schema Management**: Drizzle Kit for migrations.
+- **Key Features**: Complex foreign key relationships, cascade deletion.
 
-## Key Components
+### Key Components
+- **FAIR Risk Calculation Engine**: Monte Carlo Simulation (10,000+ iterations), IRIS 2025 integration, Log-normal and Beta-PERT distributions, FAIR-CAM for control efficacy.
+- **Asset Management System**: 5-level hierarchy, multi-currency valuation, CIA ratings, dependency mapping.
+- **Control Framework**: CIS Controls (56+), implementation tracking, ROI analysis, FAIR-CAM effectiveness metrics.
+- **Risk Library System**: 27+ risk scenario templates, pre-configured FAIR parameters, instance creation, asset/control linkages.
 
-### 1. FAIR Risk Calculation Engine
-- **Monte Carlo Simulation**: 10,000+ iteration risk modeling
-- **IRIS 2025 Integration**: Empirically-derived actuarial parameters
-- **Distribution Functions**: Log-normal and Beta-PERT distributions
-- **Control Efficacy**: FAIR-CAM methodology with reliability adjustments
+### Data Flow
+- **Risk Calculation**: Collects FAIR parameters, enhances with IRIS data, executes Monte Carlo, aggregates results, updates dashboards.
+- **Asset-Risk Relationship**: Asset registration, risk association, impact calculation, control assignment, aggregated risk exposure tracking.
 
-### 2. Asset Management System
-- **Hierarchy Support**: 5-level enterprise architecture mapping
-- **Value Tracking**: Multi-currency asset valuation
-- **CIA Ratings**: Confidentiality, Integrity, Availability assessments
-- **Dependency Mapping**: Asset relationship tracking
-
-### 3. Control Framework
-- **CIS Controls**: 56+ security controls from CIS framework
-- **Implementation Tracking**: Status monitoring with agent deployment
-- **Cost Analysis**: ROI calculations with per-agent pricing
-- **Effectiveness Metrics**: FAIR-CAM efficacy parameters
-
-### 4. Risk Library System
-- **Template Management**: 27+ risk scenario templates
-- **FAIR Parameters**: Pre-configured threat and vulnerability parameters
-- **Instance Creation**: Risk instantiation from templates
-- **Association Tracking**: Asset and control linkages
-
-## Data Flow
-
-### Risk Calculation Flow
-1. **Input Collection**: FAIR parameters from risk forms
-2. **IRIS Enhancement**: Automatic population of actuarial parameters
-3. **Monte Carlo Execution**: Statistical simulation with control adjustments
-4. **Result Aggregation**: Percentile calculations and exposure metrics
-5. **Dashboard Updates**: Real-time risk summary updates
-
-### Asset-Risk Relationship Flow
-1. **Asset Registration**: Asset creation with valuation and classification
-2. **Risk Association**: Linking risks to affected assets
-3. **Impact Calculation**: Asset value integration into loss magnitude
-4. **Control Assignment**: Protective control mapping to assets
-5. **Exposure Tracking**: Aggregated risk exposure by asset portfolio
+### Deployment Strategy
+- **Containerization**: Docker (multi-stage build).
+- **Database**: Connects to external PostgreSQL.
+- **Configuration**: Environment management, secure session cookies (SameSite=lax).
+- **Migration**: Database recreation (`production-migration.sql`), data import (`data-dumps.sql`), automated backup for rollback.
 
 ## External Dependencies
 
-### Production Dependencies
-- **Database**: PostgreSQL with connection pooling
-- **Authentication**: Passport.js (optional OIDC integration)
-- **Cryptography**: bcryptjs for password hashing
-- **Session Store**: connect-pg-simple for PostgreSQL sessions
-- **HTTP Client**: Axios for external API calls
+### Production
+- **Database**: PostgreSQL
+- **Authentication**: Passport.js
+- **Cryptography**: bcryptjs
+- **Session Store**: connect-pg-simple
+- **HTTP Client**: Axios
 
-### Development Dependencies
+### Development
 - **Build Tools**: esbuild, Vite, TypeScript compiler
 - **Code Quality**: ESLint, Prettier (implicit)
 - **Testing**: Built-in API testing utilities
-- **Monitoring**: Custom logging and diagnostic scripts
-
-## Deployment Strategy
-
-### Docker Containerization
-- **Multi-stage Build**: Separate builder and production stages
-- **External Database**: Connects to existing PostgreSQL instance
-- **Port Configuration**: 5000 (application) with proxy support
-- **Environment Management**: Production-specific configuration files
-
-### Production Configuration
-- **Database URL**: postgresql://user:password@host:port/database
-- **Session Security**: Secure cookies with HTTPS
-- **Authentication Bypass**: Configurable for deployment flexibility
-- **Logging**: Structured logging with request tracking
-
-### Migration Strategy
-- **Schema Rebuild**: Complete database recreation with production-migration.sql
-- **Data Preservation**: Reference data import with data-dumps.sql
-- **Rollback Support**: Automated backup generation before migration
-
-## Changelog
-
-- June 18, 2025. Initial setup
-- June 18, 2025. Added inherent risk curve to Loss Exceedance Curve with smooth interpolation and proper scaling
-- June 18, 2025. Merged "Risk Response Status" and "Top Risks" into single combined card for streamlined dashboard layout
-- June 18, 2025. Implemented intelligent control recommendation system with threat-specific mapping and auto-association API
-- June 18, 2025. Removed "Factors" tab from risk detail view, streamlined interface to focus on Control Suggestions as primary tab
-- June 18, 2025. Created comprehensive asset-type and risk-based control mapping system with intelligent suggestion engine
-- June 18, 2025. Added Control Mapping Manager UI for configuring control relevance based on asset types and risk characteristics
-- June 18, 2025. Fixed all API parameter order issues and validated complete CRUD functionality across application
-- June 18, 2025. Completed Control Mapping Manager with proper sidebar navigation integration and SelectItem validation fixes
-- June 18, 2025. Fixed Control Suggestions API database column reference bug and simplified SQL query to read operational control mappings
-- June 20, 2025. Enhanced Control Mapping Manager with card-based selection interface and multiple risk mapping capability
-- June 20, 2025. Redesigned UI to match application dark theme with proper styling consistency across all components
-- June 20, 2025. Fixed data type handling for control and risk selection ensuring proper single/multi-selection behavior
-- June 20, 2025. Removed Risk Scenario Modeler component from dashboard as it's not currently needed
-- June 20, 2025. Completed comprehensive API validation and fixed all route issues for full system functionality
-- June 20, 2025. Added missing API endpoints for reports, integrations, and vulnerability management
-- June 20, 2025. Restored missing AssetVulnerabilities page that was deleted during reorganization
-- June 20, 2025. Created VulnerabilityImport page for /assets/vulnerabilities/import with comprehensive import functionality
-- June 20, 2025. Fixed vulnerability management system by aligning database schema with existing table structure and implementing complete CRUD operations
-- June 24, 2025. Implemented comprehensive Backstage integration for importing service catalogs from on-premise deployments with full UI, API endpoints, and data transformation capabilities
-- June 24, 2025. Completed comprehensive API testing and database schema fixes - 92% success rate with 23/25 endpoints operational
-- June 24, 2025. Fixed remaining API issues: dashboard summary and assets/vulnerabilities endpoints now fully operational
-- June 24, 2025. Fixed production build issues by replacing react-chartjs-2 with native CSS visualization to ensure successful deployment
-- June 24, 2025. Resolved authentication session persistence issue by fixing cookie configuration and implementing bypass for schema conflicts
-- June 24, 2025. Fixed authentication system completely by replacing complex AuthService with simplified direct database authentication and removing Passport middleware conflicts
-- June 24, 2025. Platform fully operational with $66.9M risk exposure tracking, all API endpoints functional, authentication simplified for production deployment
-- June 24, 2025. Authentication system fully resolved - session persistence working correctly with session regeneration and saveUninitialized:true, maintaining secure auto-detection for production
-- June 24, 2025. Corrected session configuration to use secure SameSite=strict instead of inappropriate SameSite=None, maintaining proper security for same-site application
-- June 24, 2025. Fixed authentication session persistence by removing problematic session.regenerate() call and implementing direct session.save() - authentication now fully operational and production-ready
-- June 24, 2025. Configured Docker production deployment with proper environment variable handling, health checks, and network configuration for existing PostgreSQL database
-- June 24, 2025. Fixed Cloudflare cookie blocking issue by changing production sameSite from 'strict' to 'lax' - strict cookies were being blocked by Cloudflare proxy
-- June 24, 2025. Added domain configuration for session cookies to handle www.sarmiz-one.io subdomain access with .sarmiz-one.io cookie domain
-- June 24, 2025. Fixed session creation issue by restoring session.regenerate() call - sessions now properly create Set-Cookie headers in production environment
-- June 24, 2025. Added comprehensive session store error handling and fallback to memory store to diagnose production session middleware failures
-- June 24, 2025. Created production deployment script to ensure latest session fixes are properly deployed - production was running outdated code without session debugging
-- June 24, 2025. Switched to memory store and manual cookie setting to isolate session middleware issues in production environment
-- June 24, 2025. Identified session storage working correctly (225 sessions in database) - restored PostgreSQL session store and proper session.regenerate() flow
-- June 24, 2025. Fixed session cookie delivery to browsers by moving trust proxy configuration before session middleware - cookies now properly reach client browsers
-- June 24, 2025. Built production server with session cookie fixes and created deployment script - production ready for restart to apply session authentication fixes
-- June 24, 2025. Completed comprehensive session cookie fix with trust proxy configuration, production cookie settings, and simplified session creation - session authentication system ready for production deployment
-- June 24, 2025. Created production schema alignment scripts (production_schema_aligned.sql, production_data_dump.sql) to fix database schema mismatch between development Neon and production PostgreSQL causing API failures
-- June 24, 2025. **FIXED CRITICAL BUG**: Control instance creation from templates now working correctly - fixed PostgreSQL array handling and schema mismatches causing browser errors
-- June 24, 2025. **COMPREHENSIVE API VALIDATION COMPLETED**: All 8 major API endpoints validated and operational - fixed activity logging constraint violations, confirmed full CRUD functionality across assets, risks, controls, and reporting systems
-- June 24, 2025. **CRITICAL DATABASE SCHEMA FIXED**: Resolved PostgreSQL array handling issues and activity_logs constraint violations - control instance creation from templates now fully operational with proper database storage and activity logging restored
-- June 24, 2025. **COMPREHENSIVE ARRAY HANDLING FIXED**: Resolved all PostgreSQL array literal issues across assets, risks, controls, and legal entities - all API endpoints now operational with proper array field handling and database constraint management
-- June 24, 2025. **CONTROL SUGGESTION ENGINE OPERATIONAL**: Fixed control-to-risk mapping system using pattern matching for template relationships - control suggestions now properly display mapped controls with impact categorization and relevance scoring
-- June 24, 2025. **REMOVED FALLBACK CATEGORIZATION**: Control suggestions now rely exclusively on explicit database mappings - no more incorrect fallback suggestions for unmapped risk types
-- June 24, 2025. **FIXED ASSET CREATION DATABASE CONSTRAINT**: Resolved NOT NULL constraint on legal_entity column preventing asset creation - all CRUD operations now functional
-- June 24, 2025. **RESOLVED ALL REMAINING ISSUES**: Fixed React duplicate key warnings in SelectItem components and PUT endpoint validation for partial asset updates - all API endpoints fully operational
-- June 24, 2025. **VULNERABILITY DELETE FUNCTIONALITY ADDED**: Implemented missing delete handlers and mutation for vulnerability management with confirmation dialog and success/error notifications
-- June 24, 2025. **RISK RESPONSE DISPLAY FIXED**: Resolved "Unknown Risk" display issue by fixing orphaned risk response record pointing to deleted risk - updated to reference existing risk for proper name resolution
-- June 24, 2025. **USER MANAGEMENT SYSTEM FIXED**: Created missing /api/auth/users endpoints with full CRUD operations, fixed cache invalidation issues preventing UI updates after user deletion, and resolved XSS vulnerability in confirm dialogs with input sanitization
-- June 24, 2025. **CORRECT LOGO RESTORED**: Fixed sidebar navigation to display proper SARMIZ-ONE logo with dragon emblem and company branding - replaced incorrect placeholder with authentic logo asset
-- June 24, 2025. **API PARAMETER ORDER FIXED**: Resolved API parameter order issues across all components causing fetch errors - corrected apiRequest method/URL parameter sequence in backstage integration, vulnerability management, and vulnerability import pages
-- June 24, 2025. **DATABASE CONNECTION STABILITY IMPROVED**: Optimized connection pool settings to prevent frequent connection cycling in production - reduced max connections, increased idle timeout, and fixed vulnerability deletion schema mismatch
-- June 24, 2025. **XSS SECURITY WARNING REMOVED**: Eliminated browser XSS confirmation dialog by removing unsafe window.confirm usage in vulnerability deletion - replaced with direct deletion for smoother user experience
-- June 24, 2025. **COMPREHENSIVE SCHEMA ASSESSMENT COMPLETED**: PostgreSQL production schema fully validated with all tables, constraints, and relationships operational - schema is deployment-ready with no migration issues identified
-- June 24, 2025. **COMPLETE DATABASE SCHEMA DUMP GENERATED**: Created comprehensive SQL dump with all 25 tables, 17 enums, constraints, indexes, and production-ready structure for deployment reference
-- June 24, 2025. **PRODUCTION DATA DUMP CREATED**: Generated complete data dump for 6 critical tables containing 103 production records including CIS Controls v8.1.2, IRIS 2025 actuarial data, and risk templates with FAIR parameters
-- June 24, 2025. **SCHEMA DUMP POSTGRESQL SYNTAX FIXED**: Resolved reserved keyword conflicts and missing sequence dependencies - schema dump now fully executable without errors
-- June 24, 2025. **FOREIGN KEY DEPENDENCY ISSUES RESOLVED**: Removed all inline foreign key constraints from table definitions and moved to ALTER TABLE statements to eliminate circular dependency errors
-- June 24, 2025. **DUPLICATE CONSTRAINT DEFINITIONS FIXED**: Eliminated duplicate CHECK constraints causing PostgreSQL execution errors - constraints now defined only once in constraints section
-- June 24, 2025. **ALL DUPLICATE CONSTRAINTS ELIMINATED**: Completed systematic removal of all duplicate foreign key and check constraints - schema dump now executes cleanly without constraint conflicts
-- June 24, 2025. **PRODUCTION DATA CONSTRAINT VIOLATION FIXED**: Corrected invalid impact_type value 'likelihood' to 'both' in control_risk_mappings data to satisfy CHECK constraint requirements
-- June 24, 2025. **PRODUCTION SCHEMA MISMATCH RESOLVED**: Updated users table schema definition to match production database structure with all required columns including first_name, last_name, and display_name
-- June 24, 2025. **SCHEMA DUMP USERS TABLE CORRECTED**: Fixed COMPLETE_DATABASE_SCHEMA_DUMP.sql to include complete users table structure with all 33 columns matching production database
-- June 24, 2025. **AUTHENTICATION SERVICE FIELD MAPPING FIXED**: Corrected authService.ts to use proper database field names (isEmailVerified, ssoSubject, displayName) eliminating column not found errors
-- June 24, 2025. **PRODUCTION API ROUTING FIXED**: Created missing logs.ts route handler and built complete production server with all API endpoints including /api/auth/users and /api/logs
-
-## User Preferences
-
-Preferred communication style: Simple, everyday language.
