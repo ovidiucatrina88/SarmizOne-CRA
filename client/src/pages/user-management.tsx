@@ -209,25 +209,160 @@ export default function UserManagementPage() {
 
   return (
     <Layout>
-      <div className="container mx-auto p-6 space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            <Users className="h-8 w-8" />
-            User Management
-          </h1>
-          <p className="text-muted-foreground">
-            Create and manage user accounts with role-based access control
-          </p>
+      <div>
+        <div className="mb-6 flex items-center gap-2">
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={() => setIsCreateDialogOpen(true)}
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            Create User
+          </Button>
+        </div>
+        
+        <div className="mb-6">
+          <div className="bg-gray-800 rounded-lg border border-gray-600">
+            {/* Header */}
+            <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
+              <div className="flex items-center gap-2">
+                <Users className="h-6 w-6 text-white" />
+                <div>
+                  <h3 className="text-lg font-semibold text-white">User Management</h3>
+                  <p className="text-sm text-gray-300 mt-1">Create and manage user accounts with role-based access control</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Users Display */}
+            <div className="bg-gray-800 p-6 rounded-b-lg">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
+                </div>
+              ) : !users?.users || users.users.length === 0 ? (
+                <div className="text-center py-8">
+                  <h3 className="text-lg font-medium mb-2 text-white">No Users Found</h3>
+                  <p className="text-gray-400 mb-4">
+                    Click "Create User" to add your first user account.
+                  </p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Authentication</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Last Login</TableHead>
+                      <TableHead>Created</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {users.users.map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                              user.role === 'admin' ? 'bg-red-600' : 'bg-blue-600'
+                            }`}>
+                              {user.role === 'admin' ? 
+                                <Shield className="h-4 w-4 text-white" /> : 
+                                <ShieldCheck className="h-4 w-4 text-white" />
+                              }
+                            </div>
+                            <div>
+                              <div className="font-medium">{user.displayName}</div>
+                              <div className="text-sm text-muted-foreground">{user.email}</div>
+                              {user.username && (
+                                <div className="text-xs text-muted-foreground">@{user.username}</div>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getAuthTypeBadgeVariant(user.authType)}>
+                            {user.authType === 'local' ? 'Local' : 'SSO'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={getRoleBadgeVariant(user.role)}>
+                            {user.role === 'admin' ? (
+                              <>
+                                <Shield className="h-3 w-3 mr-1" />
+                                Admin
+                              </>
+                            ) : (
+                              <>
+                                <ShieldCheck className="h-3 w-3 mr-1" />
+                                User
+                              </>
+                            )}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={user.isActive ? 'default' : 'secondary'}>
+                            {user.isActive ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {user.lastLogin ? (
+                            <div className="flex items-center gap-1 text-sm">
+                              <Calendar className="h-3 w-3" />
+                              {formatDate(user.lastLogin)}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">Never</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1 text-sm">
+                            <Calendar className="h-3 w-3" />
+                            {formatDate(user.createdAt)}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Select
+                              value={user.role}
+                              onValueChange={(role: 'user' | 'admin') => 
+                                updateRoleMutation.mutate({ userId: user.id, role })
+                              }
+                            >
+                              <SelectTrigger className="w-[100px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="user">User</SelectItem>
+                                <SelectItem value="admin">Admin</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            
+                            {user.isActive && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => deactivateUserMutation.mutate(user.id)}
+                                disabled={deactivateUserMutation.isPending}
+                              >
+                                <UserX className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+          </div>
         </div>
 
+        {/* Create User Dialog */}
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <UserPlus className="h-4 w-4 mr-2" />
-              Create User
-            </Button>
-          </DialogTrigger>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Create New User</DialogTitle>
@@ -355,132 +490,6 @@ export default function UserManagementPage() {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>User Accounts</CardTitle>
-          <CardDescription>
-            Manage user accounts and their access permissions
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full" />
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Authentication</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Last Login</TableHead>
-                  <TableHead>Created</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users?.users?.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                          user.role === 'admin' ? 'bg-red-600' : 'bg-blue-600'
-                        }`}>
-                          {user.role === 'admin' ? 
-                            <Shield className="h-4 w-4 text-white" /> : 
-                            <ShieldCheck className="h-4 w-4 text-white" />
-                          }
-                        </div>
-                        <div>
-                          <div className="font-medium">{user.displayName}</div>
-                          <div className="text-sm text-muted-foreground">{user.email}</div>
-                          {user.username && (
-                            <div className="text-xs text-muted-foreground">@{user.username}</div>
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getAuthTypeBadgeVariant(user.authType)}>
-                        {user.authType === 'local' ? 'Local' : 'SSO'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {user.role === 'admin' ? (
-                          <>
-                            <Shield className="h-3 w-3 mr-1" />
-                            Admin
-                          </>
-                        ) : (
-                          <>
-                            <ShieldCheck className="h-3 w-3 mr-1" />
-                            User
-                          </>
-                        )}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.isActive ? 'default' : 'secondary'}>
-                        {user.isActive ? 'Active' : 'Inactive'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {user.lastLogin ? (
-                        <div className="flex items-center gap-1 text-sm">
-                          <Calendar className="h-3 w-3" />
-                          {formatDate(user.lastLogin)}
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground text-sm">Never</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm">
-                        <Calendar className="h-3 w-3" />
-                        {formatDate(user.createdAt)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Select
-                          value={user.role}
-                          onValueChange={(role: 'user' | 'admin') => 
-                            updateRoleMutation.mutate({ userId: user.id, role })
-                          }
-                        >
-                          <SelectTrigger className="w-[100px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="user">User</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        
-                        {user.isActive && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deactivateUserMutation.mutate(user.id)}
-                            disabled={deactivateUserMutation.isPending}
-                          >
-                            <UserX className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
       </div>
     </Layout>
   );
