@@ -98,24 +98,6 @@ export default function Risks() {
     console.log('Risk deletion initiated for:', risk.name);
   };
 
-  // Page actions for top bar
-  const pageActions = (
-    <div className="flex space-x-2">
-      <Button 
-        variant="ghost" 
-        size="sm" 
-        onClick={handleRefresh} 
-        disabled={isRefreshing}
-        title="Refresh risk data"
-      >
-        <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-      </Button>
-      <Button onClick={handleCreateNew}>
-        <PlusCircle className="mr-2 h-4 w-4" />
-        Add New Risk
-      </Button>
-    </div>
-  );
 
   if (isLoading) {
     return (
@@ -148,61 +130,80 @@ export default function Risks() {
   return (
     <Layout>
       <div>
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Risk Register</h1>
-          <div className="flex items-center gap-2">
-            <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleRefresh} 
-              disabled={isRefreshing}
-              title="Refresh risk data"
-            >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </Button>
-            <Button onClick={handleCreateNew}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Add New Risk
-            </Button>
+        <div className="mb-6 flex items-center gap-2">
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={handleCreateNew}
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add New Risk
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleRefresh} 
+            disabled={isRefreshing}
+            title="Refresh risk data"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
+        </div>
+        
+        <div className="mb-6">
+          <div className="bg-gray-800 rounded-lg border border-gray-600">
+            {/* Header */}
+            <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Risk Register</h3>
+                  <p className="text-sm text-gray-300 mt-1">Manage and monitor cybersecurity risks using FAIR methodology</p>
+                </div>
+                <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
+              </div>
+            </div>
+
+            {/* Risks Display */}
+            <div className="bg-gray-800 p-6 rounded-b-lg">
+              {!Array.isArray(risks) || risks.length === 0 ? (
+                <div className="text-center py-8">
+                  <h3 className="text-lg font-medium mb-2 text-white">No Risks Added Yet</h3>
+                  <p className="text-gray-400 mb-4">
+                    Click "Add New Risk" to create a new risk.
+                  </p>
+                </div>
+              ) : viewMode === 'grouped' ? (
+                <EnhancedAssetGroupedRiskList
+                  risks={risks}
+                  onRiskEdit={handleEdit}
+                  onRiskDelete={handleDelete}
+                />
+              ) : (
+                <RiskList
+                  risks={risks}
+                  onEdit={handleEdit}
+                />
+              )}
+            </div>
           </div>
         </div>
 
-        {!Array.isArray(risks) || risks.length === 0 ? (
-          <Card className="p-8">
-            <div className="text-center">
-              <h3 className="text-lg font-medium mb-2">No Risks Added Yet</h3>
-              <p className="text-gray-500 mb-4">Click "Add New Risk" to create a new risk.</p>
-            </div>
-          </Card>
-        ) : viewMode === 'grouped' ? (
-          <EnhancedAssetGroupedRiskList
-            risks={risks}
-            onRiskEdit={handleEdit}
-            onRiskDelete={handleDelete}
-          />
-        ) : (
-          <RiskList
-            risks={risks}
-            onEdit={handleEdit}
-          />
-        )}
-
-      {/* Risk Form Dialog */}
-      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="max-w-8xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{selectedRisk ? "Edit Risk" : "Create New Risk"}</DialogTitle>
-            <DialogDescription>
-              Define risk parameters using the FAIR-U methodology
-            </DialogDescription>
-          </DialogHeader>
-          <RiskForm 
-            risk={selectedRisk} 
-            onClose={handleClose} 
-          />
-        </DialogContent>
-      </Dialog>
+        {/* Risk Form Dialog */}
+        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+          <DialogContent className="max-w-8xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedRisk ? "Edit Risk" : "Create New Risk"}</DialogTitle>
+              <DialogDescription>
+                Define risk parameters using the FAIR-U methodology
+              </DialogDescription>
+            </DialogHeader>
+            <RiskForm 
+              risk={selectedRisk} 
+              onClose={handleClose} 
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </Layout>
   );
