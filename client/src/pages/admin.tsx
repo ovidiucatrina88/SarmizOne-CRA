@@ -588,29 +588,32 @@ export default function AdminPage() {
         
         {/* Users Tab */}
         <TabsContent value="users" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>
-                  Create and manage user accounts with role-based access control
-                </CardDescription>
+          <div className="bg-gray-800 rounded-lg border border-gray-600">
+            <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
+              <div className="flex flex-row items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">User Management</h3>
+                  <p className="text-sm text-gray-300 mt-1">
+                    Create and manage user accounts with role-based access control
+                  </p>
+                </div>
+                <CreateUserDialog />
               </div>
-              <CreateUserDialog />
-            </CardHeader>
-            <CardContent>
+            </div>
+            <div className="bg-gray-800 p-6 rounded-b-lg">
               <UserTable />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
         
         {/* Logs Tab */}
         <TabsContent value="logs" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Activity Logs</CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="bg-gray-800 rounded-lg border border-gray-600">
+            <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
+              <h3 className="text-lg font-semibold text-white">Activity Logs</h3>
+              <p className="text-sm text-gray-300 mt-1">System activity and user action logs</p>
+            </div>
+            <div className="bg-gray-800 p-6 rounded-b-lg">
               {isLoadingLogs ? (
                 <div className="flex justify-center py-8">
                   <RefreshCw className="h-6 w-6 animate-spin text-primary" />
@@ -649,8 +652,8 @@ export default function AdminPage() {
                   No logs available
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
         
         {/* Security Tab */}
