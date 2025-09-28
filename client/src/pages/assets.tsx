@@ -57,12 +57,6 @@ export default function Assets() {
     setSelectedAsset(null);
   };
 
-  const pageActions = (
-    <Button onClick={handleCreateNew} className="bg-blue-600 hover:bg-blue-700">
-      <PlusCircle className="mr-2 h-4 w-4" />
-      Add New Asset
-    </Button>
-  );
 
   if (isLoading) {
     return (
@@ -92,13 +86,43 @@ export default function Assets() {
   }
 
   return (
-    <Layout
-      pageTitle="Asset Management"
-      pageDescription="Manage your organization's digital assets and their risk profiles"
-      pageActions={pageActions}
-    >
+    <Layout>
       <div>
-        <AssetList assets={assets} onEdit={handleEdit} />
+        <div className="mb-6 flex items-center gap-2">
+          <Button 
+            variant="default" 
+            size="sm" 
+            onClick={handleCreateNew}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add New Asset
+          </Button>
+        </div>
+        
+        <div className="mb-6">
+          <div className="bg-gray-800 rounded-lg border border-gray-600">
+            {/* Header */}
+            <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
+              <h3 className="text-lg font-semibold text-white">Asset Management</h3>
+              <p className="text-sm text-gray-300 mt-1">Manage your organization's digital assets and their risk profiles</p>
+            </div>
+
+            {/* Assets Display */}
+            <div className="bg-gray-800 p-6 rounded-b-lg">
+              {!Array.isArray(assets) || assets.length === 0 ? (
+                <div className="text-center py-8">
+                  <h3 className="text-lg font-medium mb-2 text-white">No Assets Found</h3>
+                  <p className="text-gray-400 mb-4">
+                    Click "Add New Asset" to create your first asset.
+                  </p>
+                </div>
+              ) : (
+                <AssetList assets={assets} onEdit={handleEdit} />
+              )}
+            </div>
+          </div>
+        </div>
 
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
           <DialogContent className="max-w-[95vw] w-full max-h-[95vh] overflow-y-auto sm:max-w-2xl md:max-w-4xl lg:max-w-5xl xl:max-w-6xl">
