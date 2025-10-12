@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { RefreshCw, PlusCircle } from "lucide-react";
+import { RefreshCw, PlusCircle, Shield } from "lucide-react";
 import { RiskList } from "@/components/risks/risk-list";
 import { EnhancedAssetGroupedRiskList } from "@/components/risks/enhanced-asset-grouped-risk-list";
 import { ViewToggle } from "@/components/risks/view-toggle";
@@ -155,13 +155,18 @@ export default function Risks() {
           <div className="bg-gray-800 rounded-lg border border-gray-600">
             {/* Header */}
             <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
-              <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <Shield className="h-6 w-6 text-white" />
                 <div>
                   <h3 className="text-lg font-semibold text-white">Risk Register</h3>
-                  <p className="text-sm text-gray-300 mt-1">Manage and monitor cybersecurity risks using FAIR methodology</p>
+                  <p className="text-sm text-gray-300 mt-1">FAIR-based quantitative risk analysis</p>
                 </div>
-                <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
               </div>
+            </div>
+
+            {/* View Toggle */}
+            <div className="bg-gray-700 px-6 py-3 border-b border-gray-600">
+              <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
             </div>
 
             {/* Risks Display */}

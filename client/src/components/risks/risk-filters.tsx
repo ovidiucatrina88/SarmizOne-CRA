@@ -46,35 +46,32 @@ export function RiskFiltersComponent({
   const activeFilterCount = [filters.asset, filters.severity, filters.category].filter(Boolean).length;
 
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Filter className="w-5 h-5 text-muted-foreground" />
-            <CardTitle className="text-lg">Filters</CardTitle>
-          </div>
-          {hasActiveFilters && (
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs">
-                {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active
-              </Badge>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={clearFilters}
-                className="h-7 px-2"
-              >
-                <X className="h-3 w-3 mr-1" />
-                Clear
-              </Button>
-            </div>
-          )}
+    <div className="space-y-4">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          <Filter className="w-5 h-5 text-gray-400" />
+          <h3 className="text-lg font-semibold text-white">Filters</h3>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col gap-4">
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {hasActiveFilters && (
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-xs">
+              {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearFilters}
+              className="h-7 px-2"
+            >
+              <X className="h-3 w-3 mr-1" />
+              Clear
+            </Button>
+          </div>
+        )}
+      </div>
+      
+      <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Asset Filter */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">Asset</label>
@@ -157,21 +154,20 @@ export function RiskFiltersComponent({
             </div>
           </div>
 
-          {/* Results Summary */}
-          {riskCounts && (
-            <div className="flex items-center gap-2 pt-2 border-t">
-              <span className="text-sm text-gray-600">
-                Showing {riskCounts.filtered} of {riskCounts.total} risks
-              </span>
-              {hasActiveFilters && riskCounts.filtered !== riskCounts.total && (
-                <Badge variant="outline" className="text-xs">
-                  {riskCounts.total - riskCounts.filtered} hidden
-                </Badge>
-              )}
-            </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+        {/* Results Summary */}
+        {riskCounts && (
+          <div className="flex items-center gap-2 pt-2 border-t border-gray-600">
+            <span className="text-sm text-gray-300">
+              Showing {riskCounts.filtered} of {riskCounts.total} risks
+            </span>
+            {hasActiveFilters && riskCounts.filtered !== riskCounts.total && (
+              <Badge variant="outline" className="text-xs">
+                {riskCounts.total - riskCounts.filtered} hidden
+              </Badge>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
