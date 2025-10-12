@@ -274,42 +274,42 @@ export function EnhancedAssetGroupedRiskList({
       {/* Asset Groups */}
       <div className="space-y-4">
         {assetGroups.length === 0 ? (
-          <Card>
+          <Card className="bg-gray-800 border-gray-600">
             <CardContent className="p-6 text-center">
-              <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mb-2">No risks found</h3>
-              <p className="text-muted-foreground">
+              <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-lg font-semibold mb-2 text-white">No risks found</h3>
+              <p className="text-gray-400">
                 No risks match your current filter criteria.
               </p>
             </CardContent>
           </Card>
         ) : (
           assetGroups.map(group => (
-            <Card key={group.assetId} className="overflow-hidden">
+            <Card key={group.assetId} className="overflow-hidden bg-gray-800 border-gray-600">
               <Collapsible 
                 open={expandedAssets.has(group.assetId)}
                 onOpenChange={() => toggleAssetExpansion(group.assetId)}
               >
                 <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                  <CardHeader className="cursor-pointer hover:bg-gray-700 transition-colors bg-gray-700">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         {expandedAssets.has(group.assetId) ? (
-                          <ChevronDown className="w-5 h-5" />
+                          <ChevronDown className="w-5 h-5 text-gray-400" />
                         ) : (
-                          <ChevronRight className="w-5 h-5" />
+                          <ChevronRight className="w-5 h-5 text-gray-400" />
                         )}
-                        <Building2 className="w-5 h-5 text-muted-foreground" />
+                        <Building2 className="w-5 h-5 text-gray-400" />
                         <div>
-                          <CardTitle className="text-lg">{group.assetName}</CardTitle>
+                          <CardTitle className="text-lg text-white">{group.assetName}</CardTitle>
                           <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs border-gray-500 text-gray-300">
                               {group.risks.length} risk{group.risks.length !== 1 ? 's' : ''}
                             </Badge>
                             <Badge className={`text-xs ${getSeverityColor(group.highestSeverity)}`}>
                               Highest: {group.highestSeverity}
                             </Badge>
-                            <span className="text-sm text-muted-foreground">
+                            <span className="text-sm text-gray-300">
                               Total Exposure: {formatCurrency(group.totalExposure)}
                             </span>
                           </div>
@@ -342,24 +342,24 @@ export function EnhancedAssetGroupedRiskList({
                 </CollapsibleTrigger>
                 
                 <CollapsibleContent>
-                  <CardContent className="pt-0">
+                  <CardContent className="pt-0 bg-gray-800">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead>Risk</TableHead>
-                          <TableHead>Severity</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Residual Risk</TableHead>
-                          <TableHead>Actions</TableHead>
+                        <TableRow className="border-gray-600 hover:bg-transparent">
+                          <TableHead className="text-gray-300">Risk</TableHead>
+                          <TableHead className="text-gray-300">Severity</TableHead>
+                          <TableHead className="text-gray-300">Category</TableHead>
+                          <TableHead className="text-gray-300">Residual Risk</TableHead>
+                          <TableHead className="text-gray-300">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {group.risks.map(risk => (
-                          <TableRow key={risk.id} className="cursor-pointer hover:bg-muted/50">
+                          <TableRow key={risk.id} className="cursor-pointer hover:bg-gray-700 border-gray-600">
                             <TableCell>
                               <div>
-                                <div className="font-medium">{risk.name}</div>
-                                <div className="text-sm text-muted-foreground line-clamp-2">
+                                <div className="font-medium text-white">{risk.name}</div>
+                                <div className="text-sm text-gray-400 line-clamp-2">
                                   {risk.description}
                                 </div>
                               </div>
@@ -370,9 +370,9 @@ export function EnhancedAssetGroupedRiskList({
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              <Badge variant="outline">{risk.riskCategory}</Badge>
+                              <Badge variant="outline" className="border-gray-500 text-gray-300">{risk.riskCategory}</Badge>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="text-gray-300">
                               {formatCurrency(Number(risk.residualRisk) || 0)}
                             </TableCell>
                             <TableCell>
@@ -384,6 +384,7 @@ export function EnhancedAssetGroupedRiskList({
                                     e.stopPropagation();
                                     handleRiskClick(risk);
                                   }}
+                                  className="text-gray-300 hover:bg-gray-600"
                                 >
                                   <ExternalLink className="w-4 h-4" />
                                 </Button>
@@ -394,6 +395,7 @@ export function EnhancedAssetGroupedRiskList({
                                     e.stopPropagation();
                                     onRiskEdit?.(risk);
                                   }}
+                                  className="text-gray-300 hover:bg-gray-600"
                                 >
                                   <Edit className="w-4 h-4" />
                                 </Button>
@@ -404,7 +406,7 @@ export function EnhancedAssetGroupedRiskList({
                                     e.stopPropagation();
                                     setRiskToDelete(risk);
                                   }}
-                                  className="text-red-600 hover:text-red-800"
+                                  className="text-gray-300 hover:bg-gray-600 hover:text-red-400"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>
