@@ -98,70 +98,70 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'high': return 'bg-red-500 text-white';
+      case 'medium': return 'bg-yellow-500 text-black';
+      case 'low': return 'bg-green-500 text-white';
+      default: return 'bg-gray-500 text-white';
     }
   };
 
   const renderControlCard = (control: ControlSuggestion) => (
-    <Card key={control.controlId} className="mb-4 bg-[#2a2a2a] border-gray-600">
-      <CardHeader className="pb-3">
+    <Card key={control.controlId} className="mb-4 bg-gray-800 border-gray-600">
+      <CardHeader className="pb-3 bg-gray-700">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <CardTitle className="text-lg">{control.name}</CardTitle>
-            <CardDescription className="text-sm">{control.description}</CardDescription>
+            <CardTitle className="text-lg text-white">{control.name}</CardTitle>
+            <CardDescription className="text-sm text-gray-400">{control.description}</CardDescription>
           </div>
           <div className="flex items-center space-x-2">
             <Badge className={getPriorityColor(control.priority)}>
               {control.priority} priority
             </Badge>
-            <Badge variant="outline">
+            <Badge variant="outline" className="border-gray-500 text-gray-300">
               {Math.round(control.matchScore)}% match
             </Badge>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-300">
           <div className="flex items-center space-x-2">
-            <Shield className="h-4 w-4 text-blue-500" />
+            <Shield className="h-4 w-4 text-blue-400" />
             <span>{control.controlEffectiveness}/10 effectiveness</span>
           </div>
           <div className="flex items-center space-x-2">
-            <TrendingDown className="h-4 w-4 text-green-500" />
+            <TrendingDown className="h-4 w-4 text-green-400" />
             <span>{formatCurrency(control.estimatedRiskReduction)} reduction</span>
           </div>
           <div className="flex items-center space-x-2">
-            <DollarSign className="h-4 w-4 text-purple-500" />
+            <DollarSign className="h-4 w-4 text-purple-400" />
             <span>{control.roi > 0 ? '+' : ''}{control.roi.toFixed(1)}% ROI</span>
           </div>
           <div className="flex items-center space-x-2">
-            <Calendar className="h-4 w-4 text-orange-500" />
+            <Calendar className="h-4 w-4 text-orange-400" />
             <span>{control.paybackMonths.toFixed(1)} mo payback</span>
           </div>
         </div>
         
-        <div className="text-sm text-gray-600">
-          <strong>Reasoning:</strong> {control.reasoning}
+        <div className="text-sm text-gray-300">
+          <strong className="text-white">Reasoning:</strong> {control.reasoning}
         </div>
 
-        <div className="text-sm">
-          <strong>Implementation Cost:</strong> {formatCurrency(Number(control.implementationCost))}
+        <div className="text-sm text-gray-300">
+          <strong className="text-white">Implementation Cost:</strong> {formatCurrency(Number(control.implementationCost))}
           {control.isPerAgentPricing && (
-            <span className="text-gray-500"> + {formatCurrency(Number(control.costPerAgent))}/agent</span>
+            <span className="text-gray-400"> + {formatCurrency(Number(control.costPerAgent))}/agent</span>
           )}
         </div>
 
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <Badge variant="secondary">{control.controlType}</Badge>
-            <Badge variant="outline">{control.controlCategory}</Badge>
+            <Badge variant="secondary" className="bg-gray-600 text-gray-200">{control.controlType}</Badge>
+            <Badge variant="outline" className="border-gray-500 text-gray-300">{control.controlCategory}</Badge>
           </div>
           
           {control.isAssociated ? (
-            <Badge variant="default" className="bg-green-100 text-green-800">
+            <Badge variant="default" className="bg-green-600 text-white">
               Already Associated
             </Badge>
           ) : (
@@ -169,6 +169,7 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
               size="sm"
               onClick={() => handleAssociateControl(control.controlId)}
               disabled={associateControlMutation.isPending}
+              className="bg-blue-600 hover:bg-blue-700"
             >
               {associateControlMutation.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -184,7 +185,7 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
 
   if (isLoading) {
     return (
-      <Card className="bg-[#1e1e1e] border-gray-700">
+      <Card className="bg-gray-800 border-gray-600">
         <CardContent className="flex items-center justify-center py-8">
           <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
           <span className="ml-2 text-white">Loading control suggestions...</span>
@@ -195,7 +196,7 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
 
   if (error) {
     return (
-      <Card className="bg-[#1e1e1e] border-gray-700">
+      <Card className="bg-gray-800 border-gray-600">
         <CardContent className="py-8 text-center">
           <p className="text-red-400 mb-2">Failed to load control suggestions</p>
           <p className="text-gray-400 text-sm">{error.message}</p>
@@ -206,7 +207,7 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
 
   if (!suggestions) {
     return (
-      <Card className="bg-[#1e1e1e] border-gray-700">
+      <Card className="bg-gray-800 border-gray-600">
         <CardContent className="py-8 text-center text-gray-400">
           No control suggestions available
         </CardContent>
@@ -223,8 +224,8 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
   return (
     <div className="space-y-6">
       {/* Risk Exposure Summary */}
-      <Card className="bg-[#1e1e1e] border-gray-700">
-        <CardHeader>
+      <Card className="bg-gray-800 border-gray-600">
+        <CardHeader className="bg-gray-700">
           <CardTitle className="flex items-center space-x-2 text-white">
             <Target className="h-5 w-5 text-orange-500" />
             <span>Current Risk Exposure</span>
@@ -250,16 +251,16 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
 
       {/* Control Suggestions Tabs */}
       <Tabs defaultValue="likelihood" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-[#2a2a2a] border-gray-600">
-          <TabsTrigger value="likelihood" className="flex items-center space-x-2">
+        <TabsList className="grid w-full grid-cols-3 bg-gray-700 border-gray-600">
+          <TabsTrigger value="likelihood" className="flex items-center space-x-2 data-[state=active]:bg-gray-800 data-[state=active]:text-white">
             <TrendingDown className="h-4 w-4" />
             <span>Reduce Likelihood ({suggestions.likelihoodControls?.length || 0})</span>
           </TabsTrigger>
-          <TabsTrigger value="magnitude" className="flex items-center space-x-2">
+          <TabsTrigger value="magnitude" className="flex items-center space-x-2 data-[state=active]:bg-gray-800 data-[state=active]:text-white">
             <TrendingUp className="h-4 w-4" />
             <span>Reduce Impact ({suggestions.magnitudeControls?.length || 0})</span>
           </TabsTrigger>
-          <TabsTrigger value="both" className="flex items-center space-x-2">
+          <TabsTrigger value="both" className="flex items-center space-x-2 data-[state=active]:bg-gray-800 data-[state=active]:text-white">
             <Shield className="h-4 w-4" />
             <span>Both ({suggestions.bothControls?.length || 0})</span>
           </TabsTrigger>
@@ -273,7 +274,7 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
             {suggestions.likelihoodControls?.length > 0 ? (
               suggestions.likelihoodControls.map(renderControlCard)
             ) : (
-              <Card className="bg-[#1e1e1e] border-gray-700">
+              <Card className="bg-gray-800 border-gray-600">
                 <CardContent className="py-8 text-center text-gray-400">
                   No likelihood-focused controls available
                 </CardContent>
@@ -290,7 +291,7 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
             {suggestions.magnitudeControls?.length > 0 ? (
               suggestions.magnitudeControls.map(renderControlCard)
             ) : (
-              <Card className="bg-[#1e1e1e] border-gray-700">
+              <Card className="bg-gray-800 border-gray-600">
                 <CardContent className="py-8 text-center text-gray-400">
                   No impact-focused controls available
                 </CardContent>
@@ -307,7 +308,7 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
             {suggestions.bothControls?.length > 0 ? (
               suggestions.bothControls.map(renderControlCard)
             ) : (
-              <Card className="bg-[#1e1e1e] border-gray-700">
+              <Card className="bg-gray-800 border-gray-600">
                 <CardContent className="py-8 text-center text-gray-400">
                   No dual-impact controls available
                 </CardContent>
