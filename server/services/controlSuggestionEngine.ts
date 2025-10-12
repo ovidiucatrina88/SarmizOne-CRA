@@ -226,6 +226,47 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
       
       console.log(`[ControlSuggestions] Using explicit mapping for control ${control.control_id}: ${control.risk_impact_type}, score: ${baseScore}`);
       
+      // Calculate estimated risk reduction based on control effectiveness and current risk exposure
+      const controlEffectiveness = Number(control.control_effectiveness || 7) / 10; // Convert 0-10 scale to 0-1
+      const currentRisk = currentExposure.residual || currentExposure.inherent;
+      
+      // Estimate risk reduction: effectiveness × relevance score × current risk
+      // For likelihood controls: reduce probability (typically 30-70% of risk)
+      // For magnitude controls: reduce impact (typically 20-50% of risk)
+      // For both: combined effect (typically 40-80% of risk)
+      let reductionFactor = controlEffectiveness * (baseScore / 100);
+      if (impactCategory.category === 'likelihood') {
+        reductionFactor *= 0.5; // Likelihood controls typically reduce 50% max
+      } else if (impactCategory.category === 'magnitude') {
+        reductionFactor *= 0.35; // Magnitude controls typically reduce 35% max
+      } else { // both
+        reductionFactor *= 0.6; // Combined controls can reduce up to 60%
+      }
+      
+      const estimatedRiskReduction = currentRisk * reductionFactor;
+      
+      // Calculate implementation cost
+      const baseImplementationCost = parseFloat(control.implementation_cost || '1000');
+      const costPerAgent = parseFloat(control.cost_per_agent || '100');
+      const isPerAgentPricing = Boolean(control.is_per_agent_pricing || control.is_per_agent || false);
+      
+      // For suggestions, estimate agent count from risk's associated assets (if available)
+      // Default to 10 agents as a reasonable estimate for per-agent pricing
+      const estimatedAgents = 10;
+      const implementationCost = isPerAgentPricing 
+        ? costPerAgent * estimatedAgents 
+        : baseImplementationCost;
+      
+      // Calculate ROI: (risk reduction - implementation cost) / implementation cost
+      const roi = implementationCost > 0 
+        ? ((estimatedRiskReduction - implementationCost) / implementationCost) * 100 
+        : 0;
+      
+      // Calculate payback period in months: (implementation cost / annual risk reduction) × 12
+      const paybackMonths = estimatedRiskReduction > 0 
+        ? (implementationCost / estimatedRiskReduction) * 12 
+        : 999;
+      
       const suggestion: ControlSuggestion = {
         controlId: String(control.control_id || ''),
         name: String(control.name || ''),
@@ -243,9 +284,9 @@ export async function getControlSuggestions(riskId: string): Promise<ControlSugg
         priority: baseScore >= 80 ? 'high' : baseScore >= 60 ? 'medium' : 'low',
         reasoning: impactCategory.reasoning,
         
-        estimatedRiskReduction: Math.min(25, baseScore / 4),
-        roi: 2.5,
-        paybackMonths: 12,
+        estimatedRiskReduction: Math.round(estimatedRiskReduction),
+        roi: Math.round(roi * 10) / 10, // Round to 1 decimal place
+        paybackMonths: Math.min(Math.round(paybackMonths), 999), // Cap at 999 months
         isAssociated: associatedControlIds.has(String(control.control_id || ''))
       };
       
