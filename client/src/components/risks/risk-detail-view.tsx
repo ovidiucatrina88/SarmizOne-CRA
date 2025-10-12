@@ -8,6 +8,7 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { getThreatSpecificSuggestions, type ControlRecommendation } from "@shared/utils/controlRecommendation";
 import { ControlSuggestionsPanel } from "./ControlSuggestionsPanel";
+import { LossExceedanceCurveModern } from "@/components/ui/loss-exceedance-curve-modern";
 
 interface RiskDetailViewProps {
   risk: Risk;
@@ -63,6 +64,17 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
   
   // Ensure controls is always an array
   const controls = Array.isArray(controlsData) ? controlsData : [];
+  
+  // Fetch IRIS benchmark data (same endpoint as dashboard)
+  const { data: irisData } = useQuery({
+    queryKey: ["/api/dashboard/iris-benchmarks"],
+  });
+
+  // Fetch risk calculation results for exposure data
+  const { data: calculationData } = useQuery({
+    queryKey: ["/api/risks", risk.id, "calculate"],
+    enabled: !!risk.id,
+  });
   
   // Get threat-specific control suggestions when no real controls exist
   const controlSuggestions = useMemo(() => {
@@ -143,11 +155,29 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
 
         {/* Loss Exceedance Curve Tab Content */}
         <TabsContent value="curve" className="flex-1 p-4">
-          <div className="bg-[#1e1e1e] rounded-lg p-6">
-            <h2 className="text-lg font-medium mb-4">Loss Exceedance Curve</h2>
-            <p className="text-gray-400 mb-8">
-              The curve will be implemented in a future update.
-            </p>
+          <div className="bg-gray-800 rounded-lg border border-gray-600 overflow-hidden">
+            <div className="bg-gray-700 px-6 py-4 border-b border-gray-600">
+              <h2 className="text-lg font-medium text-white">Loss Exceedance Curve</h2>
+            </div>
+            <div className="p-6">
+              <LossExceedanceCurveModern 
+                risks={[risk]}
+                currentExposure={calculationData?.data ? {
+                  minimumExposure: calculationData.data.monteCarloResults?.p05 || 0,
+                  averageExposure: calculationData.data.monteCarloResults?.mean || calculationData.data.residualRisk || 0,
+                  maximumExposure: calculationData.data.monteCarloResults?.max || 0,
+                  tenthPercentile: calculationData.data.monteCarloResults?.p05 || 0,
+                  mostLikely: calculationData.data.monteCarloResults?.p50 || calculationData.data.residualRisk || 0,
+                  ninetiethPercentile: calculationData.data.monteCarloResults?.p90 || 0,
+                  exposureCurveData: calculationData.data.monteCarloResults?.exceedanceCurve || []
+                } : undefined}
+                irisBenchmarks={irisData?.data ? {
+                  smb: irisData.data.exceedanceCurves?.smb || [],
+                  enterprise: irisData.data.exceedanceCurves?.enterprise || []
+                } : undefined}
+                filterType="all"
+              />
+            </div>
           </div>
         </TabsContent>
       </Tabs>
