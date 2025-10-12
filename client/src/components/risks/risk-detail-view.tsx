@@ -70,11 +70,31 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
     queryKey: ["/api/dashboard/iris-benchmarks"],
   });
 
-  // Fetch risk calculation results for exposure data
-  const { data: calculationData } = useQuery({
-    queryKey: ["/api/risks", risk.id, "calculate"],
-    enabled: !!risk.id,
-  });
+  // Construct exposure data from risk's inherent and residual risk values
+  const currentExposure = useMemo(() => {
+    const inherent = parseFloat(risk.inherentRisk || '0');
+    const residual = parseFloat(risk.residualRisk || '0');
+    
+    if (residual === 0) return undefined;
+    
+    // Create simple exposure curve with 4 probability points
+    const exposureCurveData = [
+      { impact: residual * 1.5, probability: 0.10 },  // 10% probability (high impact)
+      { impact: residual, probability: 0.50 },        // 50% probability (median)
+      { impact: residual * 0.7, probability: 0.75 },  // 75% probability 
+      { impact: residual * 0.3, probability: 0.95 }   // 95% probability (low impact)
+    ];
+    
+    return {
+      minimumExposure: residual * 0.3,
+      averageExposure: residual,
+      maximumExposure: residual * 1.5,
+      tenthPercentile: residual * 0.5,
+      mostLikely: residual,
+      ninetiethPercentile: residual * 1.3,
+      exposureCurveData
+    };
+  }, [risk.inherentRisk, risk.residualRisk]);
   
   // Get threat-specific control suggestions when no real controls exist
   const controlSuggestions = useMemo(() => {
@@ -162,15 +182,7 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
             <div className="p-6">
               <LossExceedanceCurveModern 
                 risks={[risk]}
-                currentExposure={calculationData?.data ? {
-                  minimumExposure: calculationData.data.monteCarloResults?.p05 || 0,
-                  averageExposure: calculationData.data.monteCarloResults?.mean || calculationData.data.residualRisk || 0,
-                  maximumExposure: calculationData.data.monteCarloResults?.max || 0,
-                  tenthPercentile: calculationData.data.monteCarloResults?.p05 || 0,
-                  mostLikely: calculationData.data.monteCarloResults?.p50 || calculationData.data.residualRisk || 0,
-                  ninetiethPercentile: calculationData.data.monteCarloResults?.p90 || 0,
-                  exposureCurveData: calculationData.data.monteCarloResults?.exceedanceCurve || []
-                } : undefined}
+                currentExposure={currentExposure}
                 irisBenchmarks={irisData?.data ? {
                   smb: irisData.data.exceedanceCurves?.smb || [],
                   enterprise: irisData.data.exceedanceCurves?.enterprise || []
