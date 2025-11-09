@@ -9,12 +9,6 @@ import { AnnualizedLossFactors } from "@/components/risks/annualized-loss-factor
 import { Link, useLocation } from "wouter";
 
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Table,
   TableBody,
   TableCell,
@@ -35,14 +29,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Search, ChevronLeft, ChevronRight, Calculator, Tv, ExternalLink, Shield, AlertTriangle } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { 
   Dialog, 
   DialogContent,
@@ -50,7 +36,9 @@ import {
   DialogTitle,
   DialogDescription
 } from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
+import { GlowCard } from "@/components/ui/glow-card";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type RiskListProps = {
   risks: Risk[];
@@ -81,17 +69,20 @@ export function RiskList({
   const itemsPerPage = 10;
 
   // Filter risks based on search query and filters
-  const filteredRisks = risks?.filter((risk) => {
-    const matchesSearch =
-      risk.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      risk.riskId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      risk.threatCommunity.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = filterCategory === "all" || risk.riskCategory === filterCategory;
-    const matchesSeverity = filterSeverity === "all" || risk.severity === filterSeverity;
-    
-    return matchesSearch && matchesCategory && matchesSeverity;
-  }) || [];
+  const filteredRisks =
+    risks?.filter((risk) => {
+      const matchesSearch =
+        risk.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        risk.riskId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        risk.threatCommunity.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesCategory =
+        filterCategory === "all" || risk.riskCategory?.toLowerCase() === filterCategory;
+      const matchesSeverity =
+        filterSeverity === "all" || risk.severity?.toLowerCase() === filterSeverity;
+
+      return matchesSearch && matchesCategory && matchesSeverity;
+    }) || [];
   
   // Calculate pagination
   const totalPages = Math.ceil(filteredRisks.length / itemsPerPage);
@@ -233,45 +224,28 @@ export function RiskList({
     setDetailsRisk(risk);
     setDetailsOpen(true);
   };
-  
-  // Get severity badge color
-  const getSeverityColor = (severity: string) => {
-    switch(severity) {
-      case "critical": return "bg-red-100 text-red-800";
-      case "high": return "bg-amber-100 text-amber-800";
-      case "medium": return "bg-yellow-100 text-yellow-800";
-      case "low": return "bg-green-100 text-green-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-  
-  // Get category badge color
-  const getCategoryColor = (category: string) => {
-    switch(category) {
-      case "operational": return "bg-blue-100 text-blue-800";
-      case "strategic": return "bg-indigo-100 text-indigo-800";
-      case "compliance": return "bg-purple-100 text-purple-800";
-      case "financial": return "bg-teal-100 text-teal-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
+  const severityStyles: Record<string, string> = {
+    Critical: "bg-rose-500/15 text-rose-200 border border-rose-400/40",
+    High: "bg-amber-500/15 text-amber-200 border border-amber-400/40",
+    Medium: "bg-sky-500/15 text-sky-200 border border-sky-400/40",
+    Low: "bg-emerald-500/15 text-emerald-200 border border-emerald-400/40",
   };
 
   return (
     <>
-      <div className="bg-gray-800 rounded-lg border border-gray-600">
-        {/* Search and Filter Controls */}
-        <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
-          <div className="flex items-center space-x-3">
+      <GlowCard className="p-0">
+        <div className="border-b border-white/10 px-6 py-4">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+              <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-white/40" />
               <Input
                 type="search"
                 placeholder="Search risks..."
-                className="w-full pl-8 bg-gray-600 border-gray-500 text-white placeholder-gray-400 focus:border-blue-500"
+                className="w-full rounded-2xl border border-white/10 bg-white/5 pl-9 text-white placeholder:text-white/40 focus-visible:ring-0"
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  setCurrentPage(1); // Reset to first page on search
+                  setCurrentPage(1);
                 }}
               />
             </div>
@@ -279,147 +253,113 @@ export function RiskList({
               value={filterCategory}
               onValueChange={(value) => {
                 setFilterCategory(value);
-                setCurrentPage(1); // Reset to first page on filter change
+                setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="w-40 bg-gray-600 border-gray-500 text-white">
+              <SelectTrigger className="w-48 rounded-2xl border border-white/10 bg-white/5 text-white">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-700 border-gray-600">
-                <SelectItem value="all" className="text-white hover:bg-gray-600">All Categories</SelectItem>
-                <SelectItem value="operational" className="text-white hover:bg-gray-600">Operational</SelectItem>
-                <SelectItem value="strategic" className="text-white hover:bg-gray-600">Strategic</SelectItem>
-                <SelectItem value="compliance" className="text-white hover:bg-gray-600">Compliance</SelectItem>
-                <SelectItem value="financial" className="text-white hover:bg-gray-600">Financial</SelectItem>
+              <SelectContent className="border-white/10 bg-surface-muted text-white">
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="operational">Operational</SelectItem>
+                <SelectItem value="strategic">Strategic</SelectItem>
+                <SelectItem value="compliance">Compliance</SelectItem>
+                <SelectItem value="financial">Financial</SelectItem>
               </SelectContent>
             </Select>
             <Select
               value={filterSeverity}
               onValueChange={(value) => {
                 setFilterSeverity(value);
-                setCurrentPage(1); // Reset to first page on filter change
+                setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="w-40 bg-gray-600 border-gray-500 text-white">
+              <SelectTrigger className="w-48 rounded-2xl border border-white/10 bg-white/5 text-white">
                 <SelectValue placeholder="Severity" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-700 border-gray-600">
-                <SelectItem value="all" className="text-white hover:bg-gray-600">All Severities</SelectItem>
-                <SelectItem value="critical" className="text-white hover:bg-gray-600">Critical</SelectItem>
-                <SelectItem value="high" className="text-white hover:bg-gray-600">High</SelectItem>
-                <SelectItem value="medium" className="text-white hover:bg-gray-600">Medium</SelectItem>
-                <SelectItem value="low" className="text-white hover:bg-gray-600">Low</SelectItem>
+              <SelectContent className="border-white/10 bg-surface-muted text-white">
+                <SelectItem value="all">All Severities</SelectItem>
+                <SelectItem value="critical">Critical</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
-        
-        {/* Content area */}
+
         <div className="p-0">
           {paginatedRisks.length > 0 ? (
             <>
-              {/* Grid Header */}
-              <div className="bg-gray-700 px-6 py-3 border-b border-gray-600">
-                <div className="grid grid-cols-6 gap-4 text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  <div>Risk Information</div>
-                  <div>Category & Severity</div>
-                  <div>Inherent Risk</div>
-                  <div>Residual Risk</div>
-                  <div>Threat Community</div>
+              <div className="border-b border-white/10 bg-white/5 px-6 py-3 text-xs font-medium uppercase tracking-[0.3em] text-white/50">
+                <div className="grid grid-cols-6 gap-4">
+                  <div>Risk</div>
+                  <div>Category</div>
+                  <div>Severity</div>
+                  <div>Inherent</div>
+                  <div>Residual</div>
                   <div className="text-right">Actions</div>
                 </div>
               </div>
-              
-              {/* Risk rows */}
-              <div className="divide-y divide-gray-600">
+
+              <div className="divide-y divide-white/5">
                 {paginatedRisks.map((risk) => (
-                  <div key={risk.id} className="px-6 py-4 hover:bg-gray-700 transition-colors cursor-pointer" onClick={() => handleViewDetails(risk)}>
+                  <div
+                    key={risk.id}
+                    className="cursor-pointer px-6 py-4 transition-colors hover:bg-white/5"
+                    onClick={() => handleViewDetails(risk)}
+                  >
                     <div className="grid grid-cols-6 gap-4 items-center">
-                      {/* Risk Information */}
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0">
-                          <div className={`w-12 h-8 rounded flex items-center justify-center border ${
-                            risk.severity === 'critical' ? 'bg-red-600 border-red-500' : 
-                            risk.severity === 'high' ? 'bg-orange-600 border-orange-500' : 
-                            risk.severity === 'medium' ? 'bg-yellow-600 border-yellow-500' : 
-                            risk.severity === 'low' ? 'bg-green-600 border-green-500' : 'bg-gray-600 border-gray-500'
-                          }`}>
-                            {risk.severity === 'critical' ? 
-                              <AlertTriangle className="h-4 w-4 text-white" /> : 
-                              <Shield className="h-4 w-4 text-white" />
-                            }
+                      <div>
+                        <div className="text-sm font-semibold text-white">{risk.name}</div>
+                        <div className="text-xs text-white/50">ID: {risk.riskId}</div>
+                      </div>
+                      <div className="text-sm text-white/70 capitalize">{risk.riskCategory || "Unknown"}</div>
+                      {(() => {
+                        const severityKey = risk.severity
+                          ? `${risk.severity.charAt(0).toUpperCase()}${risk.severity.slice(1).toLowerCase()}`
+                          : "Unknown";
+                        return (
+                          <div>
+                            <span
+                              className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+                                severityStyles[severityKey] || "bg-white/10 border border-white/10 text-white/70"
+                              }`}
+                            >
+                              {severityKey}
+                            </span>
                           </div>
-                        </div>
-                        <div>
-                          <div className="font-medium text-white text-sm">{risk.name}</div>
-                          <div className="text-xs text-gray-400">ID: {risk.riskId}</div>
-                        </div>
-                      </div>
-
-                      {/* Category & Severity */}
+                        );
+                      })()}
                       <div>
-                        <div className="text-sm text-gray-300 capitalize">{risk.riskCategory || 'Unknown'}</div>
-                        <div className="mt-1">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${getSeverityColor(risk.severity || 'unknown')}`}>
-                            {risk.severity ? risk.severity.charAt(0).toUpperCase() + risk.severity.slice(1) : 'Unknown'}
-                          </span>
-                        </div>
+                        <div className="text-sm font-semibold text-white/90">{formatCurrency(risk.inherentRisk || 0)}</div>
+                        <div className="text-xs text-white/50">Inherent</div>
                       </div>
-
-                      {/* Inherent Risk */}
                       <div>
-                        <div className="text-sm font-medium text-red-400">
-                          {formatCurrency(risk.inherentRisk || 0)}
-                        </div>
-                      </div>
-
-                      {/* Residual Risk */}
-                      <div>
-                        <div className="text-sm font-medium text-green-400">
+                        <div className="text-sm font-semibold text-emerald-200">
                           {formatCurrency(risk.residualRisk || 0)}
                         </div>
+                        <div className="text-xs text-white/50">Residual</div>
                       </div>
-
-                      {/* Threat Community */}
-                      <div>
-                        <div className="text-sm text-gray-300">{risk.threatCommunity || 'Unknown'}</div>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex items-center justify-end space-x-1" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                         {isTemplateView && onCreateFromTemplate ? (
                           <>
                             <Button
-                              variant="default"
+                              variant="ghost"
                               size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onCreateFromTemplate(risk.id);
-                              }}
-                              className="bg-blue-600 hover:bg-blue-700"
+                              className="rounded-full border border-white/10 text-white hover:bg-white/10"
+                              onClick={() => onCreateFromTemplate(risk.id)}
                             >
-                              <ExternalLink className="h-4 w-4 mr-1" />
-                              Assign
+                              <ExternalLink className="h-4 w-4" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEdit(risk);
-                              }}
-                              className="text-gray-300 hover:bg-gray-600"
-                            >
+                            <Button variant="ghost" size="sm" className="rounded-full text-white hover:bg-white/10" onClick={() => onEdit(risk)}>
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClick(risk);
-                              }}
-                              className="text-gray-300 hover:bg-gray-600 hover:text-red-400"
+                              className="rounded-full text-white hover:bg-rose-500/20 hover:text-rose-200"
+                              onClick={() => handleDeleteClick(risk)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -427,48 +367,30 @@ export function RiskList({
                         ) : (
                           <>
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleCalculate(risk);
-                              }}
-                              className="border-gray-500 text-gray-300 hover:bg-gray-600"
+                              className="rounded-full border border-white/10 text-white hover:bg-white/10"
+                              onClick={() => handleCalculate(risk)}
                             >
                               <Calculator className="h-4 w-4" />
                             </Button>
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
-                              asChild
-                              onClick={(e) => {
-                                e.stopPropagation();
-                              }}
-                              className="border-gray-500 text-gray-300 hover:bg-gray-600"
+                              className="rounded-full border border-white/10 text-white hover:bg-white/10"
                             >
                               <Link href={`/risks/${risk.id}`}>
                                 <ExternalLink className="h-4 w-4" />
                               </Link>
                             </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onEdit(risk);
-                              }}
-                              className="text-gray-300 hover:bg-gray-600"
-                            >
+                            <Button variant="ghost" size="sm" className="rounded-full text-white hover:bg-white/10" onClick={() => onEdit(risk)}>
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteClick(risk);
-                              }}
-                              className="text-gray-300 hover:bg-gray-600 hover:text-red-400"
+                              className="rounded-full text-white hover:bg-rose-500/20 hover:text-rose-200"
+                              onClick={() => handleDeleteClick(risk)}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -481,39 +403,38 @@ export function RiskList({
               </div>
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center h-64">
-              <Shield className="h-12 w-12 text-muted-foreground mb-4" />
+            <div className="flex flex-col items-center justify-center py-16 text-white/70">
+              <Shield className="mb-4 h-12 w-12 text-muted-foreground" />
               <h3 className="text-lg font-medium">No risks found</h3>
-              <p className="text-muted-foreground">
-                {searchTerm || categoryFilter !== 'all' || severityFilter !== 'all' 
-                  ? "No risks match your current filters" 
+              <p className="text-sm text-white/50">
+                {searchQuery || filterCategory !== "all" || filterSeverity !== "all"
+                  ? "No risks match your current filters"
                   : "Get started by creating your first risk"}
               </p>
             </div>
           )}
-          
-          {/* Pagination */}
+
           {totalPages > 1 && (
-            <div className="flex items-center justify-end space-x-2 py-4 px-6 bg-gray-800 border-t border-gray-600 rounded-b-lg">
+            <div className="flex items-center justify-end space-x-2 border-t border-white/10 bg-white/5 px-6 py-4">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="border-gray-500 text-gray-300 hover:bg-gray-600"
+                className="rounded-full border border-white/10 text-white hover:bg-white/10 disabled:opacity-40"
               >
                 <ChevronLeft className="h-4 w-4" />
                 <span className="sr-only">Previous Page</span>
               </Button>
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-white/60">
                 Page {currentPage} of {totalPages}
               </div>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="border-gray-500 text-gray-300 hover:bg-gray-600"
+                className="rounded-full border border-white/10 text-white hover:bg-white/10 disabled:opacity-40"
               >
                 <ChevronRight className="h-4 w-4" />
                 <span className="sr-only">Next Page</span>
@@ -521,7 +442,7 @@ export function RiskList({
             </div>
           )}
         </div>
-      </div>
+      </GlowCard>
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>

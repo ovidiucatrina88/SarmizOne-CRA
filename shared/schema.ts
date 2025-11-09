@@ -206,7 +206,7 @@ export const risks = pgTable('risks', {
   severity: severityEnum('severity').notNull(),
   inherentRisk: numeric('inherent_risk', { precision: 15, scale: 2 }),
   residualRisk: numeric('residual_risk', { precision: 15, scale: 2 }),
-  associatedAssets: json('associated_assets').default([]),
+  associatedAssets: text('associated_assets').array().default(sql`ARRAY[]::text[]`),
   libraryItemId: integer('library_item_id'), // Reference to risk library template
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),

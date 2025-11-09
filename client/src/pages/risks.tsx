@@ -1,24 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Risk } from "@shared/schema";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { RefreshCw, PlusCircle, Shield } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { RefreshCw, PlusCircle } from "lucide-react";
 import { RiskList } from "@/components/risks/risk-list";
 import { EnhancedAssetGroupedRiskList } from "@/components/risks/enhanced-asset-grouped-risk-list";
 import { ViewToggle } from "@/components/risks/view-toggle";
 import { RiskForm } from "@/components/risks";
-import { Skeleton } from "@/components/ui/skeleton";
 import Layout from "@/components/layout/layout";
-import { Card } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { GlowCard } from "@/components/ui/glow-card";
+import { KpiCard } from "@/components/ui/kpi-card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Risks() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -99,114 +94,137 @@ export default function Risks() {
   };
 
 
+  const stats = useMemo(() => {
+    const open = risks.filter((risk) => risk.status === "open").length;
+    const mitigated = risks.filter((risk) => risk.status === "mitigated").length;
+    const high = risks.filter((risk) => risk.severity === "High" || risk.severity === "Critical").length;
+    return {
+      total: risks.length,
+      open,
+      mitigated,
+      high,
+    };
+  }, [risks]);
+
+  const generateSeries = (seed: number) => {
+    const base = seed || 10;
+    return Array.from({ length: 7 }).map((_, index) =>
+      Number((base * (1 + Math.sin(index / 1.4) * 0.08)).toFixed(2)),
+    );
+  };
+
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <Card>
-          <div className="p-6">
-            <Skeleton className="h-8 w-full mb-4" />
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
+      <Layout pageTitle="Risk Register">
+        <div className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <GlowCard key={idx} compact className="h-[150px]">
+                <div className="flex h-full flex-col justify-between">
+                  <Skeleton className="h-3 w-20 rounded-full" />
+                  <Skeleton className="h-8 w-24 rounded" />
+                  <Skeleton className="h-5 w-full rounded-full" />
+                </div>
+              </GlowCard>
+            ))}
           </div>
-        </Card>
-      </div>
+          <GlowCard className="p-8">
+            <Skeleton className="h-96 w-full rounded-[32px]" />
+          </GlowCard>
+        </div>
+      </Layout>
     );
   }
 
   if (error) {
     return (
-      <div className="p-8 text-center">
-        <h2 className="text-xl font-bold text-red-500">Error loading risks</h2>
-        <p className="mt-2 text-gray-600">
-          Please try again later or contact support.
-        </p>
-      </div>
+      <Layout pageTitle="Risk Register">
+        <GlowCard className="p-8 text-center text-white/80">
+          <h2 className="text-xl font-semibold text-destructive">Error loading risks</h2>
+          <p className="mt-2 text-muted-foreground">Please try again later or contact support.</p>
+        </GlowCard>
+      </Layout>
     );
   }
   
   return (
-    <Layout>
-      <div>
-        <div className="mb-6 flex items-center gap-2">
-          <Button 
-            variant="default" 
-            size="sm" 
-            onClick={handleCreateNew}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add New Risk
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh} 
+    <Layout
+      pageTitle="Risk Register"
+      pageDescription="FAIR-based insights into your top risk scenarios."
+      pageActions={
+        <div className="flex gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="rounded-full border border-white/10 text-white hover:bg-white/5"
+            onClick={handleRefresh}
             disabled={isRefreshing}
-            title="Refresh risk data"
           >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
             Refresh
           </Button>
+          <Button className="rounded-full bg-primary px-5 text-primary-foreground" onClick={handleCreateNew}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Risk
+          </Button>
         </div>
-        
-        <div className="mb-6">
-          <div className="bg-gray-800 rounded-lg border border-gray-600">
-            {/* Header */}
-            <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
-              <div className="flex items-center gap-2">
-                <Shield className="h-6 w-6 text-white" />
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Risk Register</h3>
-                  <p className="text-sm text-gray-300 mt-1">FAIR-based quantitative risk analysis</p>
-                </div>
-              </div>
-            </div>
+      }
+    >
+      <div className="space-y-8">
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <KpiCard label="Total Risks" value={stats.total.toLocaleString()} delta="+4% vs last month" trendSeries={generateSeries(stats.total)} />
+          <KpiCard
+            label="Critical/High"
+            value={stats.high.toLocaleString()}
+            delta="-1% QoQ"
+            trendSeries={generateSeries(stats.high)}
+            trendColor="#fca5a5"
+          />
+          <KpiCard
+            label="Open"
+            value={stats.open.toLocaleString()}
+            delta="+2 backlog"
+            trendSeries={generateSeries(stats.open)}
+            trendColor="#fdba74"
+          />
+          <KpiCard
+            label="Mitigated"
+            value={stats.mitigated.toLocaleString()}
+            delta="+5 this week"
+            trendSeries={generateSeries(stats.mitigated)}
+            trendColor="#86efac"
+          />
+        </section>
 
-            {/* View Toggle */}
-            <div className="bg-gray-700 px-6 py-3 border-b border-gray-600">
-              <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
+        <GlowCard className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">Risk Catalog</p>
+              <h2 className="text-2xl font-semibold text-white">FAIR Register</h2>
+              <p className="text-sm text-muted-foreground">Toggle views to analyze risks by asset or in a simple list.</p>
             </div>
-
-            {/* Risks Display */}
-            <div className="bg-gray-800 p-6 rounded-b-lg">
-              {!Array.isArray(risks) || risks.length === 0 ? (
-                <div className="text-center py-8">
-                  <h3 className="text-lg font-medium mb-2 text-white">No Risks Added Yet</h3>
-                  <p className="text-gray-400 mb-4">
-                    Click "Add New Risk" to create a new risk.
-                  </p>
-                </div>
-              ) : viewMode === 'grouped' ? (
-                <EnhancedAssetGroupedRiskList
-                  risks={risks}
-                  onRiskEdit={handleEdit}
-                  onRiskDelete={handleDelete}
-                />
-              ) : (
-                <RiskList
-                  risks={risks}
-                  onEdit={handleEdit}
-                />
-              )}
-            </div>
+            <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
           </div>
-        </div>
 
-        {/* Risk Form Dialog */}
+          {!Array.isArray(risks) || risks.length === 0 ? (
+            <div className="py-16 text-center text-white/70">
+              <h3 className="text-xl font-semibold">No risks added</h3>
+              <p className="mt-2 text-sm text-white/50">Use “Add Risk” to capture your first FAIR scenario.</p>
+            </div>
+          ) : viewMode === "grouped" ? (
+            <EnhancedAssetGroupedRiskList risks={risks} onRiskEdit={handleEdit} onRiskDelete={handleDelete} />
+          ) : (
+            <RiskList risks={risks} onEdit={handleEdit} />
+          )}
+        </GlowCard>
+
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-          <DialogContent className="max-w-8xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto rounded-[32px] border-white/10 bg-background/95">
             <DialogHeader>
               <DialogTitle>{selectedRisk ? "Edit Risk" : "Create New Risk"}</DialogTitle>
-              <DialogDescription>
-                Define risk parameters using the FAIR-U methodology
-              </DialogDescription>
+              <DialogDescription>Define parameters using the FAIR-U methodology.</DialogDescription>
             </DialogHeader>
-            <RiskForm 
-              risk={selectedRisk} 
-              onClose={handleClose} 
-            />
+            <RiskForm risk={selectedRisk} onClose={handleClose} />
           </DialogContent>
         </Dialog>
       </div>

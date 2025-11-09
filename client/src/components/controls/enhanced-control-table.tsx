@@ -1,22 +1,9 @@
 import React, { useState } from "react";
 import { Control } from "@shared/schema";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { formatCurrency } from "@/lib/utils";
-
-import {
-  Card,
-  CardContent,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,21 +14,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ExternalLink, Edit, Trash2, AlertTriangle } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { 
-  Edit, 
-  Trash2,
-  ExternalLink,
-  AlertTriangle 
-} from "lucide-react";
+  badgeTone,
+  categoryToneMap,
+  formatControlCost,
+  formatImplementationStatus,
+  statusToneMap,
+  typeToneMap,
+} from "@/components/controls/control-style";
 
 interface EnhancedControlTableProps {
   controls: Control[];
@@ -49,346 +30,274 @@ interface EnhancedControlTableProps {
   onControlDelete?: (control: Control) => void;
 }
 
-export function EnhancedControlTable({ 
-  controls, 
-  onControlEdit, 
-  onControlDelete 
-}: EnhancedControlTableProps) {
+export function EnhancedControlTable({ controls, onControlEdit, onControlDelete }: EnhancedControlTableProps) {
   const [selectedControl, setSelectedControl] = useState<Control | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
   const [controlToDelete, setControlToDelete] = useState<Control | null>(null);
-
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  const calculateControlCost = (control: Control) => {
-    if (control.implementationStatus === "fully_implemented") {
-      if (control.isPerAgentPricing) {
-        return Number(control.costPerAgent) || 0;
-      } else {
-        return Number(control.implementationCost) || 0;
-      }
-    } else if (control.implementationStatus === "in_progress") {
-      const deployed = Number(control.deployedAgentCount) || 0;
-      const costPerAgent = Number(control.costPerAgent) || 0;
-      return deployed * costPerAgent;
-    }
-    return 0;
-  };
-
-  const formatCostDisplay = (control: Control) => {
-    const totalCost = calculateControlCost(control);
-    
-    if (control.implementationStatus === "fully_implemented" && control.isPerAgentPricing) {
-      return `${formatCurrency(totalCost)}/agent`;
-    }
-    return formatCurrency(totalCost);
-  };
-
-  const getStatusColor = (status: string) => {
-    const colors = {
-      fully_implemented: "bg-green-500 text-white",
-      in_progress: "bg-yellow-500 text-black",
-      not_implemented: "bg-red-500 text-white"
-    };
-    return colors[status as keyof typeof colors] || "bg-gray-500 text-white";
-  };
-
-  const getTypeColor = (type: string) => {
-    const colors = {
-      preventive: "bg-blue-500 text-white",
-      detective: "bg-purple-500 text-white",
-      corrective: "bg-orange-500 text-white"
-    };
-    return colors[type as keyof typeof colors] || "bg-gray-500 text-white";
-  };
-
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      technical: "bg-indigo-500 text-white",
-      administrative: "bg-pink-500 text-white",
-      physical: "bg-teal-500 text-white"
-    };
-    return colors[category as keyof typeof colors] || "bg-gray-500 text-white";
-  };
-
-  const formatImplementationStatus = (status: string) => {
-    const labels = {
-      fully_implemented: "Fully Implemented",
-      in_progress: "In Progress",
-      not_implemented: "Not Implemented"
-    };
-    return labels[status as keyof typeof labels] || status;
-  };
 
   const handleControlClick = (control: Control) => {
     setSelectedControl(control);
     setIsDetailDialogOpen(true);
   };
 
-  // Delete control mutation
-  const deleteControlMutation = useMutation({
-    mutationFn: async (controlId: number) => {
-      return apiRequest("DELETE", `/api/controls/${controlId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/controls"] });
-      toast({
-        title: "Control deleted",
-        description: "The control has been successfully deleted.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete control",
-        variant: "destructive",
-      });
-    },
-  });
-
-  if (controls.length === 0) {
+  if (!controls.length) {
     return (
-      <Card>
-        <CardContent className="p-6 text-center">
-          <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-lg font-semibold mb-2">No controls found</h3>
-          <p className="text-muted-foreground">
-            No controls match your current filter criteria.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="rounded-[28px] border border-white/10 bg-white/5 p-10 text-center text-white/70">
+        <AlertTriangle className="mx-auto mb-4 h-10 w-10 text-white/30" />
+        <p className="text-lg font-semibold text-white">No controls match these filters</p>
+        <p className="text-sm text-white/60">Adjust your filters to see additional controls.</p>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      <div className="bg-gray-800 rounded-lg border border-gray-600 overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-gray-600">
-              <TableHead className="text-gray-300">Control</TableHead>
-              <TableHead className="text-gray-300">Type</TableHead>
-              <TableHead className="text-gray-300">Category</TableHead>
-              <TableHead className="text-gray-300">Framework</TableHead>
-              <TableHead className="text-gray-300">Cloud Domain</TableHead>
-              <TableHead className="text-gray-300">Compliance Mappings</TableHead>
-              <TableHead className="text-gray-300">Associated Risks</TableHead>
-              <TableHead className="text-gray-300">Status</TableHead>
-              <TableHead className="text-gray-300">Effectiveness</TableHead>
-              <TableHead className="text-gray-300">Cost</TableHead>
-              <TableHead className="text-gray-300">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {controls.map(control => (
-              <TableRow key={control.id} className="cursor-pointer hover:bg-gray-700 border-gray-600">
-                <TableCell className="text-white">
-                  <div>
-                    <div className="font-medium">{control.name}</div>
-                    <div className="text-sm text-gray-400">{control.controlId}</div>
-                    {control.description && (
-                      <div className="text-sm text-gray-400 line-clamp-2 mt-1">
-                        {control.description}
-                      </div>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <Badge className={getTypeColor(control.controlType)}>
-                    {control.controlType}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge className={getCategoryColor(control.controlCategory)}>
-                    {control.controlCategory}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="outline" className="text-gray-300 border-gray-500">
-                    {(control as any).complianceFramework || 'Custom'}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  {(control as any).cloudDomain ? (
-                    <Badge variant="secondary" className="bg-blue-600 text-blue-100">
-                      {(control as any).cloudDomain}
+    <div className="space-y-6">
+      <div className="overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-b from-white/5 to-white/0">
+        <div className="hidden bg-white/5 px-6 py-4 text-xs font-semibold uppercase tracking-wide text-white/60 lg:block">
+          Control inventory
+        </div>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader className="bg-white/5 text-xs uppercase text-white/60">
+              <TableRow className="border-b border-white/5">
+                <TableHead className="min-w-[220px] text-white/70">Control</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Framework</TableHead>
+                <TableHead>Compliance</TableHead>
+                <TableHead className="min-w-[160px]">Associated Risks</TableHead>
+                <TableHead>Status & Effectiveness</TableHead>
+                <TableHead>Cost</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {controls.map((control) => (
+                <TableRow
+                  key={control.id}
+                  className="group border-b border-white/5 bg-white/0 transition hover:bg-white/[0.03]"
+                >
+                  <TableCell className="align-top">
+                    <button
+                      type="button"
+                      onClick={() => handleControlClick(control)}
+                      className="text-left"
+                    >
+                      <div className="text-sm font-semibold text-white">{control.name}</div>
+                      <div className="text-xs uppercase tracking-wide text-white/40">{control.controlId}</div>
+                      {control.description && (
+                        <p className="mt-2 line-clamp-2 text-xs text-white/60">{control.description}</p>
+                      )}
+                    </button>
+                  </TableCell>
+                  <TableCell className="align-top">
+                    <Badge className={`rounded-full px-3 py-0.5 text-xs capitalize ${badgeTone(typeToneMap, control.controlType)}`}>
+                      {control.controlType || "n/a"}
                     </Badge>
-                  ) : (
-                    <span className="text-gray-400 text-sm">-</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {(control as any).nistMappings && (control as any).nistMappings.length > 0 && (
-                      <Badge variant="outline" className="text-xs bg-green-600 text-green-100 border-green-500">
-                        NIST ({(control as any).nistMappings.length})
-                      </Badge>
+                  </TableCell>
+                  <TableCell className="align-top">
+                    <Badge className={`rounded-full px-3 py-0.5 text-xs capitalize ${badgeTone(categoryToneMap, control.controlCategory)}`}>
+                      {control.controlCategory || "n/a"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="align-top">
+                    <Badge className="rounded-full border border-white/10 bg-white/5 px-3 py-0.5 text-xs text-white/70">
+                      {(control as any).complianceFramework || "Custom"}
+                    </Badge>
+                    {(control as any).cloudDomain && (
+                      <div className="mt-1 text-xs text-white/50">{(control as any).cloudDomain}</div>
                     )}
-                    {(control as any).pciMappings && (control as any).pciMappings.length > 0 && (
-                      <Badge variant="outline" className="text-xs bg-purple-600 text-purple-100 border-purple-500">
-                        PCI ({(control as any).pciMappings.length})
-                      </Badge>
-                    )}
-                    {(control as any).cisMappings && (control as any).cisMappings.length > 0 && (
-                      <Badge variant="outline" className="text-xs bg-orange-600 text-orange-100 border-orange-500">
-                        CIS ({(control as any).cisMappings.length})
-                      </Badge>
-                    )}
-                    {!(control as any).nistMappings?.length && !(control as any).pciMappings?.length && !(control as any).cisMappings?.length && (
-                      <span className="text-gray-400 text-sm">None</span>
-                    )}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {control.associatedRisks && control.associatedRisks.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {control.associatedRisks.slice(0, 2).map(riskId => (
-                        <Badge key={riskId} variant="secondary" className="text-xs bg-gray-600 text-gray-200">
-                          {riskId}
+                  </TableCell>
+                  <TableCell className="align-top">
+                    <div className="flex flex-wrap gap-1.5">
+                      {(control as any).nistMappings?.length ? (
+                        <Badge className="rounded-full border border-emerald-400/20 bg-emerald-500/10 text-[11px] text-emerald-100">
+                          NIST {(control as any).nistMappings.length}
                         </Badge>
-                      ))}
-                      {control.associatedRisks.length > 2 && (
-                        <Badge variant="secondary" className="text-xs bg-gray-600 text-gray-200">
-                          +{control.associatedRisks.length - 2}
+                      ) : null}
+                      {(control as any).pciMappings?.length ? (
+                        <Badge className="rounded-full border border-violet-400/20 bg-violet-500/10 text-[11px] text-violet-100">
+                          PCI {(control as any).pciMappings.length}
                         </Badge>
+                      ) : null}
+                      {(control as any).cisMappings?.length ? (
+                        <Badge className="rounded-full border border-amber-400/20 bg-amber-500/10 text-[11px] text-amber-100">
+                          CIS {(control as any).cisMappings.length}
+                        </Badge>
+                      ) : null}
+                      {!((control as any).nistMappings?.length || (control as any).pciMappings?.length || (control as any).cisMappings?.length) && (
+                        <span className="text-xs text-white/40">None</span>
                       )}
                     </div>
-                  ) : (
-                    <span className="text-gray-400 text-sm">None</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge className={getStatusColor(control.implementationStatus)}>
-                    {formatImplementationStatus(control.implementationStatus)}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Progress value={(control.controlEffectiveness || 0) * 10} className="w-16 h-2" />
-                    <span className="text-sm text-gray-300">{(control.controlEffectiveness || 0).toFixed(1)}/10</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-gray-300">
-                  {formatCostDisplay(control)}
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleControlClick(control);
-                      }}
-                      className="text-gray-400 hover:text-white hover:bg-gray-600"
-                    >
-                      <ExternalLink className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onControlEdit?.(control);
-                      }}
-                      className="text-gray-400 hover:text-white hover:bg-gray-600"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setControlToDelete(control);
-                      }}
-                      className="text-red-400 hover:text-red-300 hover:bg-gray-600"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                  </TableCell>
+                  <TableCell className="align-top">
+                    {control.associatedRisks && control.associatedRisks.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {control.associatedRisks.slice(0, 3).map((riskId) => (
+                          <Badge
+                            key={riskId}
+                            className="rounded-full border border-white/10 bg-white/5 px-2 text-[11px] text-white/70"
+                          >
+                            {riskId}
+                          </Badge>
+                        ))}
+                        {control.associatedRisks.length > 3 && (
+                          <Badge className="rounded-full border border-white/10 bg-white/5 px-2 text-[11px] text-white/70">
+                            +{control.associatedRisks.length - 3}
+                          </Badge>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-xs text-white/40">Unassigned</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="align-top">
+                    <div className="mb-2">
+                      <Badge className={`rounded-full px-3 py-0.5 text-xs ${badgeTone(statusToneMap, control.implementationStatus)}`}>
+                        {formatImplementationStatus(control.implementationStatus)}
+                      </Badge>
+                    </div>
+                    <div className="space-y-1 text-xs text-white/60">
+                      <div className="flex items-center justify-between">
+                        <span>Effectiveness</span>
+                        <span className="font-semibold text-white">
+                          {(control.controlEffectiveness || 0).toFixed(1)}/10
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full bg-white/5">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-sky-400 to-indigo-400"
+                          style={{ width: `${Math.min((control.controlEffectiveness || 0) * 10, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="align-top text-sm font-semibold text-white">
+                  {formatControlCost(control)}
+                  </TableCell>
+                  <TableCell className="align-top text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleControlClick(control)}
+                        className="h-9 w-9 rounded-full border border-white/10 text-white/70 hover:bg-white/10"
+                      >
+                        <ExternalLink className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onControlEdit?.(control)}
+                        className="h-9 w-9 rounded-full border border-white/10 text-white/70 hover:bg-white/10"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setControlToDelete(control)}
+                        className="h-9 w-9 rounded-full border border-rose-400/20 text-rose-200 hover:bg-rose-500/10"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
-      {/* Control Detail Dialog */}
       {selectedControl && (
         <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-gray-800 border-gray-600">
-            <DialogHeader>
-              <DialogTitle className="text-white">{selectedControl.name}</DialogTitle>
+          <DialogContent className="max-w-3xl rounded-[32px] border border-white/10 bg-slate-950/90 text-white backdrop-blur-xl">
+            <DialogHeader className="space-y-2">
+              <DialogTitle className="text-2xl font-semibold">{selectedControl.name}</DialogTitle>
+              <DialogDescription className="text-base text-white/60">{selectedControl.controlId}</DialogDescription>
             </DialogHeader>
-            <div className="space-y-6">
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold mb-2 text-white">Basic Information</h4>
-                  <div className="space-y-2">
-                    <div className="text-gray-300"><span className="font-medium text-white">Control ID:</span> {selectedControl.controlId}</div>
-                    <div className="text-gray-300"><span className="font-medium text-white">Type:</span> {selectedControl.controlType}</div>
-                    <div className="text-gray-300"><span className="font-medium text-white">Category:</span> {selectedControl.controlCategory}</div>
-                    <div className="text-gray-300"><span className="font-medium text-white">Framework:</span> {(selectedControl as any).complianceFramework || 'Custom'}</div>
-                  </div>
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-4">
+                <p className="text-sm text-white/70">{selectedControl.description}</p>
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-wide text-white/40">Type</p>
+                  <Badge className={`rounded-full px-3 py-0.5 text-xs ${badgeTone(typeToneMap, selectedControl.controlType)}`}>
+                    {selectedControl.controlType}
+                  </Badge>
                 </div>
-                <div>
-                  <h4 className="font-semibold mb-2 text-white">Implementation</h4>
-                  <div className="space-y-2">
-                    <div className="text-gray-300"><span className="font-medium text-white">Status:</span> {formatImplementationStatus(selectedControl.implementationStatus)}</div>
-                    <div className="text-gray-300"><span className="font-medium text-white">Effectiveness:</span> {(selectedControl.controlEffectiveness || 0).toFixed(1)}/10</div>
-                    <div className="text-gray-300"><span className="font-medium text-white">Cost:</span> {formatCostDisplay(selectedControl)}</div>
-                  </div>
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-wide text-white/40">Framework</p>
+                  <Badge className="rounded-full border border-white/10 bg-white/5 px-3 py-0.5 text-xs text-white/70">
+                    {(selectedControl as any).complianceFramework || "Custom"}
+                  </Badge>
                 </div>
               </div>
-              {selectedControl.description && (
-                <div>
-                  <h4 className="font-semibold mb-2 text-white">Description</h4>
-                  <p className="text-gray-400">{selectedControl.description}</p>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-xs uppercase tracking-wide text-white/40">Implementation</p>
+                  <Badge className={`rounded-full px-3 py-0.5 text-xs ${badgeTone(statusToneMap, selectedControl.implementationStatus)}`}>
+                    {formatImplementationStatus(selectedControl.implementationStatus)}
+                  </Badge>
                 </div>
+                <div className="space-y-1 text-sm text-white/70">
+                  <div className="flex items-center justify-between">
+                    <span>Effectiveness</span>
+                    <span className="font-semibold text-white">
+                      {(selectedControl.controlEffectiveness || 0).toFixed(1)}/10
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full bg-white/5">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-sky-400 to-indigo-400"
+                      style={{ width: `${Math.min((selectedControl.controlEffectiveness || 0) * 10, 100)}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="text-sm text-white/70">
+                  <p className="text-xs uppercase tracking-wide text-white/40">Cost</p>
+                  <p className="text-lg font-semibold text-white">{formatControlCost(selectedControl)}</p>
+                </div>
+              </div>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-wide text-white/40">Associated Risks</p>
+              {selectedControl.associatedRisks?.length ? (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {selectedControl.associatedRisks.map((riskId) => (
+                    <Badge key={riskId} className="rounded-full border border-white/10 bg-white/5 px-3 py-0.5 text-xs text-white/70">
+                      {riskId}
+                    </Badge>
+                  ))}
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-white/60">No risks associated</p>
               )}
-              <div>
-                <h4 className="font-semibold mb-2 text-white">Associated Risks</h4>
-                {selectedControl.associatedRisks && selectedControl.associatedRisks.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {selectedControl.associatedRisks.map(riskId => (
-                      <Badge key={riskId} variant="outline" className="text-gray-300 border-gray-500">
-                        Risk ID: {riskId}
-                      </Badge>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-400 text-sm">No risks associated</p>
-                )}
-              </div>
             </div>
           </DialogContent>
         </Dialog>
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog 
-        open={!!controlToDelete} 
-        onOpenChange={() => setControlToDelete(null)}
-      >
-        <AlertDialogContent className="bg-gray-800 border-gray-600">
+      <AlertDialog open={!!controlToDelete} onOpenChange={() => setControlToDelete(null)}>
+        <AlertDialogContent className="rounded-[28px] border border-white/10 bg-slate-950/90 text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Delete Control</AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-400">
-              Are you sure you want to delete "{controlToDelete?.name}"? This action cannot be undone.
+            <AlertDialogTitle>Delete control</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/70">
+              Are you sure you want to delete “{controlToDelete?.name}”? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-gray-600 text-white border-gray-500 hover:bg-gray-500">Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-full border-white/10 bg-white/5 text-white hover:bg-white/10">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
+              className="rounded-full bg-rose-500 text-white hover:bg-rose-400"
               onClick={() => {
                 if (controlToDelete) {
                   onControlDelete?.(controlToDelete);
                   setControlToDelete(null);
                 }
               }}
-              className="bg-red-600 hover:bg-red-700"
             >
               Delete
             </AlertDialogAction>

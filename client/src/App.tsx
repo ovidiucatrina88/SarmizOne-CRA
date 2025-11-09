@@ -36,6 +36,7 @@ import LoginPage from "@/pages/login";
 import ChangePasswordPage from "@/pages/change-password";
 import NotFound from "@/pages/not-found";
 import Layout from "@/components/layout/layout";
+import ConceptDashboard from "@/pages/concept-dashboard";
 
 function AuthenticatedRoutes() {
   return (
@@ -74,6 +75,7 @@ function AuthenticatedRoutes() {
         <Route path="/cost-modules" component={CostModules} />
         <Route path="/admin" component={AdminPage} />
         <Route path="/change-password" component={ChangePasswordPage} />
+        <Route path="/concept-dashboard" component={ConceptDashboard} />
         <Route component={NotFound} />
       </Switch>
   );

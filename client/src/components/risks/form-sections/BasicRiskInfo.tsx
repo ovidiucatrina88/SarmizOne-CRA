@@ -6,7 +6,7 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,7 +15,7 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 
 // Props for the basic risk information component
@@ -25,11 +25,17 @@ interface BasicRiskInfoProps {
 
 export function BasicRiskInfo({ form }: BasicRiskInfoProps) {
   return (
-    <div className="space-y-4 max-w-[500px]">
-      <div>
-        <h3 className="text-lg font-medium">Basic Risk Information</h3>
-        <p className="text-sm text-muted-foreground">
-          Provide details about the risk being assessed.
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <p className="text-[11px] uppercase tracking-[0.35em] text-white/60">
+          Profile
+        </p>
+        <h3 className="text-2xl font-semibold text-white">
+          Risk overview
+        </h3>
+        <p className="text-sm text-white/60 max-w-2xl">
+          Capture the FAIR scenario context so quantification stays aligned to the
+          business problem you are solving.
         </p>
       </div>
 
@@ -38,8 +44,8 @@ export function BasicRiskInfo({ form }: BasicRiskInfoProps) {
         control={form.control}
         name="riskId"
         render={({ field }) => (
-          <FormItem>
-            <FormLabel>Risk ID</FormLabel>
+          <FormItem className="text-white">
+            <FormLabel className="text-sm text-white/80">Risk ID</FormLabel>
             <FormControl>
               <Input 
                 placeholder="e.g., RISK-DDOS-2025-001" 
@@ -47,7 +53,7 @@ export function BasicRiskInfo({ form }: BasicRiskInfoProps) {
                 disabled={field.value && field.value.length > 0}
               />
             </FormControl>
-            <FormDescription>
+            <FormDescription className="text-xs text-white/50">
               {field.value && field.value.length > 0 
                 ? "Risk ID cannot be changed after creation" 
                 : "A unique identifier for the risk, auto-generated if left blank"}
@@ -62,15 +68,15 @@ export function BasicRiskInfo({ form }: BasicRiskInfoProps) {
         control={form.control}
         name="name"
         render={({ field }) => (
-          <FormItem>
-            <FormLabel>Risk Name</FormLabel>
+          <FormItem className="text-white">
+            <FormLabel className="text-sm text-white/80">Risk Name</FormLabel>
             <FormControl>
               <Input 
                 placeholder="e.g., DDoS Attack Risk" 
                 {...field} 
               />
             </FormControl>
-            <FormDescription>
+            <FormDescription className="text-xs text-white/50">
               A descriptive name for the risk
             </FormDescription>
             <FormMessage />
@@ -83,8 +89,8 @@ export function BasicRiskInfo({ form }: BasicRiskInfoProps) {
         control={form.control}
         name="description"
         render={({ field }) => (
-          <FormItem>
-            <FormLabel>Description</FormLabel>
+          <FormItem className="text-white">
+            <FormLabel className="text-sm text-white/80">Description</FormLabel>
             <FormControl>
               <Textarea 
                 placeholder="Describe the risk in detail..." 
@@ -102,8 +108,8 @@ export function BasicRiskInfo({ form }: BasicRiskInfoProps) {
         control={form.control}
         name="threatCommunity"
         render={({ field }) => (
-          <FormItem>
-            <FormLabel>Threat Community</FormLabel>
+          <FormItem className="text-white">
+            <FormLabel className="text-sm text-white/80">Threat Community</FormLabel>
             <FormControl>
               <Input 
                 placeholder="e.g., External Threat Actor" 
@@ -123,8 +129,8 @@ export function BasicRiskInfo({ form }: BasicRiskInfoProps) {
         control={form.control}
         name="vulnerability"
         render={({ field }) => (
-          <FormItem>
-            <FormLabel>Vulnerability</FormLabel>
+          <FormItem className="text-white">
+            <FormLabel className="text-sm text-white/80">Vulnerability</FormLabel>
             <FormControl>
               <Input 
                 placeholder="e.g., Unpatched Server" 
@@ -139,20 +145,20 @@ export function BasicRiskInfo({ form }: BasicRiskInfoProps) {
         )}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-[400px]">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Risk Category */}
         <FormField
           control={form.control}
           name="riskCategory"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Category</FormLabel>
+            <FormItem className="text-white">
+              <FormLabel className="text-sm text-white/80">Category</FormLabel>
               <Select 
                 value={field.value} 
                 onValueChange={field.onChange}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-black/20 text-white border-white/10">
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                 </FormControl>
@@ -173,14 +179,14 @@ export function BasicRiskInfo({ form }: BasicRiskInfoProps) {
           control={form.control}
           name="severity"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Severity</FormLabel>
+            <FormItem className="text-white">
+              <FormLabel className="text-sm text-white/80">Severity</FormLabel>
               <Select 
                 value={field.value} 
                 onValueChange={field.onChange}
               >
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-black/20 text-white border-white/10">
                     <SelectValue placeholder="Select severity" />
                   </SelectTrigger>
                 </FormControl>

@@ -1,9 +1,8 @@
-import { useState, useEffect, useQuery } from "@/common/react-import";
+import { useState, useEffect, useMemo, useQuery } from "@/common/react-import";
 import type { UseFormReturn } from "@/common/react-import";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 
 type Asset = {
   id: number;
@@ -31,9 +30,19 @@ export function AssetSelection({
   // Use either selectedAssetIds (new prop) or selectedAssets (old prop)
   const effectiveSelectedAssets = selectedAssetIds || selectedAssets || [];
   // Fetch assets for selection
-  const { data: assets = [] } = useQuery<Asset[]>({
+  const { data: assetsResponse } = useQuery({
     queryKey: ["/api/assets"],
   });
+
+  const assets = useMemo<Asset[]>(() => {
+    if (assetsResponse?.data) {
+      return assetsResponse.data as Asset[];
+    }
+    if (Array.isArray(assetsResponse)) {
+      return assetsResponse as Asset[];
+    }
+    return [];
+  }, [assetsResponse]);
 
   // Handle asset selection change
   const handleAssetChange = (checked: boolean, assetId: string) => {
@@ -67,10 +76,15 @@ export function AssetSelection({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium">Associated Assets</h3>
-      <p className="text-sm text-muted-foreground mb-2">
-        Select one or more assets affected by this risk.
-      </p>
+      <div className="space-y-2">
+        <p className="text-[11px] uppercase tracking-[0.35em] text-white/60">
+          Associations
+        </p>
+        <h3 className="text-xl font-semibold text-white">Assets in scope</h3>
+        <p className="text-sm text-white/60">
+          Select the business services or infrastructure that experience loss if this scenario occurs.
+        </p>
+      </div>
 
       {form?.formState?.errors?.associatedAssets && (
         <p className="text-sm font-medium text-destructive">
@@ -78,42 +92,53 @@ export function AssetSelection({
         </p>
       )}
 
-      <div className="grid grid-cols-2 gap-4 mt-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         {assets.length > 0 ? (
           assets.map((asset) => (
-            <Card key={asset.assetId} className="overflow-hidden">
-              <CardContent className="p-4">
-                <div className="flex items-start space-x-2">
-                  <Checkbox
-                    id={asset.assetId}
-                    checked={effectiveSelectedAssets.includes(asset.assetId)}
-                    onCheckedChange={(checked) =>
-                      handleAssetChange(checked as boolean, asset.assetId)
-                    }
-                  />
-                  <div className="grid gap-1 leading-none pl-2">
-                    <Label
-                      htmlFor={asset.assetId}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+            <div
+              key={asset.assetId}
+              className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm transition hover:border-primary/40"
+            >
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id={asset.assetId}
+                  className="mt-1 border-white/40 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
+                  checked={effectiveSelectedAssets.includes(asset.assetId)}
+                  onCheckedChange={(checked) =>
+                    handleAssetChange(checked as boolean, asset.assetId)
+                  }
+                />
+                <div className="flex-1">
+                  <Label
+                    htmlFor={asset.assetId}
+                    className="text-base font-semibold text-white cursor-pointer"
+                  >
+                    {asset.name}
+                  </Label>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                    <Badge
+                      variant="outline"
+                      className="border-white/20 bg-white/5 text-white/80"
                     >
-                      {asset.name}
-                    </Label>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Badge className="bg-secondary/80 text-secondary-foreground">{asset.assetId}</Badge>
-                      <Badge className="bg-primary/80 text-primary-foreground">{asset.assetType}</Badge>
-                    </div>
-                    {asset.description && (
-                      <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                        {asset.description}
-                      </p>
-                    )}
+                      {asset.assetId}
+                    </Badge>
+                    <Badge
+                      variant="outline"
+                      className="border-primary/30 bg-primary/10 text-primary-foreground"
+                    >
+                      {asset.assetType}
+                    </Badge>
                   </div>
+                  {asset.description && (
+                    <p className="mt-3 text-sm text-white/70 line-clamp-2">
+                      {asset.description}
+                    </p>
+                  )}
                 </div>
-              </CardContent>
-            </Card>
+            </div>
           ))
         ) : (
-          <p className="col-span-2 text-sm text-muted-foreground py-2">
+          <p className="col-span-2 rounded-2xl border border-dashed border-white/20 bg-white/5 py-6 text-center text-sm text-white/70">
             No assets available. Create assets before assigning risks.
           </p>
         )}

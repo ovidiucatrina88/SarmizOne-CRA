@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Loader } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { GlowCard } from "@/components/ui/glow-card";
 
 import { BasicRiskInfo } from "./form-sections";
 import { AssetSelection } from "./form-sections/AssetSelection";
@@ -489,6 +490,7 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
   const [calculatedInherentRisk, setCalculatedInherentRisk] = useState<number>(
     risk?.inherentRisk ? Number(risk.inherentRisk) : 0,
   );
+  const [isRecalculating, setIsRecalculating] = useState(false);
   // We're using just a single form view now without tabs
 
   // Define default values for a new risk using FAIR-U standards
@@ -1228,16 +1230,90 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
     }
   };
 
+  const residualRiskValue = Number(form.watch("residualRisk") || 0);
+  const lossEventFrequencyValue = Number(
+    form.watch("lossEventFrequencyAvg") || 0,
+  );
+  const lossMagnitudeValue = Number(form.watch("lossMagnitudeAvg") || 0);
+  const susceptibilityValue = Number(form.watch("susceptibilityAvg") || 0);
+
+  const summaryMetrics = [
+    {
+      label: "Inherent Risk",
+      helper: "Annualized loss before controls",
+      value: formatCurrency(calculatedInherentRisk),
+    },
+    {
+      label: "Residual Risk",
+      helper: "After mitigations",
+      value: formatCurrency(residualRiskValue),
+    },
+    {
+      label: "Loss Event Frequency",
+      helper: "Average events per year",
+      value: `${lossEventFrequencyValue.toFixed(2)} / yr`,
+    },
+    {
+      label: "Loss Magnitude",
+      helper: "Average loss per occurrence",
+      value: formatCurrency(lossMagnitudeValue),
+    },
+  ];
+
+  const handleAssetSelectionChange = (assets: string[]) => {
+    setSelectedAssets(assets);
+    form.setValue("associatedAssets", assets, { shouldValidate: true });
+    try {
+      const recalcEvent = new CustomEvent("recalculateRisk");
+      window.dispatchEvent(recalcEvent);
+    } catch (error) {
+      console.warn("Failed to dispatch recalculation event", error);
+    }
+  };
+
+  const handleManualRecalculation = async () => {
+    try {
+      setIsRecalculating(true);
+      await calculateRisk();
+      toast({
+        title: "Risk recalculated",
+        description: "Derived FAIR values were refreshed.",
+      });
+    } catch (error) {
+      console.error("Manual recalculation failed", error);
+      toast({
+        title: "Calculation failed",
+        description: "Unable to refresh derived values. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRecalculating(false);
+    }
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold">
-            {risk ? "Edit Risk" : isTemplate ? "Create Risk Template" : "Create Risk"}
-          </h2>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pb-8">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="space-y-2">
+            <p className="text-[11px] uppercase tracking-[0.35em] text-white/50">
+              {isTemplate ? "Risk Template" : risk ? "Edit Risk" : "New Risk"}
+            </p>
+            <h2 className="text-3xl font-semibold text-white">
+              {risk ? risk.name : isTemplate ? "Create Risk Template" : "Create Risk"}
+            </h2>
+            <p className="text-sm text-white/60">
+              Configure FAIR parameters, associate assets, and quantify exposure without leaving the page.
+            </p>
+          </div>
 
-          <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={onClose}>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              className="rounded-full border border-white/20 bg-white/5 px-5 text-white hover:bg-white/10"
+              onClick={onClose}
+            >
               Cancel
             </Button>
             {risk ? (
@@ -1245,7 +1321,7 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
               <Button
                 type="button" // Changed to button to prevent form submission
                 disabled={mutation.isPending}
-                className="gap-1 bg-blue-600 hover:bg-blue-700"
+                className="gap-1 rounded-full bg-primary px-6 text-primary-foreground hover:bg-primary/90"
                 onClick={() => {
                   console.log("Update button clicked with manual data sending");
                   if (risk) {
@@ -1372,7 +1448,7 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
               <Button
                 type="button"
                 disabled={mutation.isPending}
-                className="gap-1 bg-blue-600 hover:bg-blue-700"
+                className="gap-1 rounded-full bg-primary px-6 text-primary-foreground hover:bg-primary/90"
                 onClick={() => {
                   console.log("Create button clicked using React Query mutation");
                   try {
@@ -1591,84 +1667,92 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
           </div>
         </div>
 
-        {/* New 2-column Grid Layout with controlled width and column ratio */}
-        <div className="max-w-[1500px] mx-auto grid grid-cols-1 md:grid-cols-[0.8fr_2fr] gap-8">
-          {/* Left Column - Basic Risk Information */}
+        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.9fr]">
           <div className="space-y-6">
-            {/* Basic Risk Information */}
-            <BasicRiskInfo form={form} />
+            <GlowCard className="space-y-8">
+              <BasicRiskInfo form={form} />
+            </GlowCard>
 
-            {/* Asset Selection - Simplified version */}
-            <div className="space-y-4 mb-6">
-              <h3 className="text-lg font-medium">Associated Assets</h3>
-              <div className="border rounded-md p-4 bg-muted/20">
-                <div className="flex flex-wrap gap-2">
-                  {selectedAssets.map((asset, index) => (
-                    <div
-                      key={index}
-                      className="px-2 py-1 rounded-md bg-primary/10 text-sm"
-                    >
-                      {typeof asset === "string"
-                        ? asset
-                        : asset.name || `Asset ${index + 1}`}
-                    </div>
-                  ))}
-                  {selectedAssets.length === 0 && (
-                    <div className="text-sm text-muted-foreground py-2">
-                      No assets selected. Select assets to calculate risk.
-                    </div>
-                  )}
-                </div>
+            <GlowCard className="space-y-6">
+              <AssetSelection
+                form={form}
+                selectedAssetIds={selectedAssets}
+                onChange={handleAssetSelectionChange}
+              />
+            </GlowCard>
+
+            <GlowCard className="space-y-4">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.35em] text-white/50">
+                  Notes
+                </p>
+                <h4 className="text-xl font-semibold text-white">
+                  Additional context
+                </h4>
               </div>
-            </div>
-
-            {/* Notes */}
-            <div className="space-y-4 mt-6">
-              <h4 className="text-md font-medium">Additional Notes</h4>
               <Textarea
-                placeholder="Additional notes about this risk"
-                className="min-h-[100px]"
+                placeholder="Document decisions, assumptions, or mitigation details"
+                className="min-h-[140px] rounded-2xl border border-white/10 bg-black/20 text-white placeholder:text-white/40"
                 {...form.register("notes")}
               />
-            </div>
+            </GlowCard>
           </div>
 
-          {/* Right Column - FAIR-U Risk Parameters Visualization */}
-          <div className="space-y-6 w-full">
-            {/* Calculated Inherent Risk Display */}
-            <div className="bg-muted/50 p-4 rounded-md mb-6">
-              <h4 className="text-lg font-medium mb-2">
-                Calculated Inherent Risk
-              </h4>
-              <p className="text-3xl font-bold text-primary">
-                {formatCurrency(calculatedInherentRisk)}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Annualized expected loss based on the parameters below
-              </p>
-            </div>
+          <div className="space-y-6">
+            <GlowCard className="space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm text-white/60">FAIR summary</p>
+                  <h3 className="text-2xl font-semibold text-white">Dynamic calculations</h3>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="rounded-full border border-white/20 bg-white/5 px-5 text-white hover:bg-white/10"
+                  onClick={handleManualRecalculation}
+                  disabled={isRecalculating}
+                >
+                  {isRecalculating && <Loader className="mr-2 h-4 w-4 animate-spin" />}
+                  Run Calculations
+                </Button>
+              </div>
 
-            {/* Editable Risk Parameter UI */}
-            <div className="mt-6">
-              <p className="text-sm text-muted-foreground mb-4">
-                Click on any parameter box below to edit its values. Changes
-                will automatically update the calculated risk.
-              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {summaryMetrics.map((metric) => (
+                  <div
+                    key={metric.label}
+                    className="rounded-2xl border border-white/10 bg-white/5 p-4"
+                  >
+                    <p className="text-[11px] uppercase tracking-[0.3em] text-white/50">
+                      {metric.helper}
+                    </p>
+                    <p className="text-xl font-semibold text-white">{metric.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/70">
+                Susceptibility Avg: {susceptibilityValue.toFixed(2)}
+              </div>
+            </GlowCard>
+
+            <GlowCard className="space-y-6">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="text-xl font-semibold text-white">FAIR Parameter Editor</h3>
+                  <p className="text-sm text-white/60">
+                    Linked assets: {selectedAssets.length || 0}
+                  </p>
+                </div>
+              </div>
               <RiskFormPreviewEditable
                 form={form}
                 selectedAssets={selectedAssets}
-                setSelectedAssets={setSelectedAssets}
-                onParameterEdit={() => {
-                  // Trigger manual calculation when button is clicked
-                  console.log("Manual calculation triggered from Run Calculations button");
-                  calculateRisk().catch((err) => {
-                    console.error("Error in manual risk recalculation:", err);
-                  });
-                }}
               />
-            </div>
+            </GlowCard>
           </div>
         </div>
+      </form>
       </form>
     </Form>
   );

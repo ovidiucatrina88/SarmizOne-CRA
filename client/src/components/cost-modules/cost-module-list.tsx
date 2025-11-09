@@ -1,49 +1,35 @@
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter
-} from "@/components/ui/card";
+import { useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { GlowCard } from "@/components/ui/glow-card";
+import { KpiCard } from "@/components/ui/kpi-card";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle, DollarSign, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Search, PlusCircle, DollarSign, Pencil, Trash2, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { CostModuleForm } from "./cost-module-form";
 
-// Define cost module types
-type CostType = 'fixed' | 'per_event' | 'per_hour' | 'percentage';
+type CostType = "fixed" | "per_event" | "per_hour" | "percentage";
 
 interface CostModule {
   id: number;
   name: string;
-  cis_control?: string[]; // From database
-  cisControl?: string[];  // For frontend consistency
-  cost_factor?: number;   // From database
-  costFactor?: number;    // For frontend consistency
-  cost_type?: CostType;   // From database
-  costType?: CostType;    // For frontend consistency  
+  cis_control?: string[];
+  cisControl?: string[];
+  cost_factor?: number;
+  costFactor?: number;
+  cost_type?: CostType;
+  costType?: CostType;
   description?: string;
 }
+
+const tone: Record<CostType, string> = {
+  fixed: "border-emerald-400/30 bg-emerald-500/10 text-emerald-100",
+  per_event: "border-sky-400/30 bg-sky-500/10 text-sky-100",
+  per_hour: "border-violet-400/30 bg-violet-500/10 text-violet-100",
+  percentage: "border-amber-400/30 bg-amber-500/10 text-amber-100",
+};
 
 export function CostModuleList() {
   const [editModule, setEditModule] = useState<CostModule | null>(null);
@@ -51,90 +37,89 @@ export function CostModuleList() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [moduleToDelete, setModuleToDelete] = useState<CostModule | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  // Fetch cost modules
+
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["/api/cost-modules"],
   });
-  
-  // Extract and ensure costModules is an array, then normalize field names
-  const costModules = data?.data 
-    ? (Array.isArray(data.data) 
-      ? data.data.map((module: any) => ({
-          ...module,
-          // Normalize field names for consistency in the UI
-          cisControl: module.cis_control || module.cisControl,
-          costFactor: module.cost_factor || module.costFactor,
-          costType: module.cost_type || module.costType
-        })) 
-      : [])
+
+  const costModules: CostModule[] = Array.isArray(data?.data)
+    ? data!.data.map((module: CostModule) => ({
+        ...module,
+        cisControl: module.cis_control || module.cisControl || [],
+        costFactor: module.cost_factor || module.costFactor || 0,
+        costType: (module.cost_type || module.costType || "fixed") as CostType,
+      }))
     : [];
 
-  // Delete mutation
+  const filteredModules = useMemo(() => {
+    if (!searchQuery) return costModules;
+    const q = searchQuery.toLowerCase();
+    return costModules.filter(
+      (module) =>
+        module.name.toLowerCase().includes(q) ||
+        module.description?.toLowerCase().includes(q) ||
+        module.cisControl?.some((ctrl) => ctrl.toLowerCase().includes(q)),
+    );
+  }, [costModules, searchQuery]);
+
+  const stats = useMemo(() => {
+    const total = costModules.length;
+    const perEvent = costModules.filter((m) => (m.costType || "fixed") === "per_event").length;
+    const percentage = costModules.filter((m) => (m.costType || "fixed") === "percentage").length;
+    const avgFactor =
+      costModules.reduce((sum, module) => sum + (Number(module.costFactor) || 0), 0) / (total || 1);
+    return { total, perEvent, percentage, avgFactor };
+  }, [costModules]);
+
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const response = await fetch(`/api/cost-modules/${id}`, {
-        method: "DELETE",
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to delete cost module");
-      }
-      
+      const response = await fetch(`/api/cost-modules/${id}`, { method: "DELETE" });
+      if (!response.ok) throw new Error("Failed to delete cost module");
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/cost-modules"] });
-      toast({
-        title: "Cost module deleted",
-        description: "The cost module has been deleted successfully."
-      });
+      toast({ title: "Cost module deleted", description: "The module was removed successfully." });
       setIsDeleteDialogOpen(false);
     },
-    onError: (error) => {
+    onError: (err: any) => {
       toast({
         title: "Failed to delete cost module",
-        description: error.message,
-        variant: "destructive"
+        description: err.message,
+        variant: "destructive",
       });
-    }
+    },
   });
 
-  // Format cost factor based on type
   const formatCostFactor = (module: CostModule) => {
-    // Get the cost factor value, checking both camelCase and snake_case properties
-    const costFactor = module.costFactor || module.cost_factor || 0;
-    
-    // Get the cost type value, checking both camelCase and snake_case properties
-    const costType = module.costType || module.cost_type || 'fixed';
-    
-    switch (costType) {
-      case 'fixed':
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(costFactor);
-      case 'per_event':
-        return `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(costFactor)} per event`;
-      case 'per_hour':
-        return `${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(costFactor)} per hour`;
-      case 'percentage':
-        return `${(costFactor * 100).toFixed(2)}%`;
+    const value = Number(module.costFactor || 0);
+    switch (module.costType) {
+      case "fixed":
+        return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
+      case "per_event":
+        return `${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value)} per event`;
+      case "per_hour":
+        return `${new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value)} per hour`;
+      case "percentage":
+        return `${(value * 100).toFixed(2)}% of loss`;
       default:
-        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(costFactor);
+        return value;
     }
   };
 
-  // Format the cost type for display
-  const formatCostType = (type: string) => {
+  const formatCostType = (type: CostType) => {
     switch (type) {
-      case 'fixed':
-        return 'Fixed Cost';
-      case 'per_event':
-        return 'Per Event';
-      case 'per_hour':
-        return 'Per Hour';
-      case 'percentage':
-        return 'Percentage of Loss';
+      case "fixed":
+        return "Fixed Cost";
+      case "per_event":
+        return "Per Event";
+      case "per_hour":
+        return "Per Hour";
+      case "percentage":
+        return "Percentage";
       default:
         return type;
     }
@@ -142,207 +127,172 @@ export function CostModuleList() {
 
   if (isLoading) {
     return (
-      <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-background via-background to-muted/20 shadow-lg">
-        <CardHeader>
-          <CardTitle>Cost Modules</CardTitle>
-          <CardDescription>Loading cost modules...</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64 flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        </CardContent>
-      </Card>
+      <GlowCard className="text-center text-white/70">
+        <p>Loading cost modules…</p>
+      </GlowCard>
     );
   }
 
   if (error) {
     return (
-      <Card className="relative overflow-hidden border-0 bg-gradient-to-br from-background via-background to-muted/20 shadow-lg">
-        <CardHeader>
-          <CardTitle>Cost Modules</CardTitle>
-          <CardDescription>Error loading cost modules</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="p-4 text-destructive">
-            An error occurred while loading the cost modules. Please try again.
-          </div>
-        </CardContent>
-        <CardFooter>
-          <Button onClick={() => refetch()}>Retry</Button>
-        </CardFooter>
-      </Card>
+      <GlowCard className="space-y-4 text-white/80">
+        <div>Unable to load cost modules.</div>
+        <Button variant="ghost" className="rounded-full border border-white/10 text-white hover:bg-white/10" onClick={() => refetch()}>
+          Retry
+        </Button>
+      </GlowCard>
     );
   }
 
   return (
-    <div>
-      <div className="mb-6 flex items-center gap-2">
-        <Button 
-          variant="default" 
-          size="sm" 
-          onClick={() => setIsCreateDialogOpen(true)}
-        >
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Add Cost Module
-        </Button>
-      </div>
-      
-      <div className="mb-6">
-        <div className="bg-gray-800 rounded-lg border border-gray-600">
-          <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
-            <h3 className="text-lg font-semibold text-white">Cost Modules</h3>
-            <p className="text-gray-400 text-sm">Manage cost factors associated with CIS controls</p>
+    <div className="space-y-6">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard label="Cost Modules" value={stats.total.toString()} delta={`${filteredModules.length} in view`} />
+        <KpiCard
+          label="Per-Event Motors"
+          value={stats.perEvent.toString()}
+          delta="Modules tied to occurrences"
+          trendColor="#86efac"
+        />
+        <KpiCard
+          label="Percentage Models"
+          value={stats.percentage.toString()}
+          delta="Modules tied to loss %"
+          trendColor="#c4b5fd"
+        />
+        <KpiCard
+          label="Avg Cost Factor"
+          value={new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(stats.avgFactor)}
+          delta="Baseline value"
+          trendColor="#fda4af"
+        />
+      </section>
+
+      <GlowCard className="space-y-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+            <Input
+              placeholder="Search cost modules…"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              className="h-11 rounded-full border-white/10 bg-white/5 pl-10 text-white placeholder:text-white/40"
+            />
           </div>
-          
-          <div className="bg-gray-800 p-6 rounded-b-lg">
-            {costModules.length === 0 ? (
-              <div className="text-center py-8">
-                <DollarSign className="mx-auto h-12 w-12 text-gray-500" />
-                <p className="mt-4 text-white">No cost modules have been added yet.</p>
-                <p className="text-sm text-gray-400">
-                  Add cost modules to map financial impacts to CIS controls.
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {costModules.map((module: any) => (
-                  <div key={module.id} className="bg-gray-700 rounded-lg border border-gray-600 p-4 hover:bg-gray-650 transition-colors">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
-                          <DollarSign className="w-5 h-5 text-white" />
-                        </div>
-                        <div>
-                          <h4 className="text-white text-lg font-bold">{module.name}</h4>
-                          <div className="text-sm text-gray-400 uppercase tracking-wide font-medium">
-                            {formatCostType(module.costType || module.cost_type)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-600"
-                          onClick={() => {
-                            setEditModule(module);
-                            setIsEditDialogOpen(true);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-gray-400 hover:text-red-300 hover:bg-gray-600"
-                          onClick={() => {
-                            setModuleToDelete(module);
-                            setIsDeleteDialogOpen(true);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+          <Button className="rounded-full bg-primary px-5 text-primary-foreground" onClick={() => setIsCreateDialogOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Add Cost Module
+          </Button>
+        </div>
+        {!filteredModules.length ? (
+          <div className="rounded-[28px] border border-dashed border-white/10 bg-white/5 p-12 text-center text-white/60">
+            No cost modules match your search.
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {filteredModules.map((module) => (
+              <GlowCard key={module.id} compact className="border-white/10">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
+                      <DollarSign className="h-5 w-5 text-white" />
                     </div>
-                    
-                    <div className="space-y-4">
-                      <div>
-                        <p className="text-sm text-gray-400 mb-2 uppercase tracking-wide font-medium">Cost Factor</p>
-                        <p className="text-white font-bold text-lg">{formatCostFactor(module)}</p>
-                      </div>
-                      
-                      {module.description && (
-                        <div>
-                          <p className="text-sm text-gray-400 mb-1 uppercase tracking-wide font-medium">Description</p>
-                          <p className="text-gray-300 text-sm leading-relaxed">{module.description}</p>
-                        </div>
-                      )}
-                      
-                      {(module.cisControl || module.cis_control) && (
-                        <div className="pt-2 border-t border-gray-600">
-                          <p className="text-sm text-gray-400 mb-2 uppercase tracking-wide font-medium">CIS Controls</p>
-                          <div className="flex flex-wrap gap-2">
-                            {(module.cisControl || module.cis_control)?.map((control: string) => (
-                              <Badge key={control} variant="secondary" className="bg-blue-600 text-blue-100 border-blue-500">
-                                {control}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
+                    <div>
+                      <p className="text-white font-semibold">{module.name}</p>
+                      <Badge className={`mt-1 rounded-full border px-3 py-0.5 text-xs capitalize ${tone[module.costType || "fixed"]}`}>
+                        {formatCostType(module.costType || "fixed")}
+                      </Badge>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 rounded-full border border-white/10 text-white/70 hover:bg-white/10"
+                      onClick={() => {
+                        setEditModule(module);
+                        setIsEditDialogOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 rounded-full border border-rose-400/20 text-rose-200 hover:bg-rose-500/10"
+                      onClick={() => {
+                        setModuleToDelete(module);
+                        setIsDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="mt-4 space-y-3 text-sm text-white/70">
+                  <div>
+                    <p className="text-xs uppercase tracking-wide text-white/40">Cost Factor</p>
+                    <p className="text-lg font-semibold text-white">{formatCostFactor(module)}</p>
+                  </div>
+                  {module.description && <p>{module.description}</p>}
+                  {!!(module.cisControl?.length) && (
+                    <div className="flex flex-wrap gap-2 pt-2 text-xs">
+                      {module.cisControl!.map((control) => (
+                        <Badge key={control} className="rounded-full border border-white/10 bg-white/5 text-white/70">
+                          {control}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </GlowCard>
+            ))}
           </div>
-        </div>
-      </div>
+        )}
+      </GlowCard>
 
-      {/* Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="bg-gray-800 border-gray-600">
+        <DialogContent className="max-w-2xl rounded-[32px] border border-white/10 bg-slate-950/95 text-white">
           <DialogHeader>
-            <DialogTitle className="text-white">Add New Cost Module</DialogTitle>
+            <DialogTitle>Add Cost Module</DialogTitle>
           </DialogHeader>
-          <CostModuleForm 
-            onSuccess={() => setIsCreateDialogOpen(false)} 
-            onCancel={() => setIsCreateDialogOpen(false)} 
-          />
+          <CostModuleForm onSuccess={() => setIsCreateDialogOpen(false)} onCancel={() => setIsCreateDialogOpen(false)} />
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="bg-gray-800 border-gray-600">
+        <DialogContent className="max-w-2xl rounded-[32px] border border-white/10 bg-slate-950/95 text-white">
           <DialogHeader>
-            <DialogTitle className="text-white">Edit Cost Module</DialogTitle>
+            <DialogTitle>Edit Cost Module</DialogTitle>
           </DialogHeader>
           {editModule && (
-            <CostModuleForm 
-              module={editModule} 
-              onSuccess={() => setIsEditDialogOpen(false)} 
-              onCancel={() => setIsEditDialogOpen(false)} 
-            />
+            <CostModuleForm module={editModule} onSuccess={() => setIsEditDialogOpen(false)} onCancel={() => setIsEditDialogOpen(false)} />
           )}
         </DialogContent>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent className="bg-gray-800 border-gray-600">
+        <DialogContent className="max-w-md rounded-[28px] border border-white/10 bg-slate-950/95 text-white">
           <DialogHeader>
-            <DialogTitle className="text-white">Delete Cost Module</DialogTitle>
+            <DialogTitle>Delete Cost Module</DialogTitle>
           </DialogHeader>
-          <div className="py-4">
-            <p className="text-gray-300">
-              Are you sure you want to delete the cost module "{moduleToDelete?.name}"?
-              This action cannot be undone.
-            </p>
-          </div>
+          <p className="text-sm text-white/70">
+            Are you sure you want to delete “{moduleToDelete?.name}”? This action cannot be undone.
+          </p>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-              className="bg-gray-600 text-white border-gray-500 hover:bg-gray-500"
-            >
+            <Button variant="ghost" className="rounded-full border border-white/10 text-white hover:bg-white/10" onClick={() => setIsDeleteDialogOpen(false)}>
               Cancel
             </Button>
             <Button
               variant="destructive"
-              onClick={() => {
-                if (moduleToDelete) {
-                  deleteMutation.mutate(moduleToDelete.id);
-                }
-              }}
+              className="rounded-full"
+              onClick={() => moduleToDelete && deleteMutation.mutate(moduleToDelete.id)}
               disabled={deleteMutation.isPending}
-              className="bg-red-600 hover:bg-red-700"
             >
               {deleteMutation.isPending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
+                  Deleting…
                 </>
               ) : (
                 "Delete"

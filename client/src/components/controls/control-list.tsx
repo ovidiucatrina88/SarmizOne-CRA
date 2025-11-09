@@ -1,23 +1,9 @@
-import { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Control } from "@shared/schema";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { GlowCard } from "@/components/ui/glow-card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,563 +14,220 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Search, ChevronLeft, ChevronRight, Link } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Edit, ExternalLink, Trash2 } from "lucide-react";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle,
-  DialogDescription
-} from "@/components/ui/dialog";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
+  badgeTone,
+  categoryToneMap,
+  formatControlCost,
+  formatImplementationStatus,
+  statusToneMap,
+  typeToneMap,
+} from "@/components/controls/control-style";
 
 type ControlListProps = {
   controls: Control[];
   onEdit: (control: Control) => void;
-  isTemplateView?: boolean;
-  onAssignToRisk?: (control: Control) => void;
+  onDelete?: (control: Control) => void;
 };
 
-export function ControlList({ controls, onEdit, isTemplateView = false, onAssignToRisk }: ControlListProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState("all");
-  const [filterCategory, setFilterCategory] = useState("all");
-  const [filterStatus, setFilterStatus] = useState("all");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [controlToDelete, setControlToDelete] = useState<Control | null>(null);
+const gradients = [
+  "from-[#2f2b54]/90 via-[#1d1a32]/90 to-[#110f1f]/95",
+  "from-[#103e35]/85 via-[#0b2d26]/90 to-[#051612]/95",
+  "from-[#1e2b52]/85 via-[#121a30]/90 to-[#090d18]/95",
+];
+
+export function ControlList({ controls, onEdit, onDelete }: ControlListProps) {
   const [detailsControl, setDetailsControl] = useState<Control | null>(null);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  
-  const itemsPerPage = 10;
+  const [deleteCandidate, setDeleteCandidate] = useState<Control | null>(null);
 
-  // Filter controls based on search query and filters
-  const filteredControls = (controls || []).filter((control) => {
-    const matchesSearch =
-      control.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      control.controlId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (control.description && control.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesType = filterType === "all" || control.controlType === filterType;
-    const matchesCategory = filterCategory === "all" || control.controlCategory === filterCategory;
-    const matchesStatus = filterStatus === "all" || control.implementationStatus === filterStatus;
-    
-    return matchesSearch && matchesType && matchesCategory && matchesStatus;
-  });
-  
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredControls.length / itemsPerPage);
-  const paginatedControls = filteredControls.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const cards = useMemo(() => controls || [], [controls]);
 
-  // Handle control deletion confirmation
-  const handleDeleteClick = (control: Control) => {
-    setControlToDelete(control);
-    setDeleteConfirmOpen(true);
-  };
-
-  // Delete mutation
-  const deleteMutation = useMutation({
-    mutationFn: async (controlId: number) => {
-      // Use different endpoints based on whether we're in template view
-      const endpoint = isTemplateView 
-        ? `/api/control-library/${controlId}` 
-        : `/api/controls/${controlId}`;
-      return apiRequest("DELETE", endpoint);
-    },
-    onSuccess: () => {
-      // Invalidate appropriate queries based on view
-      if (isTemplateView) {
-        queryClient.invalidateQueries({ queryKey: ["/api/control-library"] });
-      } else {
-        queryClient.invalidateQueries({ queryKey: ["/api/controls"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/risks"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
-        // Invalidate risk summary for Loss Exceedance Curve
-        queryClient.invalidateQueries({ queryKey: ["/api/risk-summary/latest"] });
-      }
-      
-      toast({
-        title: isTemplateView ? "Template deleted" : "Control deleted",
-        description: isTemplateView 
-          ? "The control template has been deleted successfully."
-          : "The control has been deleted successfully.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: `Failed to delete ${isTemplateView ? "template" : "control"}: ${error.message}`,
-        variant: "destructive",
-      });
-    },
-  });
-
-  // Execute control deletion
-  const confirmDelete = () => {
-    if (controlToDelete) {
-      deleteMutation.mutate(controlToDelete.id);
-    }
-    setDeleteConfirmOpen(false);
-  };
-  
-  // Handle view details
-  const handleViewDetails = (control: Control) => {
-    setDetailsControl(control);
-    setDetailsOpen(true);
-  };
-  
-  // Get control type badge color
-  const getControlTypeColor = (type: string) => {
-    switch(type) {
-      case "preventive": return "bg-green-100 text-green-800";
-      case "detective": return "bg-blue-100 text-blue-800";
-      case "corrective": return "bg-amber-100 text-amber-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-  
-  // Get control category badge color
-  const getControlCategoryColor = (category: string) => {
-    switch(category) {
-      case "technical": return "bg-indigo-100 text-indigo-800";
-      case "administrative": return "bg-purple-100 text-purple-800";
-      case "physical": return "bg-teal-100 text-teal-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-  
-  // Get implementation status badge color
-  const getImplementationStatusColor = (status: string) => {
-    switch(status) {
-      case "fully_implemented": return "bg-green-100 text-green-800";
-      case "in_progress": return "bg-amber-100 text-amber-800";
-      case "not_implemented": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
-    }
-  };
-  
-  // Format implementation status for display
-  const formatImplementationStatus = (status: string) => {
-    switch(status) {
-      case "fully_implemented": return "Fully Implemented";
-      case "in_progress": return "In Progress";
-      case "not_implemented": return "Not Implemented";
-      default: return status;
-    }
-  };
-  
-  // Format currency for display
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  // Calculate total cost based on business logic
-  const calculateTotalCost = (control: Control) => {
-    if (control.implementationStatus === "fully_implemented") {
-      if (control.isPerAgentPricing) {
-        // Agent-based: Show cost per agent (actual calculation done server-side with asset count)
-        return Number(control.costPerAgent) || 0;
-      } else {
-        // Total cost
-        return Number(control.implementationCost) || 0;
-      }
-    } else if (control.implementationStatus === "in_progress") {
-      // In progress: deployedAgentCount × costPerAgent
-      const deployed = Number(control.deployedAgentCount) || 0;
-      const costPerAgent = Number(control.costPerAgent) || 0;
-      return deployed * costPerAgent;
-    }
-    return 0;
-  };
-
-  // Format cost display with context
-  const formatCostDisplay = (control: Control) => {
-    const totalCost = calculateTotalCost(control);
-    
-    if (control.implementationStatus === "fully_implemented" && control.isPerAgentPricing) {
-      return `${formatCurrency(totalCost)}/agent`;
-    }
-    return formatCurrency(totalCost);
-  };
+  if (!cards.length) {
+    return (
+      <div className="rounded-[28px] border border-white/10 bg-white/5 p-12 text-center text-white/70">
+        <p className="text-lg font-semibold text-white">No controls match the current filters.</p>
+        <p className="text-sm text-white/60">Adjust filters or create a new control to populate this view.</p>
+      </div>
+    );
+  }
 
   return (
     <>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 py-5">
-          <CardTitle>{isTemplateView ? "Control Template Library" : "Implemented Controls"}</CardTitle>
-          <div className="flex items-center space-x-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-              <Input
-                type="search"
-                placeholder="Search controls..."
-                className="w-64 pl-8"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1); // Reset to first page on search
-                }}
-              />
-            </div>
-            <Select
-              value={filterType}
-              onValueChange={(value) => {
-                setFilterType(value);
-                setCurrentPage(1); // Reset to first page on filter change
-              }}
-            >
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="preventive">Preventive</SelectItem>
-                <SelectItem value="detective">Detective</SelectItem>
-                <SelectItem value="corrective">Corrective</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select
-              value={filterStatus}
-              onValueChange={(value) => {
-                setFilterStatus(value);
-                setCurrentPage(1); // Reset to first page on filter change
-              }}
-            >
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="fully_implemented">Fully Implemented</SelectItem>
-                <SelectItem value="in_progress">In Progress</SelectItem>
-                <SelectItem value="not_implemented">Not Implemented</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {paginatedControls.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {paginatedControls.map((control) => (
-                <Card 
-                  key={control.id} 
-                  className="bg-gray-800 border-gray-700 hover:border-gray-600 transition-colors cursor-pointer"
-                  onClick={() => handleViewDetails(control)}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {cards.map((control, index) => (
+          <GlowCard
+            key={control.id}
+            compact
+            className={`h-full rounded-[28px] border-white/10 bg-gradient-to-b ${gradients[index % gradients.length]}`}
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-white/50">{control.controlId}</p>
+                <h3 className="mt-1 text-xl font-semibold text-white">{control.name}</h3>
+                <p className="mt-2 line-clamp-2 text-sm text-white/60">{control.description || "No description provided."}</p>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-full border border-white/10 text-white/70 hover:bg-white/10"
+                  onClick={() => setDetailsControl(control)}
                 >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                          <span className="text-white text-sm font-bold">
-                            {control.controlId?.substring(0, 3) || 'CTL'}
-                          </span>
-                        </div>
-                        <div>
-                          <CardTitle className="text-white text-lg">{control.name}</CardTitle>
-                          <div className="text-sm text-gray-400">{control.controlId}</div>
-                        </div>
-                      </div>
-                      <div className="flex space-x-1" onClick={(e) => e.stopPropagation()}>
-                        {isTemplateView && onAssignToRisk && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-700"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onAssignToRisk(control);
-                            }}
-                            title="Assign to Risk"
-                          >
-                            <Link className="h-4 w-4" />
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-700"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onEdit(control);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-gray-400 hover:text-red-400 hover:bg-gray-700"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteClick(control);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-gray-400 mb-1">Type</p>
-                        <Badge className={getControlTypeColor(control.controlType)}>
-                          {control.controlType.charAt(0).toUpperCase() + control.controlType.slice(1)}
-                        </Badge>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-400 mb-1">Category</p>
-                        <Badge className={getControlCategoryColor(control.controlCategory)}>
-                          {control.controlCategory.charAt(0).toUpperCase() + control.controlCategory.slice(1)}
-                        </Badge>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <p className="text-sm text-gray-400 mb-1">Status</p>
-                      <Badge className={getImplementationStatusColor(control.implementationStatus)}>
-                        {formatImplementationStatus(control.implementationStatus)}
-                      </Badge>
-                    </div>
-                    
-                    <div>
-                      <p className="text-sm text-gray-400 mb-2">Effectiveness</p>
-                      <div className="flex items-center space-x-2">
-                        <Progress value={(control.controlEffectiveness || 0) * 10} className="flex-1 h-2" />
-                        <span className="text-sm text-white">{(control.controlEffectiveness || 0).toFixed(1)}/10</span>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <p className="text-sm text-gray-400 mb-1">Cost</p>
-                      <p className="text-white font-semibold">{formatCostDisplay(control)}</p>
-                    </div>
-                    
-                    {control.description && (
-                      <div>
-                        <p className="text-sm text-gray-400 mb-1">Description</p>
-                        <p className="text-gray-300 text-sm line-clamp-2">{control.description}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center p-8 text-gray-400">
-              <Search className="mx-auto h-12 w-12 text-gray-500 mb-4" />
-              <p className="text-lg">No controls found.</p>
-              <p className="text-sm">Try adjusting your search or filter criteria.</p>
-            </div>
-          )}
-          
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-end space-x-2 py-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                <span className="sr-only">Previous Page</span>
-              </Button>
-              <div className="text-sm text-muted-foreground">
-                Page {currentPage} of {totalPages}
+                  <ExternalLink className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-full border border-white/10 text-white/70 hover:bg-white/10"
+                  onClick={() => onEdit(control)}
+                >
+                  <Edit className="h-4 w-4" />
+                </Button>
+                {onDelete && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 rounded-full border border-rose-400/20 text-rose-200 hover:bg-rose-500/10"
+                    onClick={() => setDeleteCandidate(control)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-              >
-                <ChevronRight className="h-4 w-4" />
-                <span className="sr-only">Next Page</span>
-              </Button>
             </div>
-          )}
-        </CardContent>
-      </Card>
 
-      {/* Delete confirmation dialog */}
-      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the control &quot;{controlToDelete?.name}&quot; ({controlToDelete?.controlId}).
-              This action cannot be undone and may impact risk calculations.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Control details dialog */}
-      <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Control Details</DialogTitle>
-            <DialogDescription>
-              Detailed information about this control
-            </DialogDescription>
-          </DialogHeader>
-
-          {detailsControl ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Control ID</h4>
-                  <p>{detailsControl.controlId}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Name</h4>
-                  <p>{detailsControl.name}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Type</h4>
-                  <Badge className={getControlTypeColor(detailsControl.controlType)}>
-                    {detailsControl.controlType.charAt(0).toUpperCase() + detailsControl.controlType.slice(1)}
-                  </Badge>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Category</h4>
-                  <Badge className={getControlCategoryColor(detailsControl.controlCategory)}>
-                    {detailsControl.controlCategory.charAt(0).toUpperCase() + detailsControl.controlCategory.slice(1)}
-                  </Badge>
-                </div>
-              </div>
-
+            <div className="mt-6 grid grid-cols-2 gap-4 text-sm">
               <div>
-                <h4 className="text-sm font-medium text-gray-500">Description</h4>
-                <p className="text-sm">{detailsControl.description || "No description provided."}</p>
+                <p className="text-xs uppercase tracking-wide text-white/40">Type</p>
+                <Badge className={`mt-1 rounded-full px-3 py-0.5 text-xs capitalize ${badgeTone(typeToneMap, control.controlType)}`}>
+                  {control.controlType || "n/a"}
+                </Badge>
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Implementation Status</h4>
-                  <Badge className={getImplementationStatusColor(detailsControl.implementationStatus)}>
-                    {formatImplementationStatus(detailsControl.implementationStatus)}
-                  </Badge>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Total Cost</h4>
-                  <p className="font-medium">{formatCostDisplay(detailsControl)}</p>
-                </div>
-              </div>
-
-              {/* Cost Breakdown Section */}
-              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                <h4 className="text-sm font-semibold text-blue-900 mb-3">Cost Breakdown</h4>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-blue-700 font-medium">Pricing Model:</span>
-                    <p className="font-semibold text-gray-900">
-                      {detailsControl.isPerAgentPricing ? "Per Agent" : "Total Implementation"}
-                    </p>
-                  </div>
-                  {detailsControl.isPerAgentPricing ? (
-                    <div>
-                      <span className="text-blue-700 font-medium">Cost Per Agent:</span>
-                      <p className="font-semibold text-gray-900">{formatCurrency(Number(detailsControl.costPerAgent) || 0)}</p>
-                    </div>
-                  ) : (
-                    <div>
-                      <span className="text-blue-700 font-medium">Implementation Cost:</span>
-                      <p className="font-semibold text-gray-900">{formatCurrency(Number(detailsControl.implementationCost) || 0)}</p>
-                    </div>
-                  )}
-                  {detailsControl.implementationStatus === "in_progress" && (
-                    <>
-                      <div>
-                        <span className="text-blue-700 font-medium">Deployed Agents:</span>
-                        <p className="font-semibold text-gray-900">{Number(detailsControl.deployedAgentCount) || 0}</p>
-                      </div>
-                      <div>
-                        <span className="text-blue-700 font-medium">Current Cost:</span>
-                        <p className="font-semibold text-gray-900">{formatCurrency((Number(detailsControl.deployedAgentCount) || 0) * (Number(detailsControl.costPerAgent) || 0))}</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-
               <div>
-                <h4 className="text-sm font-medium text-gray-500">Control Effectiveness</h4>
-                <div className="flex items-center space-x-2 mt-1">
-                  <Progress value={detailsControl.controlEffectiveness * 10} className="h-2.5" />
-                  <span className="text-sm font-medium">{detailsControl.controlEffectiveness.toFixed(1)} / 10</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  FAIR-U resistance strength score - how effectively this control reduces risk
+                <p className="text-xs uppercase tracking-wide text-white/40">Category</p>
+                <Badge
+                  className={`mt-1 rounded-full px-3 py-0.5 text-xs capitalize ${badgeTone(categoryToneMap, control.controlCategory)}`}
+                >
+                  {control.controlCategory || "n/a"}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-white/40">Status</p>
+                <Badge
+                  className={`mt-1 rounded-full px-3 py-0.5 text-xs capitalize ${badgeTone(
+                    statusToneMap,
+                    control.implementationStatus,
+                  )}`}
+                >
+                  {formatImplementationStatus(control.implementationStatus)}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-white/40">Effectiveness</p>
+                <p className="mt-1 text-base font-semibold text-white">
+                  {(control.controlEffectiveness || 0).toFixed(1)}
+                  <span className="text-sm text-white/50"> / 10</span>
                 </p>
+                <div className="mt-2 h-1.5 rounded-full bg-white/10">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-indigo-400"
+                    style={{ width: `${Math.min((control.controlEffectiveness || 0) * 10, 100)}%` }}
+                  />
+                </div>
               </div>
+            </div>
 
+            <div className="mt-6 rounded-[18px] border border-dashed border-white/10 bg-white/5 px-4 py-3 text-sm text-white/70">
+              <p className="text-xs uppercase tracking-wide text-white/40">Cost</p>
+              <p className="text-lg font-semibold text-white">{formatControlCost(control)}</p>
+            </div>
+            {control.associatedRisks?.length ? (
+              <div className="mt-4">
+                <p className="text-xs uppercase tracking-wide text-white/40">Associated Risks</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {control.associatedRisks.slice(0, 3).map((riskId) => (
+                    <Badge key={riskId} className="rounded-full border border-white/10 bg-white/5 px-2 text-[11px] text-white/70">
+                      {riskId}
+                    </Badge>
+                  ))}
+                  {control.associatedRisks.length > 3 && (
+                    <Badge className="rounded-full border border-white/10 bg-white/5 px-2 text-[11px] text-white/70">
+                      +{control.associatedRisks.length - 3}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            ) : null}
+          </GlowCard>
+        ))}
+      </div>
+
+      <Dialog open={!!detailsControl} onOpenChange={() => setDetailsControl(null)}>
+        <DialogContent className="max-w-2xl rounded-[32px] border border-white/10 bg-slate-950/90 text-white">
+          <DialogHeader>
+            <DialogTitle>{detailsControl?.name}</DialogTitle>
+            <DialogDescription className="text-white/60">{detailsControl?.controlId}</DialogDescription>
+          </DialogHeader>
+          {detailsControl && (
+            <div className="space-y-4 text-sm text-white/70">
+              <p>{detailsControl.description || "No description provided."}</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-white/40">Framework</p>
+                  <Badge className="mt-1 rounded-full border border-white/10 bg-white/5 px-3 py-0.5 text-xs text-white/70">
+                    {(detailsControl as any).complianceFramework || "Custom"}
+                  </Badge>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-white/40">Cost</p>
+                  <p className="mt-1 text-lg font-semibold text-white">{formatControlCost(detailsControl)}</p>
+                </div>
+              </div>
               <div>
-                <h4 className="text-sm font-medium text-gray-500">Associated Risks</h4>
-                {detailsControl.associatedRisks && detailsControl.associatedRisks.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-2 mt-1">
-                    {detailsControl.associatedRisks.map((riskId, index) => (
-                      <Badge key={index} variant="outline">
+                <p className="text-xs uppercase tracking-wide text-white/40">Associated Risks</p>
+                {detailsControl.associatedRisks?.length ? (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {detailsControl.associatedRisks.map((riskId) => (
+                      <Badge key={riskId} className="rounded-full border border-white/10 bg-white/5 px-3 py-0.5 text-xs text-white/70">
                         {riskId}
                       </Badge>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm">No risks associated.</p>
+                  <p className="mt-2 text-white/60">No risks associated.</p>
                 )}
               </div>
-
-              {detailsControl.notes && (
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Notes</h4>
-                  <p className="text-sm">{detailsControl.notes}</p>
-                </div>
-              )}
-
-              <div className="flex justify-end space-x-2">
-                <Button onClick={() => onEdit(detailsControl)} className="gap-1">
-                  <Edit className="h-4 w-4" />
-                  Edit Control
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-5/6" />
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!deleteCandidate} onOpenChange={() => setDeleteCandidate(null)}>
+        <AlertDialogContent className="rounded-[28px] border border-white/10 bg-slate-950/90 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete control</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/70">
+              This will permanently delete “{deleteCandidate?.name}”. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="rounded-full border-white/10 bg-white/5 text-white hover:bg-white/10">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="rounded-full bg-rose-500 text-white hover:bg-rose-400"
+              onClick={() => {
+                if (deleteCandidate && onDelete) {
+                  onDelete(deleteCandidate);
+                }
+                setDeleteCandidate(null);
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

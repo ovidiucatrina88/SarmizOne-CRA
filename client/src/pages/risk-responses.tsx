@@ -1,289 +1,324 @@
-import React, { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import React, { useMemo, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import Layout from "@/components/layout/layout";
+import { GlowCard } from "@/components/ui/glow-card";
+import { KpiCard } from "@/components/ui/kpi-card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Plus, Edit, Trash2, RefreshCw } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
-import { RiskResponseForm } from "@/components/risk-responses/risk-response-form";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import Layout from "@/components/layout/layout";
+import { useToast } from "@/hooks/use-toast";
+import { RiskResponseForm } from "@/components/risk-responses/risk-response-form";
+import { Search, RefreshCw, PlusCircle, Edit, Trash2 } from "lucide-react";
+
+type RiskResponse = {
+  id: number;
+  riskId: string;
+  responseType: "mitigate" | "transfer" | "avoid" | "accept";
+  assignedControls?: string[];
+  transferMethod?: string;
+  avoidanceStrategy?: string;
+  acceptanceReason?: string;
+  justification?: string;
+};
+
+const responseTone: Record<RiskResponse["responseType"], string> = {
+  mitigate: "border-emerald-400/30 bg-emerald-500/10 text-emerald-100",
+  transfer: "border-indigo-400/30 bg-indigo-500/10 text-indigo-100",
+  avoid: "border-rose-400/30 bg-rose-500/10 text-rose-100",
+  accept: "border-amber-400/30 bg-amber-500/10 text-amber-100",
+};
 
 export default function RiskResponses() {
   const { toast } = useToast();
-  const [selectedResponse, setSelectedResponse] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedResponse, setSelectedResponse] = useState<RiskResponse | null>(null);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  // Fetch risk responses
-  const { 
-    data: riskResponses, 
+  const {
+    data: responsesData,
     isLoading: responsesLoading,
-    refetch: refetchResponses
+    refetch: refetchResponses,
   } = useQuery({
     queryKey: ["/api/risk-responses"],
   });
 
-  // Fetch risks for dropdown list
-  const { 
-    data: risks, 
-    isLoading: risksLoading 
-  } = useQuery({
+  const { data: risksData, isLoading: risksLoading } = useQuery({
     queryKey: ["/api/risks"],
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const response = await fetch(`/api/risk-responses/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Failed to delete risk response");
+      return response.json();
+    },
+    onSuccess: () => {
+      refetchResponses();
+      toast({ title: "Response deleted" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error deleting response",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const riskResponses: RiskResponse[] = (responsesData as any)?.data ?? [];
+  const risks: Risk[] = (risksData as any)?.data ?? [];
+  const isLoading = responsesLoading || risksLoading;
+
+  const filteredResponses = useMemo(() => {
+    return riskResponses.filter(
+      (response) =>
+        !searchQuery ||
+        response.responseType.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        getRiskName(response.riskId, risks)
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        response.justification?.toLowerCase().includes(searchQuery.toLowerCase()),
+    );
+  }, [riskResponses, searchQuery, risks]);
+
+  const stats = useMemo(() => {
+    const total = riskResponses.length;
+    const typeCounts = riskResponses.reduce(
+      (acc, response) => {
+        acc[response.responseType] = (acc[response.responseType] || 0) + 1;
+        return acc;
+      },
+      { mitigate: 0, transfer: 0, avoid: 0, accept: 0 } as Record<RiskResponse["responseType"], number>,
+    );
+    return { total, ...typeCounts, coverage: total ? Math.round((typeCounts.mitigate / total) * 100) : 0 };
+  }, [riskResponses]);
 
   const handleAddSuccess = () => {
     setIsAddDialogOpen(false);
     refetchResponses();
-    toast({
-      title: "Success",
-      description: "Risk response added successfully",
-    });
+    toast({ title: "Response added", description: "Risk response added successfully." });
   };
 
   const handleEditSuccess = () => {
     setIsEditDialogOpen(false);
     setSelectedResponse(null);
     refetchResponses();
-    toast({
-      title: "Success",
-      description: "Risk response updated successfully",
-    });
+    toast({ title: "Response updated", description: "Risk response updated successfully." });
   };
 
-  const handleDeleteResponse = async (id) => {
-    try {
-      const response = await fetch(`/api/risk-responses/${id}`, {
-        method: "DELETE",
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to delete risk response");
-      }
-      
-      refetchResponses();
-      toast({
-        title: "Success",
-        description: "Risk response deleted successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    }
+  const handleDelete = (id: number) => {
+    deleteMutation.mutate(id);
   };
 
-  // Get response type badge color
-  const getResponseTypeColor = (responseType) => {
-    switch(responseType) {
-      case "mitigate": return "bg-blue-900 text-blue-200 border-blue-700";
-      case "transfer": return "bg-purple-900 text-purple-200 border-purple-700";
-      case "avoid": return "bg-red-900 text-red-200 border-red-700";
-      case "accept": return "bg-amber-900 text-amber-200 border-amber-700";
-      default: return "bg-gray-700 text-gray-200 border-gray-600";
-    }
-  };
-
-  // Get risk name from risk ID
-  const getRiskName = (riskId) => {
-    if (!risks || !Array.isArray(risks.data)) return "Unknown Risk";
-    const risk = risks.data.find(r => r.riskId === riskId);
+  const getRiskName = (riskId: string, riskList: Risk[]) => {
+    const risk = riskList.find((r) => r.riskId === riskId);
     return risk ? risk.name : "Unknown Risk";
   };
 
-  const isLoading = responsesLoading || risksLoading;
+  const pageActions = (
+    <div className="flex gap-2">
+      <Button
+        variant="ghost"
+        className="rounded-full border border-white/10 text-white hover:bg-white/10"
+        onClick={() => refetchResponses()}
+      >
+        <RefreshCw className="mr-2 h-4 w-4" />
+        Refresh
+      </Button>
+      <Button className="rounded-full bg-primary px-5 text-primary-foreground" onClick={() => setIsAddDialogOpen(true)}>
+        <PlusCircle className="mr-2 h-4 w-4" />
+        Add Response
+      </Button>
+    </div>
+  );
 
   if (isLoading) {
     return (
-      
-        <div className="space-y-6">
-          <div className="flex justify-between">
-            <Skeleton className="h-10 w-1/3" />
-            <Skeleton className="h-10 w-32" />
+      <Layout pageTitle="Risk Responses" pageDescription="Plan, track, and analyze risk treatment strategies." pageActions={pageActions}>
+        <div className="space-y-8">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <GlowCard key={idx} compact className="border-white/10">
+                <Skeleton className="h-3 w-20 rounded-full" />
+                <Skeleton className="mt-4 h-6 w-32 rounded-[10px]" />
+                <Skeleton className="mt-2 h-4 w-16 rounded-full" />
+              </GlowCard>
+            ))}
           </div>
-          <div className="bg-gray-800 rounded-lg border border-gray-700">
-            <div className="p-6 border-b border-gray-700">
-              <Skeleton className="h-6 w-1/4" />
-            </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                <Skeleton className="h-6 w-full" />
-                <Skeleton className="h-6 w-full" />
-                <Skeleton className="h-6 w-full" />
-                <Skeleton className="h-6 w-full" />
-                <Skeleton className="h-6 w-full" />
-              </div>
-            </div>
-          </div>
+          <GlowCard className="p-8">
+            <Skeleton className="h-96 w-full rounded-[32px]" />
+          </GlowCard>
         </div>
-      
+      </Layout>
     );
   }
 
   return (
-    <Layout>
-      <div className="container mx-auto p-6 space-y-6">
-      <div className="mb-6 flex gap-2">
-        <Button 
-          onClick={() => refetchResponses()} 
-          variant="outline" 
-          size="sm"
-          className="flex items-center gap-1"
-        >
-          <RefreshCw className="h-4 w-4" />
-          Refresh
-        </Button>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-1">
-              <Plus className="h-4 w-4" />
-              Add Response
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl bg-gray-800 border-gray-700">
-            <DialogHeader>
-              <DialogTitle className="text-white">Add New Risk Response</DialogTitle>
-            </DialogHeader>
-            <RiskResponseForm 
-              risks={risks?.data || []} 
-              onSuccess={handleAddSuccess} 
+    <Layout pageTitle="Risk Responses" pageDescription="Plan, track, and analyze risk treatment strategies." pageActions={pageActions}>
+      <div className="space-y-8">
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <KpiCard label="Responses" value={stats.total.toLocaleString()} delta={`${filteredResponses.length} in view`} />
+          <KpiCard label="Mitigate" value={stats.mitigate.toLocaleString()} delta="Mitigation actions" trendColor="#86efac" />
+          <KpiCard label="Transfer" value={stats.transfer.toLocaleString()} delta="Insurance/offloading" trendColor="#c4b5fd" />
+          <KpiCard label="Mitigation Coverage" value={`${stats.coverage}%`} delta="Share of mitigation responses" trendColor="#fda4af" />
+        </section>
+
+        <GlowCard className="space-y-4">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-white/50">Filters</p>
+              <p className="text-lg font-semibold text-white">Locate responses by risk or treatment type</p>
+            </div>
+            <div className="text-sm text-white/60">
+              {filteredResponses.length} of {riskResponses.length} responses
+            </div>
+          </div>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+            <Input
+              placeholder="Search responses by risk, response type, or justification…"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              className="h-11 rounded-full border-white/10 bg-white/5 pl-10 text-white placeholder:text-white/40"
             />
-          </DialogContent>
-        </Dialog>
-      </div>
-      <div className="bg-gray-800 rounded-lg border border-gray-700">
-        <div className="p-6 border-b border-gray-700">
-          <h3 className="text-lg font-semibold text-white">Risk Responses</h3>
-        </div>
-        <div className="p-6">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-700">
-                  <th className="text-left py-3 px-4 text-gray-300 font-medium">Risk</th>
-                  <th className="text-left py-3 px-4 text-gray-300 font-medium">Response Type</th>
-                  <th className="text-left py-3 px-4 text-gray-300 font-medium">Justification</th>
-                  <th className="text-left py-3 px-4 text-gray-300 font-medium">Details</th>
-                  <th className="text-left py-3 px-4 text-gray-300 font-medium w-[100px]">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {riskResponses?.data && riskResponses.data.length > 0 ? (
-                  riskResponses.data.map((response) => (
-                    <tr key={response.id} className="border-b border-gray-700 hover:bg-gray-700/50">
-                      <td className="py-3 px-4 text-white font-medium">
-                        {getRiskName(response.riskId)}
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getResponseTypeColor(response.responseType)}`}>
-                          {response.responseType.charAt(0).toUpperCase() + response.responseType.slice(1)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-gray-300">
-                        {response.justification || "No justification provided"}
-                      </td>
-                      <td className="py-3 px-4 text-gray-300">
+          </div>
+        </GlowCard>
+
+        <GlowCard className="space-y-4">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-white/50">Responses</p>
+              <p className="text-lg font-semibold text-white">Treatment library</p>
+            </div>
+            <div className="text-sm text-white/60">{filteredResponses.length} entries</div>
+          </div>
+          {!filteredResponses.length ? (
+            <div className="rounded-[28px] border border-dashed border-white/10 bg-white/5 p-12 text-center text-white/60">
+              No risk responses found. Use “Add Response” to create one.
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-[28px] border border-white/10">
+              <Table>
+                <TableHeader className="bg-white/5 text-xs uppercase tracking-wide text-white/50">
+                  <TableRow>
+                    <TableHead>Risk</TableHead>
+                    <TableHead>Response Type</TableHead>
+                    <TableHead>Justification</TableHead>
+                    <TableHead>Details</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredResponses.map((response) => (
+                    <TableRow key={response.id} className="border-b border-white/5">
+                      <TableCell className="align-top text-sm font-semibold text-white">
+                        {getRiskName(response.riskId, risks)}
+                      </TableCell>
+                      <TableCell className="align-top">
+                        <Badge className={`rounded-full border px-3 py-0.5 text-xs capitalize ${responseTone[response.responseType]}`}>
+                          {response.responseType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="align-top text-sm text-white/70">
+                        {response.justification || "Not documented"}
+                      </TableCell>
+                      <TableCell className="align-top text-sm text-white/70">
                         {response.responseType === "mitigate" && (
-                          <div>
-                            <strong className="text-white">Controls: </strong>
-                            {response.assignedControls && response.assignedControls.length > 0 
-                              ? response.assignedControls.join(", ") 
-                              : "None"}
-                          </div>
+                          <>
+                            <span className="text-white/60 text-xs uppercase tracking-wide">Controls</span>
+                            <p>{response.assignedControls?.length ? response.assignedControls.join(", ") : "None assigned"}</p>
+                          </>
                         )}
                         {response.responseType === "transfer" && (
-                          <div>
-                            <strong className="text-white">Transfer Method: </strong>
-                            {response.transferMethod || "Not specified"}
-                          </div>
+                          <>
+                            <span className="text-white/60 text-xs uppercase tracking-wide">Transfer Method</span>
+                            <p>{response.transferMethod || "Not specified"}</p>
+                          </>
                         )}
                         {response.responseType === "avoid" && (
-                          <div>
-                            <strong className="text-white">Avoidance Strategy: </strong>
-                            {response.avoidanceStrategy || "Not specified"}
-                          </div>
+                          <>
+                            <span className="text-white/60 text-xs uppercase tracking-wide">Avoidance Strategy</span>
+                            <p>{response.avoidanceStrategy || "Not specified"}</p>
+                          </>
                         )}
                         {response.responseType === "accept" && (
-                          <div>
-                            <strong className="text-white">Acceptance Reason: </strong>
-                            {response.acceptanceReason || "Not specified"}
-                          </div>
+                          <>
+                            <span className="text-white/60 text-xs uppercase tracking-wide">Acceptance Reason</span>
+                            <p>{response.acceptanceReason || "Not specified"}</p>
+                          </>
                         )}
-                      </td>
-                      <td className="py-3 px-4">
-                      <div className="flex gap-2">
-                        <Dialog open={isEditDialogOpen && selectedResponse?.id === response.id} onOpenChange={(open) => {
-                          setIsEditDialogOpen(open);
-                          if (!open) setSelectedResponse(null);
-                        }}>
-                          <DialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => {
-                                setSelectedResponse(response);
-                                setIsEditDialogOpen(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                              <span className="sr-only">Edit</span>
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl bg-gray-800 border-gray-700">
-                            <DialogHeader>
-                              <DialogTitle className="text-white">Edit Risk Response</DialogTitle>
-                            </DialogHeader>
-                            {selectedResponse && (
-                              <RiskResponseForm 
-                                risks={risks?.data || []} 
-                                response={selectedResponse}
-                                onSuccess={handleEditSuccess} 
-                              />
-                            )}
-                          </DialogContent>
-                        </Dialog>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-100"
-                          onClick={() => handleDeleteResponse(response.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
-                      </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={5} className="text-center py-6 text-gray-400">
-                      No risk responses found. Click the "Add Response" button to create one.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                      </TableCell>
+                      <TableCell className="align-top text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-9 rounded-full border border-white/10 text-white hover:bg-white/10"
+                            onClick={() => {
+                              setSelectedResponse(response);
+                              setIsEditDialogOpen(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-9 rounded-full border border-rose-400/20 text-rose-200 hover:bg-rose-500/10"
+                            onClick={() => handleDelete(response.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </GlowCard>
       </div>
-      </div>
+
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-[32px] border border-white/10 bg-slate-950/95 text-white">
+          <DialogHeader>
+            <DialogTitle>Add Risk Response</DialogTitle>
+          </DialogHeader>
+          <RiskResponseForm risks={risks} onSuccess={handleAddSuccess} />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-[32px] border border-white/10 bg-slate-950/95 text-white">
+          <DialogHeader>
+            <DialogTitle>Edit Risk Response</DialogTitle>
+          </DialogHeader>
+          {selectedResponse && (
+            <RiskResponseForm risks={risks} response={selectedResponse} onSuccess={handleEditSuccess} />
+          )}
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }

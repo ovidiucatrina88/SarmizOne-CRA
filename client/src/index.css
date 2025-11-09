@@ -3,49 +3,76 @@
 @tailwind utilities;
 
 :root {
-      --background: 0 0% 100%;
---foreground: 20 14.3% 4.1%;
---muted: 60 4.8% 95.9%;
---muted-foreground: 25 5.3% 44.7%;
---popover: 0 0% 100%;
---popover-foreground: 20 14.3% 4.1%;
---card: 0 0% 100%;
---card-foreground: 20 14.3% 4.1%;
---border: 20 5.9% 90%;
---input: 20 5.9% 90%;
---primary: 207 90% 54%;
---primary-foreground: 211 100% 99%;
---secondary: 60 4.8% 95.9%;
---secondary-foreground: 24 9.8% 10%;
---accent: 60 4.8% 95.9%;
---accent-foreground: 24 9.8% 10%;
---destructive: 0 84.2% 60.2%;
---destructive-foreground: 60 9.1% 97.8%;
---ring: 20 14.3% 4.1%;
---radius: 0.5rem;
-  }
-  .dark {
-      --background: 240 10% 3.9%;
---foreground: 0 0% 98%;
---muted: 240 3.7% 15.9%;
---muted-foreground: 240 5% 64.9%;
---popover: 240 10% 3.9%;
---popover-foreground: 0 0% 98%;
---card: 240 10% 3.9%;
---card-foreground: 0 0% 98%;
---border: 240 3.7% 15.9%;
---input: 240 3.7% 15.9%;
---primary: 207 90% 54%;
---primary-foreground: 211 100% 99%;
---secondary: 240 3.7% 15.9%;
---secondary-foreground: 0 0% 98%;
---accent: 240 3.7% 15.9%;
---accent-foreground: 0 0% 98%;
---destructive: 0 62.8% 30.6%;
---destructive-foreground: 0 0% 98%;
---ring: 240 4.9% 83.9%;
---radius: 0.5rem;
-  }
+  --font-sans: "Space Grotesk", "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --background: 222 60% 5%;
+  --foreground: 210 40% 98%;
+  --muted: 223 24% 18%;
+  --muted-foreground: 220 16% 65%;
+  --popover: 222 50% 7%;
+  --popover-foreground: 210 40% 96%;
+  --card: 227 45% 11%;
+  --card-foreground: 210 40% 97%;
+  --border: 226 28% 20%;
+  --input: 223 32% 18%;
+  --primary: 165 65% 55%;
+  --primary-foreground: 210 40% 8%;
+  --secondary: 226 35% 18%;
+  --secondary-foreground: 210 40% 96%;
+  --accent: 259 76% 70%;
+  --accent-foreground: 210 40% 8%;
+  --destructive: 350 80% 60%;
+  --destructive-foreground: 352 100% 96%;
+  --ring: 189 78% 75%;
+  --radius: 0.9rem;
+
+  --surface-raised: 222 45% 14%;
+  --surface-muted: 222 30% 10%;
+  --glow-emerald: 154 92% 62%;
+  --glow-magenta: 287 70% 66%;
+  --glow-cyan: 200 92% 65%;
+
+  --chart-1: 165 65% 55%;
+  --chart-2: 200 85% 65%;
+  --chart-3: 260 80% 75%;
+  --chart-4: 33 91% 65%;
+  --chart-5: 340 82% 62%;
+
+  --sidebar-background: 228 46% 6%;
+  --sidebar-foreground: 210 40% 95%;
+  --sidebar-primary: 165 65% 55%;
+  --sidebar-primary-foreground: 210 40% 8%;
+  --sidebar-accent: 228 38% 14%;
+  --sidebar-accent-foreground: 210 40% 98%;
+  --sidebar-border: 230 32% 20%;
+  --sidebar-ring: 200 82% 72%;
+}
+
+.dark {
+  --background: 223 70% 3%;
+  --foreground: 210 40% 98%;
+  --muted: 226 22% 16%;
+  --muted-foreground: 220 15% 65%;
+  --popover: 223 65% 4%;
+  --popover-foreground: 210 40% 96%;
+  --card: 227 49% 8%;
+  --card-foreground: 210 40% 97%;
+  --border: 227 30% 18%;
+  --input: 225 20% 13%;
+  --primary: 165 65% 55%;
+  --primary-foreground: 210 40% 8%;
+  --secondary: 229 34% 12%;
+  --secondary-foreground: 210 40% 96%;
+  --accent: 258 75% 68%;
+  --accent-foreground: 210 40% 8%;
+  --destructive: 350 75% 58%;
+  --destructive-foreground: 352 100% 96%;
+  --ring: 199 70% 70%;
+  --surface-raised: 225 41% 12%;
+  --surface-muted: 225 27% 8%;
+  --glow-emerald: 154 92% 62%;
+  --glow-magenta: 287 70% 66%;
+  --glow-cyan: 200 92% 65%;
+}
 
 @layer base {
   * {
@@ -53,132 +80,22 @@
   }
 
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply bg-background font-sans text-foreground antialiased;
+    background-image: radial-gradient(circle at 20% 20%, rgba(86, 203, 247, 0.12), transparent 35%), radial-gradient(circle at 80% 0%, rgba(109, 40, 217, 0.18), transparent 40%);
+    background-attachment: fixed;
   }
 }
 
-/* Custom risk visualization UI styles */
-.risk-detail-bg {
-  background-color: #121212;
-}
+@layer components {
+  .glass-panel {
+    @apply rounded-[1.75rem] border border-white/5 bg-card/80 shadow-[0_45px_120px_rgba(5,8,25,0.55)];
+  }
 
-.risk-card {
-  background-color: #1e1e1e;
-  border-radius: 0.75rem;
-}
+  .metric-grid {
+    @apply grid gap-4 sm:grid-cols-2 lg:grid-cols-4;
+  }
 
-.risk-card-inner {
-  background-color: #1a1a1a;
-  border-radius: 0.75rem;
+  .surface-muted {
+    @apply rounded-3xl border border-white/5 bg-surface-muted/80;
+  }
 }
-
-.risk-timeline-chart {
-  height: 80px;
-  width: 100%;
-}
-
-.risk-timeline-line {
-  fill: none;
-  stroke: #f97316;
-  stroke-width: 2;
-}
-
-.risk-chart-container {
-  background: linear-gradient(to bottom, rgba(249, 115, 22, 0.1), transparent);
-  border-radius: 0.5rem;
-  overflow: hidden;
-}
-
-.confidence-indicator {
-  @apply text-xs font-medium;
-}
-
-.confidence-low {
-  @apply text-amber-500;
-}
-
-.confidence-medium {
-  @apply text-orange-500;
-}
-
-.confidence-high {
-  @apply text-emerald-500;
-}
-
-.risk-control-badge {
-  @apply w-8 h-8 rounded flex items-center justify-center text-white text-sm font-medium;
-}
-
-.risk-control-network {
-  @apply bg-blue-600;
-}
-
-.risk-control-firewall {
-  @apply bg-blue-600;
-}
-
-.risk-control-cloud {
-  @apply bg-blue-600;
-}
-
-.risk-control-incident {
-  @apply bg-purple-600;
-}
-
-.risk-value-change {
-  @apply flex items-center;
-}
-
-.risk-reduction {
-  @apply text-green-500 flex items-center;
-}
-
-.risk-factors-view {
-  @apply bg-[#121212] text-white p-6 rounded-lg;
-}
-
-/* SVG Gradient Strokes for FAIR-U Risk Visualization */
-.stroke-gradient-orange {
-  stroke: #f97316;
-}
-
-.stroke-gradient-blue {
-  stroke: #3b82f6;
-}
-
-.stroke-gradient-purple {
-  stroke: #a855f7;
-}
-
-.stroke-gradient-indigo {
-  stroke: #6366f1;
-}
-
-.stroke-gradient-pink {
-  stroke: #ec4899;
-}
-
-.stroke-gradient-amber {
-  stroke: #f59e0b;
-}
-
-.stroke-gradient-green {
-  stroke: #22c55e;
-}
-
-.stroke-gradient-red {
-  stroke: #ef4444;
-}
-
-.stroke-gradient-lime {
-  stroke: #84cc16;
-}
-
-.stroke-gradient-violet {
-  stroke: #8b5cf6;
-}
-
-.stroke-gradient-fuchsia {
-  stroke: #d946ef;
-}
-

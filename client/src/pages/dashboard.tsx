@@ -1,140 +1,139 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { SquareStack, AlertTriangle, Shield, DollarSign, History } from "lucide-react";
-import { StatsCard } from "@/components/dashboard/stats-card";
-import { RiskBreakdown } from "@/components/dashboard/risk-breakdown";
-import { RiskOverviewCombined } from "@/components/dashboard/risk-overview-combined";
+import { History } from "lucide-react";
+
 import Layout from "@/components/layout/layout";
 import { LossExceedanceCurveModern } from "@/components/ui/loss-exceedance-curve-modern";
-import { Skeleton } from "@/components/ui/skeleton";
+import { GlowCard } from "@/components/ui/glow-card";
+import { KpiCard } from "@/components/ui/kpi-card";
+import { MetricPill } from "@/components/ui/metric-pill";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/utils";
-import { useState } from "react";
 import IRISBenchmarkCard from "@/components/dashboard/iris-benchmark-card";
-
 import { RiskCategorySeverityCard } from "@/components/dashboard/risk-category-severity-card";
+import { Skeleton } from "@/components/ui/skeleton";
+
+type TrendDirection = "up" | "down" | "flat";
+
+interface WatchlistRow {
+  name: string;
+  likelihood: string;
+  loss: string;
+  actor: string;
+  category: string;
+  trend: {
+    direction: TrendDirection;
+    value: string;
+  };
+}
+
+const FALLBACK_SCENARIOS = [
+  { name: "Credit Monitoring – DDoS", likelihood: "↓ 25%", loss: "↓ $122" },
+  { name: "Ransomware + Exfiltration", likelihood: "↓ 21%", loss: "↓ $25" },
+  { name: "Digital – APTs", likelihood: "↓ 18%", loss: "↓ $21" },
+];
+
+const FALLBACK_WATCHLIST: WatchlistRow[] = [
+  {
+    name: "IP training Gen AI model",
+    likelihood: "97%",
+    loss: "$18K",
+    actor: "Privileged Insider",
+    category: "Data Exfiltration",
+    trend: { direction: "up", value: "+5%" },
+  },
+  {
+    name: "Insider shares PII",
+    likelihood: "97%",
+    loss: "$6.6M",
+    actor: "Privileged Insider",
+    category: "Data Exfiltration",
+    trend: { direction: "down", value: "-2%" },
+  },
+  {
+    name: "Company IP leaked",
+    likelihood: "97%",
+    loss: "$18K",
+    actor: "Privileged Insider",
+    category: "Data Exfiltration",
+    trend: { direction: "flat", value: "0%" },
+  },
+  {
+    name: "Threat actor steals model",
+    likelihood: "43%",
+    loss: "$348K",
+    actor: "Cyber Criminal",
+    category: "Data Exfiltration",
+    trend: { direction: "up", value: "+8%" },
+  },
+];
+
+const TOP_CONTROLS = [
+  { code: "THM", name: "Application Threat Modeling", score: "95%" },
+  { code: "NDR", name: "Network Detection & Response", score: "95%" },
+  { code: "CSP", name: "Cyber Security Policies", score: "95%" },
+];
+
+const generateSeries = (base: number) => {
+  const seed = base || 50;
+  return Array.from({ length: 7 }).map((_, index) =>
+    Number((seed * (1 + Math.sin(index / 1.5) * 0.08)).toFixed(2)),
+  );
+};
 
 function DashboardSkeleton() {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="relative overflow-hidden bg-gradient-to-br from-background via-background to-muted/20 shadow-lg rounded-xl border-0 p-6">
-            <div className="flex items-center space-x-4">
-              <Skeleton className="h-12 w-12 rounded-xl" />
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, idx) => (
+          <GlowCard key={idx} compact className="h-[150px]">
+            <div className="flex h-full flex-col justify-between">
               <div className="space-y-2">
-                <Skeleton className="h-3 w-24" />
-                <Skeleton className="h-6 w-16" />
+                <Skeleton className="h-3 w-20 rounded-full" />
+                <Skeleton className="h-7 w-24 rounded" />
               </div>
+              <Skeleton className="h-8 w-full rounded-full" />
             </div>
-            <div className="mt-6 pt-4 border-t border-border/50">
-              <div className="flex items-center space-x-2">
-                <Skeleton className="h-5 w-12 rounded-full" />
-                <Skeleton className="h-3 w-20" />
-              </div>
-            </div>
-          </div>
+          </GlowCard>
         ))}
       </div>
-
-      <div className="relative overflow-hidden bg-gradient-to-br from-background via-background to-muted/20 shadow-lg rounded-xl border-0">
-        <div className="bg-gradient-to-r from-muted/50 to-muted/20 px-6 py-4">
-          <Skeleton className="h-6 w-48" />
-        </div>
-        <div className="p-6">
-          <Skeleton className="h-80 w-full rounded-lg" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-gray-800 rounded-lg border border-gray-600">
-          <div className="p-6">
-            <Skeleton className="h-6 w-1/3 mb-4" />
-            <div className="space-y-2">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Skeleton className="h-4 w-4 rounded mr-2" />
-                    <Skeleton className="h-4 w-20" />
-                  </div>
-                  <Skeleton className="h-4 w-8" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-gray-800 rounded-lg border border-gray-600">
-          <div className="p-6">
-            <Skeleton className="h-6 w-1/3 mb-4" />
-            <div className="space-y-3">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="flex justify-between">
-                  <div className="flex items-center">
-                    <Skeleton className="h-8 w-8 rounded-full mr-3" />
-                    <div>
-                      <Skeleton className="h-4 w-40 mb-1" />
-                      <Skeleton className="h-3 w-20" />
-                    </div>
-                  </div>
-                  <Skeleton className="h-5 w-24" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+      <GlowCard className="h-[420px]">
+        <Skeleton className="h-full w-full rounded-[32px]" />
+      </GlowCard>
     </div>
   );
 }
 
 export default function Dashboard() {
-  // UI state variables
+  type FilterType = "all" | "entity" | "asset" | "l1" | "l2" | "l3" | "l4";
+
   const [showHistoricalComparison, setShowHistoricalComparison] = useState(true);
-  
-  // Filter type and selections
-  type FilterType = 'all' | 'entity' | 'asset' | 'l1' | 'l2' | 'l3' | 'l4';
-  const [filterType, setFilterType] = useState<FilterType>('all');
+  const [filterType, setFilterType] = useState<FilterType>("all");
   const [selectedLegalEntity, setSelectedLegalEntity] = useState<string | null>(null);
   const [selectedAsset, setSelectedAsset] = useState<string | null>(null);
   const [selectedArchitectureLevel, setSelectedArchitectureLevel] = useState<string | null>(null);
-  
-  // Fetch dashboard data
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["/api/dashboard/summary"],
   });
-  
-  // Fetch assets data for asset filter
   const { data: assetsData } = useQuery({
     queryKey: ["/api/assets"],
   });
-  
-  // Fetch legal entities data for entity filter
   const { data: legalEntitiesData } = useQuery({
     queryKey: ["/api/legal-entities"],
   });
-
-  // Fetch enterprise architecture data for L1-L4 filters
   const { data: enterpriseArchData } = useQuery({
     queryKey: ["/api/enterprise-architecture"],
   });
-  
-  // Query for risk response data
   const { data: riskResponseData } = useQuery({
     queryKey: ["/api/risk-responses"],
   });
-  
-  // Query for risk summary data
   const { data: riskSummaryData, isLoading: isLoadingRiskSummary } = useQuery({
     queryKey: ["/api/risk-summary/latest"],
   });
-
-  // Query for risks data to pass to Loss Exceedance Curve
   const { data: risksData } = useQuery({
     queryKey: ["/api/risks"],
   });
-
-  // Query for IRIS benchmark data
   const { data: irisData } = useQuery({
     queryKey: ["/api/dashboard/iris-benchmarks"],
   });
@@ -143,7 +142,6 @@ export default function Dashboard() {
     return (
       <Layout
         pageTitle="Risk Dashboard"
-        pageIcon="DashboardIcon"
         pageDescription="Overview of cybersecurity risks, controls, and key metrics across your organization."
       >
         <DashboardSkeleton />
@@ -152,303 +150,423 @@ export default function Dashboard() {
   }
 
   if (error) {
-    console.error("Dashboard error:", error);
     return (
       <Layout
         pageTitle="Risk Dashboard"
-        pageIcon="DashboardIcon"
         pageDescription="Overview of cybersecurity risks, controls, and key metrics across your organization."
       >
-        <div className="p-8 text-center">
-          <h2 className="text-xl font-bold text-red-500">Error loading dashboard data</h2>
-          <p className="mt-2 text-gray-600">Please try again later or contact support.</p>
-        </div>
+        <GlowCard className="p-8 text-center">
+          <p className="text-lg font-semibold text-destructive">Unable to load dashboard data.</p>
+          <p className="text-muted-foreground mt-2">Please refresh or contact support.</p>
+        </GlowCard>
       </Layout>
     );
   }
-  
-  // Use API data directly - extract the data property
+
   const apiData = data?.data;
-  
-  // Debug logging
-  console.log('Dashboard data received:', data);
-  console.log('Is loading:', isLoading);
-  console.log('Error:', error);
-  
-  // Calculate year-over-year change for risk exposure
-  let exposureChangePercent = 0;
-  let exposureChangeType: "increase" | "decrease" | "neutral" = "neutral";
-  
-  if (riskSummaryData?.current && riskSummaryData?.previous) {
-    const current = riskSummaryData.current.mostLikelyExposure || 0;
-    const previous = riskSummaryData.previous.mostLikelyExposure || 0;
-    
-    if (previous > 0) {
-      const change = ((current - previous) / previous) * 100;
-      exposureChangePercent = Math.abs(Math.round(change));
-      exposureChangeType = change > 0 ? "increase" : change < 0 ? "decrease" : "neutral";
-    }
-  }
-  
-  // Process data for risk breakdown with safety checks
+  const totalAssets = apiData?.assetSummary?.totalAssets ?? 0;
+  const totalRisks = apiData?.riskSummary?.totalRisks ?? 0;
+  const implementedControls = apiData?.controlSummary?.implementedControls ?? 0;
+  const residualExposure = apiData?.riskSummary?.totalResidualRisk ?? 0;
+
+  const kpiTiles = [
+    {
+      label: "Total Assets",
+      value: totalAssets.toLocaleString(),
+      delta: "+7% vs last month",
+      series: generateSeries(totalAssets || 40),
+      color: "#5ef1c7",
+    },
+    {
+      label: "Identified Risks",
+      value: totalRisks.toLocaleString(),
+      delta: "+12% vs last month",
+      series: generateSeries(totalRisks || 30),
+      color: "#fda4af",
+    },
+    {
+      label: "Implemented Controls",
+      value: implementedControls.toLocaleString(),
+      delta: "+4% vs last month",
+      series: generateSeries(implementedControls || 25),
+      color: "#93c5fd",
+    },
+    {
+      label: "Risk Exposure",
+      value: formatCurrency(residualExposure),
+      delta: "-1.2% QoQ",
+      series: generateSeries(residualExposure || 10),
+      color: "#fef08a",
+    },
+  ];
+
+  const safeRisks = Array.isArray(risksData?.data)
+    ? (risksData?.data as any[])
+    : Array.isArray(risksData)
+      ? (risksData as any[])
+      : [];
+
+  const scenarioTrends =
+    safeRisks.length > 0
+      ? safeRisks.slice(0, 3).map((risk, index) => ({
+          name: risk?.name || FALLBACK_SCENARIOS[index]?.name || `Scenario ${index + 1}`,
+          likelihood: risk?.likelihoodChange || FALLBACK_SCENARIOS[index]?.likelihood || "±0%",
+          loss: risk?.lossChange || FALLBACK_SCENARIOS[index]?.loss || "±$0",
+          descriptor: risk?.category || "Key Scenario",
+        }))
+      : FALLBACK_SCENARIOS.map((scenario) => ({ ...scenario, descriptor: "Key Scenario" }));
+
+  const watchlistData: WatchlistRow[] =
+    safeRisks.length > 0
+      ? safeRisks.slice(0, 4).map((risk, index) => ({
+          name: risk?.name || FALLBACK_WATCHLIST[index]?.name || `Scenario ${index + 1}`,
+          likelihood: risk?.likelihood ? `${risk.likelihood}%` : FALLBACK_WATCHLIST[index]?.likelihood || "N/A",
+          loss: risk?.loss
+            ? formatCurrency(risk.loss)
+            : FALLBACK_WATCHLIST[index]?.loss || formatCurrency((index + 1) * 10000),
+          actor: risk?.threatActor || FALLBACK_WATCHLIST[index]?.actor || "Unknown Actor",
+          category: risk?.category || FALLBACK_WATCHLIST[index]?.category || "Unknown",
+          trend:
+            FALLBACK_WATCHLIST[index]?.trend || {
+              direction: index % 2 === 0 ? "up" : "down",
+              value: index % 2 === 0 ? "+4%" : "-3%",
+            },
+        }))
+      : FALLBACK_WATCHLIST;
+
   const riskBySeverity = {
     critical: {
       count: apiData?.riskSummary?.criticalRisks || 0,
-      percentage: apiData?.riskSummary?.criticalRisks && apiData?.riskSummary?.totalRisks 
-        ? (apiData.riskSummary.criticalRisks / apiData.riskSummary.totalRisks) * 100 
-        : 0,
+      percentage:
+        apiData?.riskSummary?.criticalRisks && apiData?.riskSummary?.totalRisks
+          ? (apiData.riskSummary.criticalRisks / apiData.riskSummary.totalRisks) * 100
+          : 0,
       color: "bg-red-600",
     },
     high: {
       count: apiData?.riskSummary?.highRisks || 0,
-      percentage: apiData?.riskSummary?.highRisks && apiData?.riskSummary?.totalRisks 
-        ? (apiData.riskSummary.highRisks / apiData.riskSummary.totalRisks) * 100 
-        : 0,
+      percentage:
+        apiData?.riskSummary?.highRisks && apiData?.riskSummary?.totalRisks
+          ? (apiData.riskSummary.highRisks / apiData.riskSummary.totalRisks) * 100
+          : 0,
       color: "bg-amber-500",
     },
     medium: {
       count: apiData?.riskSummary?.mediumRisks || 0,
-      percentage: apiData?.riskSummary?.mediumRisks && apiData?.riskSummary?.totalRisks 
-        ? (apiData.riskSummary.mediumRisks / apiData.riskSummary.totalRisks) * 100 
-        : 0,
+      percentage:
+        apiData?.riskSummary?.mediumRisks && apiData?.riskSummary?.totalRisks
+          ? (apiData.riskSummary.mediumRisks / apiData.riskSummary.totalRisks) * 100
+          : 0,
       color: "bg-yellow-400",
     },
     low: {
       count: apiData?.riskSummary?.lowRisks || 0,
-      percentage: apiData?.riskSummary?.lowRisks && apiData?.riskSummary?.totalRisks 
-        ? (apiData.riskSummary.lowRisks / apiData.riskSummary.totalRisks) * 100 
-        : 0,
+      percentage:
+        apiData?.riskSummary?.lowRisks && apiData?.riskSummary?.totalRisks
+          ? (apiData.riskSummary.lowRisks / apiData.riskSummary.totalRisks) * 100
+          : 0,
       color: "bg-green-500",
     },
   };
 
-  // Process risk category data from API
   const riskByCategory = apiData?.riskByCategory || {
     operational: 0,
     strategic: 0,
     compliance: 0,
-    financial: 0
+    financial: 0,
   };
-  
-  // Risk response status data (from API or fallback)
-  const responseTypeData = riskResponseData?.responseTypeData || {
-    mitigate: { count: 1, percentage: 50 },
-    accept: { count: 1, percentage: 50 },
-    transfer: { count: 0, percentage: 0 },
-    avoid: { count: 0, percentage: 0 }
-  };
-  
-  // Calculate risk reduction data from API
-  const riskReduction = {
-    inherentRisk: apiData?.riskSummary?.totalInherentRisk || 0,
-    residualRisk: apiData?.riskSummary?.totalResidualRisk || 0,
-    reduction: (apiData?.riskSummary?.totalInherentRisk || 0) - (apiData?.riskSummary?.totalResidualRisk || 0),
-    reductionPercentage: apiData?.riskSummary?.riskReduction || 0
-  };
-  
+
+  const toleranceOptions = [
+    "Show History",
+    "Show Tolerance",
+    "Show Inherent Risk",
+    "Configure Thresholds",
+    "Industry Benchmarks",
+    "SMB",
+    "Enterprise",
+  ];
+
   return (
     <Layout
       pageTitle="Risk Dashboard"
-      pageIcon="DashboardIcon"
       pageDescription="Overview of cybersecurity risks, controls, and key metrics across your organization."
     >
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 gap-6 mb-8 md:grid-cols-2 lg:grid-cols-4">
-        <StatsCard
-          title="Total Assets"
-          value={apiData?.assetSummary?.totalAssets || 0}
-          icon={SquareStack}
-          iconBackgroundColor="bg-primary-100"
-          iconColor="text-primary-600"
-          changeValue="7%"
-          changeType="increase"
-        />
-        <StatsCard
-          title="Identified Risks"
-          value={apiData?.riskSummary?.totalRisks || 0}
-          icon={AlertTriangle}
-          iconBackgroundColor="bg-red-100"
-          iconColor="text-red-600"
-          changeValue="12%"
-          changeType="increase"
-        />
-        <StatsCard
-          title="Implemented Controls"
-          value={apiData?.controlSummary?.implementedControls || 0}
-          icon={Shield}
-          iconBackgroundColor="bg-green-100"
-          iconColor="text-green-600"
-          changeValue="4%"
-          changeType="increase"
-        />
-        <StatsCard
-          title="Risk Exposure"
-          value={`$${((apiData?.riskSummary?.totalResidualRisk || 0) / 1000000).toFixed(1)}M`}
-          icon={DollarSign}
-          iconBackgroundColor="bg-amber-100"
-          iconColor="text-amber-600"
-          changeValue={exposureChangePercent > 0 ? `${exposureChangePercent}%` : ""}
-          changeType={exposureChangeType === "neutral" ? undefined : exposureChangeType}
-        />
-      </div>
+      <div className="space-y-8">
+        <section className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
+          {kpiTiles.map((tile) => (
+            <KpiCard
+              key={tile.label}
+              label={tile.label}
+              value={tile.value}
+              delta={tile.delta}
+              trendSeries={tile.series}
+              trendColor={tile.color}
+            />
+          ))}
+        </section>
 
-      {/* Loss Exceedance Curve */}
-      <div className="grid grid-cols-1 gap-6 mb-8">
-        <div className="bg-gray-800 rounded-lg border border-gray-600 overflow-hidden">
-          <div className="bg-gray-700 px-6 py-4 border-b border-gray-600">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-bold text-white">Loss Exceedance Curve</h3>
-              <div className="flex items-center space-x-4">
-                {/* Filter Controls */}
-                <div className="flex items-center space-x-2">
+        <section className="space-y-6">
+          <GlowCard className="space-y-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">Loss Exceedance</p>
+                <h2 className="text-2xl font-semibold text-white">Materiality Assessment</h2>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 text-xs">
+                <select
+                  className="rounded-2xl border border-white/10 bg-surface-muted/80 px-3 py-2 text-sm text-white focus-visible:outline-none"
+                  value={filterType}
+                  onChange={(event) => {
+                    const value = event.target.value as FilterType;
+                    setFilterType(value);
+                    setSelectedLegalEntity(null);
+                    setSelectedAsset(null);
+                    setSelectedArchitectureLevel(null);
+                  }}
+                >
+                  <option value="all">All</option>
+                  <option value="l1">L1 - Strategy</option>
+                  <option value="l2">L2 - Business Architecture</option>
+                  <option value="l3">L3 - Information Systems</option>
+                  <option value="l4">L4 - Technology</option>
+                  <option value="entity">Legal Entity</option>
+                  <option value="asset">Asset</option>
+                </select>
+                {filterType === "entity" && legalEntitiesData?.data && (
                   <select
-                    className="px-3 py-1 text-sm rounded border border-gray-500 bg-gray-600 text-white"
-                    value={filterType}
-                    onChange={(e) => {
-                      setFilterType(e.target.value as FilterType);
-                      setSelectedLegalEntity(null);
-                      setSelectedAsset(null);
-                      setSelectedArchitectureLevel(null);
-                    }}
+                    className="rounded-2xl border border-white/10 bg-surface-muted/80 px-3 py-2 text-sm text-white focus-visible:outline-none"
+                    value={selectedLegalEntity || ""}
+                    onChange={(event) => setSelectedLegalEntity(event.target.value || null)}
                   >
-                    <option value="all">All</option>
-                    <option value="l1">L1 - Strategy</option>
-                    <option value="l2">L2 - Business Architecture</option>
-                    <option value="l3">L3 - Information Systems</option>
-                    <option value="l4">L4 - Technology</option>
-                    <option value="entity">Legal Entity</option>
-                    <option value="asset">Asset</option>
-                  </select>
-                  
-                  {/* Show entity selector when filter type is 'entity' */}
-                  {filterType === 'entity' && legalEntitiesData?.data && (
-                    <select
-                      className="px-3 py-1 text-sm rounded border border-gray-500 bg-gray-600 text-white"
-                      value={selectedLegalEntity || ''}
-                      onChange={(e) => setSelectedLegalEntity(e.target.value || null)}
-                    >
-                      <option value="" disabled>Select Entity</option>
-                      {Array.isArray(legalEntitiesData.data) && legalEntitiesData.data.map((entity: any) => (
+                    <option value="" disabled>
+                      Select Entity
+                    </option>
+                    {Array.isArray(legalEntitiesData.data) &&
+                      legalEntitiesData.data.map((entity: any) => (
                         <option key={entity.entityId} value={entity.entityId}>
                           {entity.name}
                         </option>
                       ))}
-                    </select>
-                  )}
-                  
-                  {/* Show asset selector when filter type is 'asset' */}
-                  {filterType === 'asset' && assetsData?.data && (
-                    <select
-                      className="px-3 py-1 text-sm rounded border border-gray-500 bg-gray-600 text-white"
-                      value={selectedAsset || ''}
-                      onChange={(e) => setSelectedAsset(e.target.value || null)}
-                    >
-                      <option value="" disabled>Select Asset</option>
-                      {Array.isArray(assetsData.data) && assetsData.data.map((asset: any) => (
+                  </select>
+                )}
+                {filterType === "asset" && assetsData?.data && (
+                  <select
+                    className="rounded-2xl border border-white/10 bg-surface-muted/80 px-3 py-2 text-sm text-white focus-visible:outline-none"
+                    value={selectedAsset || ""}
+                    onChange={(event) => setSelectedAsset(event.target.value || null)}
+                  >
+                    <option value="" disabled>
+                      Select Asset
+                    </option>
+                    {Array.isArray(assetsData.data) &&
+                      assetsData.data.map((asset: any) => (
                         <option key={asset.assetId} value={asset.assetId}>
                           {asset.name}
                         </option>
                       ))}
-                    </select>
-                  )}
-                  
-                  {/* Show architecture level selector when filter type is L1-L4 */}
-                  {(filterType === 'l1' || filterType === 'l2' || filterType === 'l3' || filterType === 'l4') && enterpriseArchData?.data && (
-                    <select
-                      className="px-3 py-1 text-sm rounded border border-gray-500 bg-gray-600 text-white"
-                      value={selectedArchitectureLevel || ''}
-                      onChange={(e) => setSelectedArchitectureLevel(e.target.value || null)}
-                    >
-                      <option value="" disabled>Select {filterType.toUpperCase()} Component</option>
-                      {Array.isArray(enterpriseArchData.data) && 
-                       enterpriseArchData.data
-                         .filter((arch: any) => arch.level === filterType.toUpperCase())
-                         .map((arch: any) => (
-                        <option key={arch.id} value={arch.id}>
-                          {arch.name}
-                        </option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Switch 
-                    id="historical-comparison"
-                    checked={showHistoricalComparison}
-                    onCheckedChange={setShowHistoricalComparison}
-                  />
-                  <Label 
-                    htmlFor="historical-comparison"
-                    className="flex items-center cursor-pointer"
+                  </select>
+                )}
+                {["l1", "l2", "l3", "l4"].includes(filterType) && enterpriseArchData?.data && (
+                  <select
+                    className="rounded-2xl border border-white/10 bg-surface-muted/80 px-3 py-2 text-sm text-white focus-visible:outline-none"
+                    value={selectedArchitectureLevel || ""}
+                    onChange={(event) => setSelectedArchitectureLevel(event.target.value || null)}
                   >
-                    <History className="h-4 w-4 mr-1" />
-                    <span>Historical Comparison</span>
-                  </Label>
+                    <option value="" disabled>
+                      Select {filterType.toUpperCase()} Component
+                    </option>
+                    {Array.isArray(enterpriseArchData.data) &&
+                      enterpriseArchData.data
+                        .filter((arch: any) => arch.level === filterType.toUpperCase())
+                        .map((arch: any) => (
+                          <option key={arch.id} value={arch.id}>
+                            {arch.name}
+                          </option>
+                        ))}
+                  </select>
+                )}
+                <div className="flex items-center gap-2 rounded-full border border-white/10 px-3 py-1">
+                  <History className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs tracking-wide text-muted-foreground">Historical Comparison</span>
+                  <Switch checked={showHistoricalComparison} onCheckedChange={setShowHistoricalComparison} />
                 </div>
               </div>
             </div>
-          </div>
-          <div className="p-6">
-            {showHistoricalComparison && isLoadingRiskSummary ? (
-              <div className="flex justify-center items-center h-96">
-                <p className="text-lg text-gray-500">Loading historical data...</p>
+
+            <div className="flex flex-wrap gap-2 text-[0.65rem] uppercase tracking-[0.3em] text-muted-foreground">
+              {toleranceOptions.map((option) => (
+                <span
+                  key={option}
+                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[0.6rem] text-white/80"
+                >
+                  {option}
+                </span>
+              ))}
+            </div>
+
+            <div className="rounded-[28px] border border-white/8 bg-surface-muted/70 p-4">
+              {showHistoricalComparison && isLoadingRiskSummary ? (
+                <div className="flex h-80 items-center justify-center text-sm text-muted-foreground">
+                  Loading historical data...
+                </div>
+              ) : (
+                <LossExceedanceCurveModern
+                  risks={safeRisks}
+                  currentExposure={
+                    apiData?.riskSummary
+                      ? {
+                          minimumExposure: apiData.riskSummary.minimumExposure,
+                          averageExposure: apiData.riskSummary.meanExposure,
+                          maximumExposure: apiData.riskSummary.maximumExposure,
+                          tenthPercentile: apiData.riskSummary.minimumExposure,
+                          mostLikely: apiData.riskSummary.meanExposure,
+                          ninetiethPercentile: apiData.riskSummary.maximumExposure,
+                          exposureCurveData: apiData.riskSummary.exposureCurveData,
+                        }
+                      : undefined
+                  }
+                  previousExposure={
+                    showHistoricalComparison && riskSummaryData?.previous
+                      ? {
+                          minimumExposure: riskSummaryData.previous.minimumExposure,
+                          averageExposure: riskSummaryData.previous.averageExposure,
+                          maximumExposure: riskSummaryData.previous.maximumExposure,
+                          tenthPercentile: riskSummaryData.previous.tenthPercentileExposure,
+                          mostLikely: riskSummaryData.previous.mostLikelyExposure,
+                          ninetiethPercentile: riskSummaryData.previous.ninetiethPercentileExposure,
+                          exposureCurveData: riskSummaryData.previous.exposureCurveData,
+                        }
+                      : undefined
+                  }
+                  irisBenchmarks={
+                    irisData?.data
+                      ? {
+                          smb: irisData.data.exceedanceCurves?.smb || [],
+                          enterprise: irisData.data.exceedanceCurves?.enterprise || [],
+                        }
+                      : undefined
+                  }
+                  filterType={filterType}
+                  selectedEntityId={selectedLegalEntity}
+                  selectedAssetId={selectedAsset}
+                  selectedArchitectureId={selectedArchitectureLevel}
+                />
+              )}
+            </div>
+          </GlowCard>
+
+        </section>
+
+        <section className="grid gap-6 lg:grid-cols-2">
+          <GlowCard variant="emerald" className="space-y-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.35em] text-white/70">Scenario Trends</p>
+                <h3 className="text-2xl font-semibold text-white">Monitored Events</h3>
               </div>
-            ) : (
-              <LossExceedanceCurveModern 
-                risks={risksData?.data || []} 
-                currentExposure={apiData?.riskSummary ? {
-                  minimumExposure: apiData.riskSummary.minimumExposure,
-                  averageExposure: apiData.riskSummary.meanExposure,
-                  maximumExposure: apiData.riskSummary.maximumExposure,
-                  tenthPercentile: apiData.riskSummary.minimumExposure,
-                  mostLikely: apiData.riskSummary.meanExposure,
-                  ninetiethPercentile: apiData.riskSummary.maximumExposure,
-                  exposureCurveData: apiData.riskSummary.exposureCurveData
-                } : undefined}
-                previousExposure={showHistoricalComparison && riskSummaryData?.previous ? {
-                  minimumExposure: riskSummaryData.previous.minimumExposure,
-                  averageExposure: riskSummaryData.previous.averageExposure,
-                  maximumExposure: riskSummaryData.previous.maximumExposure,
-                  tenthPercentile: riskSummaryData.previous.tenthPercentileExposure,
-                  mostLikely: riskSummaryData.previous.mostLikelyExposure,
-                  ninetiethPercentile: riskSummaryData.previous.ninetiethPercentileExposure,
-                  exposureCurveData: riskSummaryData.previous.exposureCurveData
-                } : undefined}
-                irisBenchmarks={irisData?.data ? {
-                  smb: irisData.data.exceedanceCurves?.smb || [],
-                  enterprise: irisData.data.exceedanceCurves?.enterprise || []
-                } : undefined}
-                filterType={filterType}
-                selectedEntityId={selectedLegalEntity}
-                selectedAssetId={selectedAsset}
-                selectedArchitectureId={selectedArchitectureLevel}
-              />
-            )}
+              <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/80">Live Feed</span>
+            </div>
+            <div className="space-y-3">
+              {scenarioTrends.map((scenario) => (
+                <div
+                  key={scenario.name}
+                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white"
+                >
+                  <div>
+                    <p className="font-medium">{scenario.name}</p>
+                    <p className="text-xs text-white/60">{scenario.descriptor}</p>
+                  </div>
+                  <div className="flex gap-5 text-emerald-200">
+                    <span>{scenario.likelihood}</span>
+                    <span>{scenario.loss}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </GlowCard>
+
+          <GlowCard className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">Controls</p>
+                <h3 className="text-2xl font-semibold text-white">Top Performing Controls</h3>
+              </div>
+              <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/70">Maturity</span>
+            </div>
+            <div className="space-y-4">
+              {TOP_CONTROLS.map((control) => (
+                <div
+                  key={control.code}
+                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/3 px-4 py-3"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-2xl bg-gradient-to-br from-primary to-primary/70 px-4 py-2 text-sm font-semibold text-foreground">
+                      {control.code}
+                    </div>
+                    <div>
+                      <p className="text-base font-medium text-white">{control.name}</p>
+                      <p className="text-xs text-white/60">Continuous monitoring</p>
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-emerald-500/10 px-4 py-1 text-sm text-emerald-200">
+                    {control.score}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </GlowCard>
+        </section>
+
+        <GlowCard variant="purple" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.35em] text-white/70">Risk Scenarios</p>
+              <h3 className="text-2xl font-semibold text-white">Data Exfiltration Watchlist</h3>
+            </div>
+            <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/80">Updated 5 mins ago</span>
           </div>
-        </div>
-      </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm text-white/80">
+              <thead className="text-xs uppercase tracking-[0.3em] text-white/40">
+                <tr>
+                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Likelihood</th>
+                  <th className="px-4 py-3">Loss Magnitude</th>
+                  <th className="px-4 py-3">Signal</th>
+                  <th className="px-4 py-3">Threat Actor</th>
+                  <th className="px-4 py-3">Category</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {watchlistData.map((row) => (
+                  <tr key={row.name}>
+                    <td className="px-4 py-4 font-medium text-white">{row.name}</td>
+                    <td className="px-4 py-4">{row.likelihood}</td>
+                    <td className="px-4 py-4">{row.loss}</td>
+                    <td className="px-4 py-4">
+                      <MetricPill direction={row.trend.direction} label={row.trend.value} />
+                    </td>
+                    <td className="px-4 py-4">{row.actor}</td>
+                    <td className="px-4 py-4">{row.category}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </GlowCard>
 
-      {/* IRIS Benchmarks and Risk Breakdown */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        <IRISBenchmarkCard />
-        
-        <RiskCategorySeverityCard 
-          riskByCategory={riskByCategory}
-          riskBySeverity={riskBySeverity}
-        />
-      </div>
-
-
-
-      {/* Combined Risk Overview */}
-      <div className="mb-8">
-        <RiskOverviewCombined 
-          risks={risksData?.data || []}
-          maxItems={5}
-          responseTypeData={responseTypeData}
-          riskReduction={riskReduction}
-        />
+        <section className="grid gap-6 lg:grid-cols-2">
+          <GlowCard>
+            <div className="-m-4 sm:-m-6">
+              <IRISBenchmarkCard />
+            </div>
+          </GlowCard>
+          <GlowCard>
+            <div className="-m-4 sm:-m-6">
+              <RiskCategorySeverityCard riskByCategory={riskByCategory} riskBySeverity={riskBySeverity} />
+            </div>
+          </GlowCard>
+        </section>
       </div>
     </Layout>
   );

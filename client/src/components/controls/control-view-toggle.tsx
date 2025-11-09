@@ -1,5 +1,5 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { List, Grid3X3, Shield, ShieldCheck } from "lucide-react";
 
 export type ControlViewMode = 'list' | 'cards' | 'framework' | 'risk';
@@ -10,44 +10,34 @@ interface ControlViewToggleProps {
 }
 
 export function ControlViewToggle({ viewMode, onViewModeChange }: ControlViewToggleProps) {
+  const options: Array<{ value: ControlViewMode; label: string; icon: React.ElementType }> = [
+    { value: "list", label: "Table", icon: List },
+    { value: "cards", label: "Cards", icon: Grid3X3 },
+    { value: "risk", label: "Risks", icon: ShieldCheck },
+    { value: "framework", label: "Frameworks", icon: Shield },
+  ];
+
   return (
-    <div className="flex items-center space-x-1 bg-gray-600 rounded-lg p-1">
-      <Button
-        variant={viewMode === 'list' ? 'default' : 'ghost'}
-        size="sm"
-        onClick={() => onViewModeChange('list')}
-        className={`h-8 px-3 ${viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-500'}`}
-      >
-        <List className="w-4 h-4 mr-1" />
-        List
-      </Button>
-      <Button
-        variant={viewMode === 'cards' ? 'default' : 'ghost'}
-        size="sm"
-        onClick={() => onViewModeChange('cards')}
-        className={`h-8 px-3 ${viewMode === 'cards' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-500'}`}
-      >
-        <Grid3X3 className="w-4 h-4 mr-1" />
-        Cards
-      </Button>
-      <Button
-        variant={viewMode === 'risk' ? 'default' : 'ghost'}
-        size="sm"
-        onClick={() => onViewModeChange('risk')}
-        className={`h-8 px-3 ${viewMode === 'risk' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-500'}`}
-      >
-        <ShieldCheck className="w-4 h-4 mr-1" />
-        Risk Groups
-      </Button>
-      <Button
-        variant={viewMode === 'framework' ? 'default' : 'ghost'}
-        size="sm"
-        onClick={() => onViewModeChange('framework')}
-        className={`h-8 px-3 ${viewMode === 'framework' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-500'}`}
-      >
-        <Shield className="w-4 h-4 mr-1" />
-        Framework
-      </Button>
+    <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 text-sm font-medium text-white/70">
+      {options.map(({ value, label, icon: Icon }) => {
+        const isActive = viewMode === value;
+        return (
+          <button
+            key={value}
+            type="button"
+            onClick={() => onViewModeChange(value)}
+            className={cn(
+              "flex items-center gap-1 rounded-full px-3 py-1.5 transition-all",
+              isActive
+                ? "bg-white text-slate-900 shadow-[0_8px_30px_rgba(15,23,42,0.25)]"
+                : "text-white/70 hover:text-white"
+            )}
+          >
+            <Icon className={cn("h-4 w-4", !isActive && "text-white/60")} />
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }

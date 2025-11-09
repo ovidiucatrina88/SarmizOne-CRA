@@ -10,7 +10,7 @@ import {
   DialogDescription,
   DialogFooter
 } from "@/components/ui/dialog";
-import { RefreshCw, Search, Plus, PlusCircle, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { RefreshCw, Search, Plus, PlusCircle, Trash2, ChevronLeft, ChevronRight, Filter, SlidersHorizontal } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
@@ -50,6 +50,37 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Layout from "@/components/layout/layout";
+import { GlowCard } from "@/components/ui/glow-card";
+import { KpiCard } from "@/components/ui/kpi-card";
+import { formatCurrency } from "@/lib/utils";
+
+const statusLabels: Record<string, string> = {
+  fully_implemented: "Fully Implemented",
+  in_progress: "In Progress",
+  planned: "Planned",
+  not_implemented: "Not Implemented",
+};
+
+const typeAccent: Record<string, string> = {
+  preventive: "border-emerald-400/30 bg-emerald-500/10 text-emerald-100",
+  detective: "border-sky-400/30 bg-sky-500/10 text-sky-100",
+  corrective: "border-violet-400/30 bg-violet-500/10 text-violet-100",
+};
+
+const statusAccent: Record<string, string> = {
+  fully_implemented: "border-emerald-400/30 bg-emerald-500/10 text-emerald-100",
+  in_progress: "border-amber-400/30 bg-amber-500/10 text-amber-100",
+  planned: "border-sky-400/30 bg-sky-500/10 text-sky-100",
+  not_implemented: "border-rose-400/30 bg-rose-500/10 text-rose-100",
+};
+
+const formatTemplateCost = (control: ControlLibraryItem) => {
+  if (control.isPerAgentPricing) {
+    const rate = Number(control.costPerAgent) || 0;
+    return `${formatCurrency(rate)}/agent`;
+  }
+  return formatCurrency(Number(control.implementationCost) || 0);
+};
 
 // Form schema for adding a new control to the library
 const controlLibraryFormSchema = z.object({
@@ -190,6 +221,79 @@ export default function ControlLibrary() {
     return [] as ControlLibraryItem[];
   }, [controlLibraryResponse]);
 
+  const stats = React.useMemo(() => {
+    const total = controlLibrary.length;
+    const frameworks = new Set(controlLibrary.map(control => control.complianceFramework || "Custom")).size;
+    const avgEffectiveness = total
+      ? controlLibrary.reduce((sum, control) => sum + (Number(control.controlEffectiveness) || 0), 0) / total
+      : 0;
+    const ready = controlLibrary.filter(control => control.implementationStatus === "fully_implemented").length;
+    const inDesign = controlLibrary.filter(control => control.implementationStatus === "planned").length;
+    return { total, frameworks, avgEffectiveness, ready, inDesign };
+  }, [controlLibrary]);
+
+  const frameworkOptions = React.useMemo(() => {
+    const set = new Set(controlLibrary.map(control => control.complianceFramework || "Custom"));
+    return ["all", ...Array.from(set).sort()];
+  }, [controlLibrary]);
+
+  const cloudDomainOptions = React.useMemo(() => {
+    const set = new Set(
+      controlLibrary
+        .map(control => (control as any).cloudDomain)
+        .filter(Boolean),
+    );
+    return ["all", ...Array.from(set)];
+  }, [controlLibrary]);
+
+  const typeOptions = [
+    { value: "all", label: "All Types" },
+    { value: "preventive", label: "Preventive" },
+    { value: "detective", label: "Detective" },
+    { value: "corrective", label: "Corrective" },
+  ];
+
+  const categoryOptions = [
+    { value: "all", label: "All Categories" },
+    { value: "technical", label: "Technical" },
+    { value: "administrative", label: "Administrative" },
+    { value: "physical", label: "Physical" },
+  ];
+
+  const statusOptions = [
+    { value: "all", label: "All Statuses" },
+    { value: "not_implemented", label: "Not Implemented" },
+    { value: "planned", label: "Planned" },
+    { value: "in_progress", label: "In Progress" },
+    { value: "fully_implemented", label: "Fully Implemented" },
+  ];
+
+  const resetFilters = () => {
+    setSearchQuery("");
+    setFilterType("all");
+    setFilterCategory("all");
+    setFilterStatus("all");
+    setFilterFramework("all");
+    setFilterCloudDomain("all");
+  };
+
+  const hasActiveFilters =
+    !!searchQuery ||
+    filterType !== "all" ||
+    filterCategory !== "all" ||
+    filterStatus !== "all" ||
+    filterFramework !== "all" ||
+    filterCloudDomain !== "all";
+
+  const activeFilterCount = [
+    searchQuery && "search",
+    filterType !== "all" && "type",
+    filterCategory !== "all" && "category",
+    filterStatus !== "all" && "status",
+    filterFramework !== "all" && "framework",
+    filterCloudDomain !== "all" && "cloud",
+  ].filter(Boolean).length;
+
   // Filter and search controls
   const filteredControls = React.useMemo(() => {
     let filtered = controlLibrary;
@@ -231,6 +335,8 @@ export default function ControlLibrary() {
 
     return filtered;
   }, [controlLibrary, searchQuery, filterType, filterCategory, filterStatus, filterFramework, filterCloudDomain]);
+
+  const filteredCount = filteredControls.length;
 
   // Pagination logic
   const totalPages = Math.ceil(filteredControls.length / itemsPerPage);
@@ -444,357 +550,363 @@ export default function ControlLibrary() {
 
   const isLoading = isLoadingControlLibrary;
   const error = controlLibraryError;
+  const pageDescription = "Curate reusable control templates, align coverage to frameworks, and deploy instances directly into risks.";
+
+  const pageActions = (
+    <div className="flex flex-wrap gap-2">
+      <Button
+        variant="ghost"
+        className="rounded-full border border-white/10 text-white hover:bg-white/10"
+        onClick={handleRefresh}
+        disabled={isRefreshing}
+      >
+        <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+        {isRefreshing ? "Refreshing..." : "Refresh"}
+      </Button>
+      <Button
+        variant="destructive"
+        className="rounded-full"
+        onClick={handleDeleteSelected}
+        disabled={!selectedControls.length}
+      >
+        <Trash2 className="mr-2 h-4 w-4" />
+        Delete Selected{selectedControls.length ? ` (${selectedControls.length})` : ""}
+      </Button>
+      <Button className="rounded-full bg-primary px-5 text-primary-foreground" onClick={() => setIsCreateLibraryModalOpen(true)}>
+        <PlusCircle className="mr-2 h-4 w-4" />
+        Add Control
+      </Button>
+    </div>
+  );
 
   if (isLoading) {
     return (
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <Skeleton className="h-9 w-32" />
-          <Skeleton className="h-9 w-32" />
-        </div>
-        <Card>
-          <div className="p-6">
-            <Skeleton className="h-8 w-full mb-4" />
-            <div className="space-y-2">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
-            </div>
+      <Layout pageTitle="Control Library" pageDescription={pageDescription} pageActions={pageActions}>
+        <div className="space-y-8">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <GlowCard key={idx} compact className="border-white/10">
+                <div className="space-y-3">
+                  <Skeleton className="h-3 w-24 rounded-full" />
+                  <Skeleton className="h-8 w-32 rounded-[12px]" />
+                  <Skeleton className="h-4 w-20 rounded-full" />
+                </div>
+              </GlowCard>
+            ))}
           </div>
-        </Card>
-      </div>
+          <GlowCard className="p-8">
+            <Skeleton className="h-96 w-full rounded-[32px]" />
+          </GlowCard>
+        </div>
+      </Layout>
     );
   }
 
   if (error) {
     return (
-      <div className="p-8 text-center">
-        <h2 className="text-xl font-bold text-red-500">Error loading control library</h2>
-        <p className="mt-2 text-gray-600">Please try again later or contact support.</p>
-      </div>
+      <Layout pageTitle="Control Library" pageDescription={pageDescription} pageActions={pageActions}>
+        <GlowCard className="p-10 text-center text-white/80">
+          <h2 className="text-2xl font-semibold text-destructive">Unable to load control library</h2>
+          <p className="mt-2 text-white/60">Please try again later or contact support.</p>
+          <Button onClick={handleRefresh} className="mt-4 rounded-full">
+            Retry
+          </Button>
+        </GlowCard>
+      </Layout>
     );
   }
 
   return (
-    <Layout>
-      <div>
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold">Control Library</h2>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant="default" 
-            size="sm" 
-            onClick={() => setIsCreateLibraryModalOpen(true)}
-          >
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Control to Library
-          </Button>
-          <Button 
-            variant="destructive" 
-            size="sm" 
-            onClick={handleDeleteSelected}
-            disabled={selectedControls.length === 0}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete Selected ({selectedControls.length})
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleRefresh} 
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
-          </Button>
-        </div>
-      </div>
+    <Layout pageTitle="Control Library" pageDescription={pageDescription} pageActions={pageActions}>
+      <div className="space-y-8">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard label="Total Templates" value={stats.total.toLocaleString()} delta={`${filteredCount.toLocaleString()} in view`} />
+        <KpiCard label="Framework Coverage" value={stats.frameworks.toLocaleString()} delta="Active mappings" trendSeries={Array.from({ length: 7 }, (_, idx) => stats.frameworks + Math.sin(idx))} trendColor="#c4b5fd" />
+        <KpiCard label="Avg Effectiveness" value={`${stats.avgEffectiveness.toFixed(1)}/10`} delta="Curated score" trendSeries={Array.from({ length: 7 }, (_, idx) => stats.avgEffectiveness + Math.cos(idx / 2))} trendColor="#86efac" />
+        <KpiCard label="Deployment Ready" value={stats.ready.toLocaleString()} delta={`${stats.inDesign} in design`} trendSeries={Array.from({ length: 7 }, (_, idx) => stats.ready + Math.sin(idx / 3))} trendColor="#fda4af" />
+      </section>
 
-      <div className="w-full">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-medium">Control Templates</h3>
-          <div className="text-sm text-gray-500">
-            {filteredControls.length} of {controlLibrary.length} templates {searchQuery || filterType !== "all" || filterCategory !== "all" || filterStatus !== "all" ? "shown" : "available"}
-          </div>
-        </div>
-        
+      <div className="space-y-6">
         {/* Search and Filter Controls */}
-        <div className="bg-gray-800 rounded-lg border border-gray-600 mb-6">
-          <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
-            <div className="space-y-4">
-              {/* Search Bar */}
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                <Input
-                  type="search"
-                  placeholder="Search controls by name, ID, or description..."
-                  className="w-full pl-8 bg-gray-600 border-gray-500 text-white placeholder-gray-400 focus:border-blue-500"
-                  value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                />
+        <GlowCard className="space-y-6">
+          <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-white/50">Filters</p>
+              <p className="text-lg font-semibold text-white">Refine templates by type, framework, or readiness</p>
+            </div>
+            <div className="text-sm text-white/60">
+              {filteredCount} of {controlLibrary.length} templates
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
+              <Input
+                type="search"
+                placeholder="Search controls by name, ID, or description..."
+                className="h-11 rounded-full border-white/10 bg-white/5 pl-10 text-white placeholder:text-white/40"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5">
+              <div>
+                <label className="text-sm font-medium text-white/70 mb-2 block">Control Type</label>
+                <Select value={filterType} onValueChange={(value) => { setFilterType(value); setCurrentPage(1); }}>
+                  <SelectTrigger className="h-11 border-white/10 bg-white/5 text-white">
+                    <SelectValue placeholder="All Types" />
+                  </SelectTrigger>
+                  <SelectContent className="border-white/10 bg-slate-900 text-white">
+                    {typeOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              
-              {/* Primary Filters */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div>
-                  <Label className="text-xs text-gray-300 mb-1 block">Framework</Label>
-                  <Select
-                    value={filterFramework}
-                    onValueChange={(value) => {
-                      setFilterFramework(value);
-                      setCurrentPage(1);
-                    }}
-                  >
-                    <SelectTrigger className="bg-gray-600 border-gray-500 text-white">
-                      <SelectValue placeholder="All Frameworks" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-700 border-gray-600">
-                      <SelectItem value="all" className="text-white hover:bg-gray-600">All Frameworks</SelectItem>
-                      <SelectItem value="CIS" className="text-white hover:bg-gray-600">CIS Controls</SelectItem>
-                      <SelectItem value="CCM" className="text-white hover:bg-gray-600">Cloud Security Alliance CCM</SelectItem>
-                      <SelectItem value="NIST" className="text-white hover:bg-gray-600">NIST Cybersecurity Framework</SelectItem>
-                      <SelectItem value="ISO27001" className="text-white hover:bg-gray-600">ISO 27001</SelectItem>
-                      <SelectItem value="SOC2" className="text-white hover:bg-gray-600">SOC 2</SelectItem>
-                      <SelectItem value="PCI_DSS" className="text-white hover:bg-gray-600">PCI DSS</SelectItem>
-                      <SelectItem value="Custom" className="text-white hover:bg-gray-600">Custom</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label className="text-xs text-gray-300 mb-1 block">Type</Label>
-                  <Select
-                    value={filterType}
-                    onValueChange={(value) => {
-                      setFilterType(value);
-                      setCurrentPage(1);
-                    }}
-                  >
-                    <SelectTrigger className="bg-gray-600 border-gray-500 text-white">
-                      <SelectValue placeholder="All Types" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-700 border-gray-600">
-                      <SelectItem value="all" className="text-white hover:bg-gray-600">All Types</SelectItem>
-                      <SelectItem value="preventive" className="text-white hover:bg-gray-600">Preventive</SelectItem>
-                      <SelectItem value="detective" className="text-white hover:bg-gray-600">Detective</SelectItem>
-                      <SelectItem value="corrective" className="text-white hover:bg-gray-600">Corrective</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label className="text-xs text-gray-300 mb-1 block">Category</Label>
-                  <Select
-                    value={filterCategory}
-                    onValueChange={(value) => {
-                      setFilterCategory(value);
-                      setCurrentPage(1);
-                    }}
-                  >
-                    <SelectTrigger className="bg-gray-600 border-gray-500 text-white">
-                      <SelectValue placeholder="All Categories" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-700 border-gray-600">
-                      <SelectItem value="all" className="text-white hover:bg-gray-600">All Categories</SelectItem>
-                      <SelectItem value="technical" className="text-white hover:bg-gray-600">Technical</SelectItem>
-                      <SelectItem value="administrative" className="text-white hover:bg-gray-600">Administrative</SelectItem>
-                      <SelectItem value="physical" className="text-white hover:bg-gray-600">Physical</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label className="text-xs text-gray-300 mb-1 block">Status</Label>
-                  <Select
-                    value={filterStatus}
-                    onValueChange={(value) => {
-                      setFilterStatus(value);
-                      setCurrentPage(1);
-                    }}
-                  >
-                    <SelectTrigger className="bg-gray-600 border-gray-500 text-white">
-                      <SelectValue placeholder="All Statuses" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-gray-700 border-gray-600">
-                      <SelectItem value="all" className="text-white hover:bg-gray-600">All Statuses</SelectItem>
-                      <SelectItem value="fully_implemented" className="text-white hover:bg-gray-600">Fully Implemented</SelectItem>
-                      <SelectItem value="partially_implemented" className="text-white hover:bg-gray-600">Partially Implemented</SelectItem>
-                      <SelectItem value="in_progress" className="text-white hover:bg-gray-600">In Progress</SelectItem>
-                      <SelectItem value="planned" className="text-white hover:bg-gray-600">Planned</SelectItem>
-                      <SelectItem value="not_implemented" className="text-white hover:bg-gray-600">Not Implemented</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <label className="text-sm font-medium text-white/70 mb-2 block">Category</label>
+                <Select value={filterCategory} onValueChange={(value) => { setFilterCategory(value); setCurrentPage(1); }}>
+                  <SelectTrigger className="h-11 border-white/10 bg-white/5 text-white">
+                    <SelectValue placeholder="All Categories" />
+                  </SelectTrigger>
+                  <SelectContent className="border-white/10 bg-slate-900 text-white">
+                    {categoryOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              
-              {/* Clear Filters Button */}
-              {(searchQuery || filterFramework !== "all" || filterType !== "all" || filterCategory !== "all" || filterStatus !== "all") && (
-                <div className="flex justify-between items-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSearchQuery("");
-                      setFilterFramework("all");
-                      setFilterType("all");
-                      setFilterCategory("all");
-                      setFilterStatus("all");
-                      setCurrentPage(1);
-                    }}
-                    className="text-gray-300 border-gray-500 hover:bg-gray-600"
-                  >
-                    Clear All Filters
-                  </Button>
-                  <div className="text-sm text-gray-400">
-                    Showing {filteredControls.length} of {controlLibrary.length} controls
-                  </div>
-                </div>
+              <div>
+                <label className="text-sm font-medium text-white/70 mb-2 block">Status</label>
+                <Select value={filterStatus} onValueChange={(value) => { setFilterStatus(value); setCurrentPage(1); }}>
+                  <SelectTrigger className="h-11 border-white/10 bg-white/5 text-white">
+                    <SelectValue placeholder="All Statuses" />
+                  </SelectTrigger>
+                  <SelectContent className="border-white/10 bg-slate-900 text-white">
+                    {statusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-white/70 mb-2 block">Framework</label>
+                <Select value={filterFramework} onValueChange={(value) => { setFilterFramework(value); setCurrentPage(1); }}>
+                  <SelectTrigger className="h-11 border-white/10 bg-white/5 text-white">
+                    <SelectValue placeholder="All Frameworks" />
+                  </SelectTrigger>
+                  <SelectContent className="border-white/10 bg-slate-900 text-white">
+                    {frameworkOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option === "all" ? "All Frameworks" : option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-white/70 mb-2 block">Cloud Domain</label>
+                <Select value={filterCloudDomain} onValueChange={(value) => { setFilterCloudDomain(value); setCurrentPage(1); }}>
+                  <SelectTrigger className="h-11 border-white/10 bg-white/5 text-white">
+                    <SelectValue placeholder="All Domains" />
+                  </SelectTrigger>
+                  <SelectContent className="border-white/10 bg-slate-900 text-white">
+                    {cloudDomainOptions.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {option === "all" ? "All Domains" : option}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex flex-col gap-3 rounded-[24px] border border-dashed border-white/10 bg-white/5 p-4 text-sm text-white/70 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-wrap items-center gap-2">
+                <SlidersHorizontal className="h-4 w-4 text-primary" />
+                <span>{filteredCount} of {controlLibrary.length} templates shown</span>
+                {hasActiveFilters && (
+                  <Badge className="rounded-full border-white/10 bg-white/10 text-xs text-white">
+                    {activeFilterCount} filter{activeFilterCount !== 1 ? 's' : ''} active
+                  </Badge>
+                )}
+              </div>
+              {hasActiveFilters && (
+                <Button variant="ghost" className="h-9 rounded-full border border-white/10 text-white hover:bg-white/10" onClick={resetFilters}>
+                  Reset filters
+                </Button>
               )}
             </div>
           </div>
-        </div>
-        
+        </GlowCard>
         {/* Control Library Table */}
-        <div className="bg-gray-800 rounded-lg border border-gray-600">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox 
-                    checked={controlLibrary.length > 0 && selectedControls.length === controlLibrary.length} 
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        setSelectedControls(controlLibrary.map(control => control.id));
-                      } else {
-                        setSelectedControls([]);
-                      }
-                    }}
-                    aria-label="Select all controls"
-                  />
-                </TableHead>
-                <TableHead>ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Framework</TableHead>
-                <TableHead>Effectiveness</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedControls.length > 0 ? (
-                paginatedControls.map((control) => (
-                  <TableRow 
-                    key={control.id}
-                    className={selectedControls.includes(control.id) ? "bg-muted/50" : ""}
-                  >
-                    <TableCell>
-                      <Checkbox 
-                        checked={selectedControls.includes(control.id)} 
-                        onCheckedChange={() => toggleControlSelection(control.id)}
-                        aria-label={`Select ${control.name}`}
-                      />
-                    </TableCell>
-                    <TableCell className="font-medium">{control.controlId}</TableCell>
-                    <TableCell className="max-w-md">
-                      <div className="font-medium">{control.name}</div>
-                      {control.description && (
-                        <div className="text-sm text-gray-500 truncate">{control.description}</div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        control.controlType === 'preventive' ? 'default' : 
-                        control.controlType === 'detective' ? 'outline' : 
-                        'secondary'
-                      }>
-                        {control.controlType}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {control.controlCategory}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="text-xs">
-                        {control.complianceFramework || 'Custom'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {control.controlEffectiveness ? `${control.controlEffectiveness}/10` : 'N/A'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        control.implementationStatus === 'fully_implemented' ? 'default' : 
-                        control.implementationStatus === 'in_progress' ? 'outline' : 
-                        'destructive'
-                      }>
-                        {control.implementationStatus?.replace(/_/g, ' ')}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleCreateInstanceFromTemplate(control)}
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add to Risk
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
-                    {searchQuery || filterType !== "all" || filterCategory !== "all" || filterStatus !== "all" 
-                      ? "No controls match your current filters" 
-                      : "No control templates found"}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-end space-x-2 py-4 px-6 bg-gray-800 border-t border-gray-600 rounded-b-lg">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="border-gray-500 text-gray-300 hover:bg-gray-600"
-              >
-                <ChevronLeft className="h-4 w-4" />
-                <span className="sr-only">Previous Page</span>
-              </Button>
-              <div className="text-sm text-gray-400">
-                Page {currentPage} of {totalPages}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="border-gray-500 text-gray-300 hover:bg-gray-600"
-              >
-                <ChevronRight className="h-4 w-4" />
-                <span className="sr-only">Next Page</span>
-              </Button>
+        <GlowCard className="space-y-6">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-wide text-white/50">Template inventory</p>
+              <p className="text-lg font-semibold text-white">Curated control templates</p>
             </div>
-          )}
-        </div>
-        
+            <div className="flex items-center gap-3 text-sm text-white/70">
+              {!!selectedControls.length && (
+                <Badge className="rounded-full border-white/10 bg-white/10 text-xs text-white">
+                  {selectedControls.length} selected
+                </Badge>
+              )}
+              <span>{filteredCount} results</span>
+            </div>
+          </div>
+          <div className="overflow-hidden rounded-[28px] border border-white/10">
+            <div className="bg-white/5 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-white/50">
+              Template details
+            </div>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader className="text-xs uppercase tracking-wide text-white/50">
+                  <TableRow className="border-b border-white/5">
+                    <TableHead className="w-12">
+                      <Checkbox
+                        checked={controlLibrary.length > 0 && selectedControls.length === controlLibrary.length}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedControls(controlLibrary.map((control) => control.id));
+                          } else {
+                            setSelectedControls([]);
+                          }
+                        }}
+                        aria-label="Select all controls"
+                      />
+                    </TableHead>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Template</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Framework</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Effectiveness</TableHead>
+                    <TableHead>Cost</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paginatedControls.length ? (
+                    paginatedControls.map((control) => (
+                      <TableRow
+                        key={control.id}
+                        className={`border-b border-white/5 ${selectedControls.includes(control.id) ? 'bg-white/[0.04]' : 'bg-transparent'}`}
+                      >
+                        <TableCell className="align-top">
+                          <Checkbox
+                            checked={selectedControls.includes(control.id)}
+                            onCheckedChange={() => toggleControlSelection(control.id)}
+                            aria-label={`Select ${control.name}`}
+                          />
+                        </TableCell>
+                        <TableCell className="align-top text-white/70">{control.controlId}</TableCell>
+                        <TableCell className="align-top">
+                          <div className="font-semibold text-white">{control.name}</div>
+                          {control.description && (
+                            <p className="text-sm text-white/60 line-clamp-2">{control.description}</p>
+                          )}
+                        </TableCell>
+                        <TableCell className="align-top">
+                        <Badge className={`rounded-full border px-3 py-0.5 text-xs capitalize ${typeAccent[control.controlType] || 'border-white/10 bg-white/5 text-white/70'}`}>
+                            {control.controlType}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="align-top">
+                          <Badge className="rounded-full border border-white/10 bg-white/5 px-3 py-0.5 text-xs text-white/70">
+                            {control.complianceFramework || 'Custom'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="align-top">
+                        <Badge className={`rounded-full border px-3 py-0.5 text-xs capitalize ${statusAccent[control.implementationStatus] || 'border-white/10 bg-white/5 text-white/70'}`}>
+                            {statusLabels[control.implementationStatus] || control.implementationStatus}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="align-top">
+                          <div className="space-y-1 text-xs text-white/60">
+                            <div className="flex items-center justify-between">
+                              <span>Score</span>
+                              <span className="font-semibold text-white">{(control.controlEffectiveness || 0).toFixed(1)}/10</span>
+                            </div>
+                            <div className="h-2 rounded-full bg-white/5">
+                              <div
+                                className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-sky-400 to-indigo-400"
+                                style={{ width: `${Math.min((control.controlEffectiveness || 0) * 10, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="align-top text-sm font-semibold text-white">
+                          {formatTemplateCost(control)}
+                        </TableCell>
+                        <TableCell className="align-top text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-9 rounded-full border border-white/10 text-white hover:bg-white/10"
+                            onClick={() => handleCreateInstanceFromTemplate(control)}
+                          >
+                            <Plus className="mr-2 h-4 w-4" />
+                            Add to Risk
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={9} className="h-32 text-center text-white/60">
+                        {hasActiveFilters ? 'No templates match your filters.' : 'No control templates found.'}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+            {totalPages > 1 && (
+              <div className="flex flex-col gap-3 border-t border-white/10 px-6 py-4 text-sm text-white/70 md:flex-row md:items-center md:justify-between">
+                <div>
+                  Page {currentPage} of {totalPages}
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 rounded-full border border-white/10 text-white hover:bg-white/10"
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Prev
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 rounded-full border border-white/10 text-white hover:bg-white/10"
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </GlowCard>
         {/* Risk Selection Dialog */}
         <Dialog open={isRiskSelectionOpen} onOpenChange={setIsRiskSelectionOpen}>
-          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto rounded-[32px] border border-white/10 bg-slate-950/90 text-white">
             <DialogHeader>
-              <DialogTitle>Assign Control to Risk</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-white">Assign Control to Risk</DialogTitle>
+              <DialogDescription className="text-white/70">
                 Select a risk to assign the control "{selectedControl?.name}" to:
               </DialogDescription>
             </DialogHeader>
@@ -905,10 +1017,10 @@ export default function ControlLibrary() {
 
       {/* Create Control Library Modal */}
       <Dialog open={isCreateLibraryModalOpen} onOpenChange={setIsCreateLibraryModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-[32px] border border-white/10 bg-slate-950/95 text-white">
           <DialogHeader>
-            <DialogTitle>Add Control to Library</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-white">Add Control to Library</DialogTitle>
+            <DialogDescription className="text-white/70">
               Create a new control template in the library. All templates can be applied to risks as needed.
             </DialogDescription>
           </DialogHeader>

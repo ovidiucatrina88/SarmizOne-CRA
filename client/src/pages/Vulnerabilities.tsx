@@ -1,75 +1,64 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
 import Layout from "@/components/layout/layout";
-import { 
-  Shield, 
-  AlertTriangle, 
-  Plus, 
-  Search, 
-  Filter,
+import { GlowCard } from "@/components/ui/glow-card";
+import { KpiCard } from "@/components/ui/kpi-card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  AlertTriangle,
+  CheckCircle,
+  Clock,
   FileDown,
+  Plus,
+  Search,
+  Shield,
   Upload,
   Eye,
   Edit,
   Trash2,
-  CheckCircle,
-  Clock,
-  ExternalLink
 } from "lucide-react";
-import { Link } from "wouter";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Link } from "wouter";
 
 export default function VulnerabilitiesPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
-  const [severityFilter, setSeverityFilter] = useState<string>("");
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [severityFilter, setSeverityFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const { data: vulnerabilities, isLoading } = useQuery({
-    queryKey: ['/api/assets/vulnerabilities'],
+    queryKey: ["/api/assets/vulnerabilities"],
   });
 
   const vulns = vulnerabilities?.data || [];
 
-  // Delete vulnerability mutation
+  const stats = useMemo(() => {
+    const critical = vulns.filter((v: any) => v.severity === "critical").length;
+    const high = vulns.filter((v: any) => v.severity === "high").length;
+    const open = vulns.filter((v: any) => v.status === "open").length;
+    const resolved = vulns.filter((v: any) => v.status === "resolved").length;
+    return {
+      total: vulns.length,
+      critical,
+      high,
+      open,
+      resolved,
+    };
+  }, [vulns]);
+
   const deleteMutation = useMutation({
-    mutationFn: (vulnerabilityId: number) => 
-      apiRequest('DELETE', `/api/vulnerabilities/${vulnerabilityId}`),
+    mutationFn: (vulnerabilityId: number) => apiRequest("DELETE", `/api/vulnerabilities/${vulnerabilityId}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/assets/vulnerabilities'] });
-      toast({
-        title: "Success",
-        description: "Vulnerability deleted successfully",
-      });
+      queryClient.invalidateQueries({ queryKey: ["/api/assets/vulnerabilities"] });
+      toast({ title: "Success", description: "Vulnerability deleted successfully" });
     },
     onError: (error: any) => {
       toast({
@@ -80,426 +69,236 @@ export default function VulnerabilitiesPage() {
     },
   });
 
-  const handleDelete = (vulnerabilityId: number, vulnerabilityName: string) => {
-    // Simple direct deletion without confirmation dialog to avoid XSS warnings
-    deleteMutation.mutate(vulnerabilityId);
-  };
-
-  // Filter vulnerabilities based on search and filters
   const filteredVulns = vulns.filter((vuln: any) => {
-    const matchesSearch = !searchTerm || 
+    const matchesSearch =
+      !searchTerm ||
       vuln.cve_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vuln.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       vuln.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesSeverity = !severityFilter || severityFilter === 'all' || vuln.severity === severityFilter;
-    const matchesStatus = !statusFilter || statusFilter === 'all' || vuln.status === statusFilter;
-    
+    const matchesSeverity = severityFilter === "all" || vuln.severity === severityFilter;
+    const matchesStatus = statusFilter === "all" || vuln.status === statusFilter;
     return matchesSearch && matchesSeverity && matchesStatus;
   });
 
-  // Get summary statistics
-  const stats = {
-    total: vulns.length,
-    critical: vulns.filter((v: any) => v.severity === 'critical').length,
-    high: vulns.filter((v: any) => v.severity === 'high').length,
-    medium: vulns.filter((v: any) => v.severity === 'medium').length,
-    low: vulns.filter((v: any) => v.severity === 'low').length,
-    open: vulns.filter((v: any) => v.status === 'open').length,
-    inProgress: vulns.filter((v: any) => v.status === 'in_progress').length,
-    mitigated: vulns.filter((v: any) => v.status === 'mitigated').length,
-    resolved: vulns.filter((v: any) => v.status === 'resolved').length,
+  const severityStyles: Record<string, string> = {
+    critical: "bg-gradient-to-r from-rose-500/20 to-orange-500/20 text-rose-100 border border-rose-400/40",
+    high: "bg-rose-500/15 text-rose-100 border border-rose-400/40",
+    medium: "bg-amber-500/15 text-amber-100 border border-amber-400/40",
+    low: "bg-sky-500/15 text-sky-100 border border-sky-400/40",
+    info: "bg-white/10 border border-white/20 text-white/70",
   };
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity?.toLowerCase()) {
-      case 'critical': return 'bg-red-600 text-white';
-      case 'high': return 'bg-red-500 text-white';
-      case 'medium': return 'bg-yellow-500 text-white';
-      case 'low': return 'bg-blue-500 text-white';
-      case 'info': return 'bg-gray-500 text-white';
-      default: return 'bg-gray-500 text-white';
+  const statusConfig: Record<
+    string,
+    {
+      pill: string;
+      icon: React.ReactNode;
     }
+  > = {
+    open: {
+      pill: "bg-rose-500/15 text-rose-200 border border-rose-400/30",
+      icon: <AlertTriangle className="h-4 w-4" />,
+    },
+    in_progress: {
+      pill: "bg-amber-500/15 text-amber-200 border border-amber-400/30",
+      icon: <Clock className="h-4 w-4" />,
+    },
+    mitigated: {
+      pill: "bg-blue-500/15 text-blue-200 border border-blue-400/30",
+      icon: <Shield className="h-4 w-4" />,
+    },
+    resolved: {
+      pill: "bg-emerald-500/15 text-emerald-200 border border-emerald-400/30",
+      icon: <CheckCircle className="h-4 w-4" />,
+    },
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'open': return 'bg-red-100 text-red-800 border-red-200';
-      case 'in_progress': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'mitigated': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'resolved': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'open': return <AlertTriangle className="h-4 w-4" />;
-      case 'in_progress': return <Clock className="h-4 w-4" />;
-      case 'mitigated': return <Shield className="h-4 w-4" />;
-      case 'resolved': return <CheckCircle className="h-4 w-4" />;
-      default: return <AlertTriangle className="h-4 w-4" />;
-    }
+  const generateSeries = (seed: number) => {
+    const base = seed || 10;
+    return Array.from({ length: 7 }).map((_, index) =>
+      Number((base * (1 + Math.sin(index / 1.5) * 0.08)).toFixed(2)),
+    );
   };
 
   if (isLoading) {
     return (
-      <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin h-8 w-8 border-2 border-current border-t-transparent rounded-full" />
+      <Layout pageTitle="Vulnerability Management">
+        <div className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <GlowCard key={idx} compact className="h-[150px]">
+                <div className="flex h-full flex-col justify-between">
+                  <Skeleton className="h-3 w-20 rounded-full" />
+                  <Skeleton className="h-8 w-24 rounded" />
+                  <Skeleton className="h-5 w-full rounded-full" />
+                </div>
+              </GlowCard>
+            ))}
+          </div>
+          <GlowCard className="p-8">
+            <Skeleton className="h-96 w-full rounded-[32px]" />
+          </GlowCard>
         </div>
       </Layout>
     );
   }
 
   return (
-    <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Vulnerabilities</h1>
-            <p className="text-muted-foreground">
-              Manage and track security vulnerabilities across your assets
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <FileDown className="h-4 w-4 mr-2" />
-              Export
+    <Layout
+      pageTitle="Vulnerability Management"
+      pageDescription="Monitor CVEs, coordinate fixes, and keep leadership informed."
+      pageActions={
+        <div className="flex gap-2">
+          <Button variant="ghost" className="rounded-full border border-white/10 text-white hover:bg-white/5">
+            <FileDown className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+          <Link href="/assets/vulnerabilities/import">
+            <Button className="rounded-full bg-primary px-5 text-primary-foreground">
+              <Upload className="mr-2 h-4 w-4" />
+              Import
             </Button>
-            <Link href="/assets/vulnerabilities/import">
-              <Button size="sm">
-                <Upload className="h-4 w-4 mr-2" />
-                Import
-              </Button>
-            </Link>
-          </div>
+          </Link>
         </div>
+      }
+    >
+      <div className="space-y-8">
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <KpiCard label="Total Findings" value={stats.total.toLocaleString()} delta="+5% vs last month" trendSeries={generateSeries(stats.total)} />
+          <KpiCard
+            label="Critical + High"
+            value={(stats.critical + stats.high).toLocaleString()}
+            delta="-2% WoW"
+            trendSeries={generateSeries(stats.critical + stats.high)}
+            trendColor="#fca5a5"
+          />
+          <KpiCard
+            label="Open"
+            value={stats.open.toLocaleString()}
+            delta="+3 backlog"
+            trendSeries={generateSeries(stats.open)}
+            trendColor="#fdba74"
+          />
+          <KpiCard
+            label="Resolved"
+            value={stats.resolved.toLocaleString()}
+            delta="+12 this week"
+            trendSeries={generateSeries(stats.resolved)}
+            trendColor="#86efac"
+          />
+        </section>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-blue-500" />
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total</p>
-                  <p className="text-2xl font-bold">{stats.total}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-500" />
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Critical/High</p>
-                  <p className="text-2xl font-bold text-red-600">{stats.critical + stats.high}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-yellow-500" />
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Open</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats.open}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-500" />
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Resolved</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.resolved}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <Tabs defaultValue="list">
-          <TabsList>
-            <TabsTrigger value="list">Vulnerability List</TabsTrigger>
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="list" className="space-y-4">
-            {/* Filters */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <div className="relative">
-                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search vulnerabilities..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-8"
-                      />
-                    </div>
-                  </div>
-                  <Select value={severityFilter} onValueChange={setSeverityFilter}>
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue placeholder="Severity" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Severities</SelectItem>
-                      <SelectItem value="critical">Critical</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="info">Info</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[120px]">
-                      <SelectValue placeholder="Status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="open">Open</SelectItem>
-                      <SelectItem value="in_progress">In Progress</SelectItem>
-                      <SelectItem value="mitigated">Mitigated</SelectItem>
-                      <SelectItem value="resolved">Resolved</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Vulnerabilities Table */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Vulnerabilities ({filteredVulns.length})</CardTitle>
-                <CardDescription>
-                  {searchTerm || (severityFilter && severityFilter !== 'all') || (statusFilter && statusFilter !== 'all')
-                    ? `Showing filtered results (${filteredVulns.length} of ${stats.total})`
-                    : `Showing all vulnerabilities`
-                  }
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {filteredVulns.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>CVE ID</TableHead>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Severity</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>CVSS</TableHead>
-                        <TableHead>Assets</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredVulns.map((vuln: any) => (
-                        <TableRow key={vuln.id}>
-                          <TableCell className="font-mono text-sm">
-                            {vuln.cve_id}
-                          </TableCell>
-                          <TableCell>
-                            <div className="max-w-[300px]">
-                              <p className="font-medium truncate">{vuln.title}</p>
-                              <p className="text-sm text-muted-foreground truncate">
-                                {vuln.description}
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getSeverityColor(vuln.severity)}>
-                              {vuln.severity?.toUpperCase()}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {getStatusIcon(vuln.status)}
-                              <Badge variant="outline" className={getStatusColor(vuln.status)}>
-                                {vuln.status?.replace('_', ' ')}
-                              </Badge>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="font-mono">
-                              {vuln.severity_cvss3 ? parseFloat(vuln.severity_cvss3).toFixed(1) : 'N/A'}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline">
-                              {vuln.assetCount || 0} assets
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1">
-                              <Link href={`/assets/vulnerabilities/${vuln.id}`}>
-                                <Button variant="ghost" size="sm">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </Link>
-                              <Button variant="ghost" size="sm">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleDelete(vuln.id, vuln.title)}
-                                disabled={deleteMutation.isPending}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center py-12">
-                    <AlertTriangle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">
-                      {searchTerm || severityFilter || statusFilter 
-                        ? 'No vulnerabilities match your filters'
-                        : 'No vulnerabilities found'
-                      }
-                    </h3>
-                    <p className="text-muted-foreground mb-4">
-                      {searchTerm || severityFilter || statusFilter 
-                        ? 'Try adjusting your search criteria or filters.'
-                        : 'Get started by importing vulnerability data.'
-                      }
-                    </p>
-                    <Link href="/assets/vulnerabilities/import">
-                      <Button>
-                        <Upload className="h-4 w-4 mr-2" />
-                        Import Vulnerabilities
-                      </Button>
-                    </Link>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="dashboard" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Severity Distribution */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Severity Distribution</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-red-600 rounded-full"></div>
-                        Critical
-                      </span>
-                      <span>{stats.critical}</span>
-                    </div>
-                    <Progress value={(stats.critical / stats.total) * 100} className="h-2" />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                        High
-                      </span>
-                      <span>{stats.high}</span>
-                    </div>
-                    <Progress value={(stats.high / stats.total) * 100} className="h-2" />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                        Medium
-                      </span>
-                      <span>{stats.medium}</span>
-                    </div>
-                    <Progress value={(stats.medium / stats.total) * 100} className="h-2" />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                        Low
-                      </span>
-                      <span>{stats.low}</span>
-                    </div>
-                    <Progress value={(stats.low / stats.total) * 100} className="h-2" />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Status Distribution */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Status Distribution</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="flex items-center gap-2">
-                        <AlertTriangle className="w-3 h-3 text-red-500" />
-                        Open
-                      </span>
-                      <span>{stats.open}</span>
-                    </div>
-                    <Progress value={(stats.open / stats.total) * 100} className="h-2" />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="flex items-center gap-2">
-                        <Clock className="w-3 h-3 text-yellow-500" />
-                        In Progress
-                      </span>
-                      <span>{stats.inProgress}</span>
-                    </div>
-                    <Progress value={(stats.inProgress / stats.total) * 100} className="h-2" />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="flex items-center gap-2">
-                        <Shield className="w-3 h-3 text-blue-500" />
-                        Mitigated
-                      </span>
-                      <span>{stats.mitigated}</span>
-                    </div>
-                    <Progress value={(stats.mitigated / stats.total) * 100} className="h-2" />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="flex items-center gap-2">
-                        <CheckCircle className="w-3 h-3 text-green-500" />
-                        Resolved
-                      </span>
-                      <span>{stats.resolved}</span>
-                    </div>
-                    <Progress value={(stats.resolved / stats.total) * 100} className="h-2" />
-                  </div>
-                </CardContent>
-              </Card>
+        <GlowCard className="space-y-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-white/40" />
+              <Input
+                placeholder="Search by CVE, title, or description"
+                className="w-full rounded-2xl border border-white/10 bg-white/5 pl-9 text-white placeholder:text-white/40 focus-visible:ring-0"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+              />
             </div>
-          </TabsContent>
-        </Tabs>
+            <Select value={severityFilter} onValueChange={setSeverityFilter}>
+              <SelectTrigger className="w-48 rounded-2xl border border-white/10 bg-white/5 text-white">
+                <SelectValue placeholder="Severity" />
+              </SelectTrigger>
+              <SelectContent className="border-white/10 bg-surface-muted text-white">
+                <SelectItem value="all">All severities</SelectItem>
+                <SelectItem value="critical">Critical</SelectItem>
+                <SelectItem value="high">High</SelectItem>
+                <SelectItem value="medium">Medium</SelectItem>
+                <SelectItem value="low">Low</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-48 rounded-2xl border border-white/10 bg-white/5 text-white">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent className="border-white/10 bg-surface-muted text-white">
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="open">Open</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="mitigated">Mitigated</SelectItem>
+                <SelectItem value="resolved">Resolved</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Tabs defaultValue="inventory" className="space-y-4">
+            <TabsList className="rounded-2xl border border-white/10 bg-white/5 text-white">
+              <TabsTrigger value="inventory">Inventory</TabsTrigger>
+              <TabsTrigger value="timeline">Timeline</TabsTrigger>
+              <TabsTrigger value="reports">Reports</TabsTrigger>
+            </TabsList>
+            <TabsContent value="inventory">
+              <div className="overflow-hidden rounded-[30px] border border-white/10 bg-white/2">
+                <Table>
+                  <TableHeader className="bg-white/3 text-xs uppercase tracking-[0.3em] text-white/50">
+                    <TableRow>
+                      <TableHead className="text-white/60">Vulnerability</TableHead>
+                      <TableHead className="text-white/60">Severity</TableHead>
+                      <TableHead className="text-white/60">Status</TableHead>
+                      <TableHead className="text-white/60">Asset</TableHead>
+                      <TableHead className="text-right text-white/60">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredVulns.map((vuln: any) => (
+                      <TableRow key={vuln.id} className="border-white/5 hover:bg-white/5">
+                        <TableCell>
+                          <div className="space-y-1">
+                            <p className="font-semibold text-white">{vuln.title || vuln.cve_id}</p>
+                            <p className="text-xs text-white/50">{vuln.description?.slice(0, 120) || "No description"}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${severityStyles[vuln.severity] || severityStyles.info}`}>
+                            {vuln.severity?.toUpperCase()}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${statusConfig[vuln.status]?.pill}`}>
+                            {statusConfig[vuln.status]?.icon}
+                            {vuln.status?.replace("_", " ")}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm text-white/80">{vuln.asset_name || "N/A"}</div>
+                          <div className="text-xs text-white/50">Owner: {vuln.owner || "Unassigned"}</div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button variant="ghost" size="sm" className="rounded-full text-white hover:bg-white/10">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="rounded-full text-white hover:bg-white/10">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="rounded-full text-white hover:bg-rose-500/20 hover:text-rose-200"
+                              onClick={() => deleteMutation.mutate(vuln.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredVulns.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="py-16 text-center text-white/60">
+                          No vulnerabilities match your filters.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </GlowCard>
       </div>
     </Layout>
   );

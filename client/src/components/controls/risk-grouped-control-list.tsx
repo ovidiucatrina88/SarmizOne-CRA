@@ -1,24 +1,16 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Control, Risk } from "@shared/schema";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/utils";
-
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -29,22 +21,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ShieldCheck, ChevronDown, ChevronRight, Edit, Trash2, Activity } from "lucide-react";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { 
-  ShieldCheck, 
-  ChevronDown, 
-  ChevronRight, 
-  Edit, 
-  Trash2,
-  AlertTriangle 
-} from "lucide-react";
+  badgeTone,
+  formatControlCost,
+  formatImplementationStatus,
+  statusToneMap,
+  typeToneMap,
+  calculateControlCost,
+} from "@/components/controls/control-style";
 
 interface RiskGroupedControlListProps {
   controls: Control[];
@@ -69,75 +54,62 @@ interface RiskControlGroup {
   residualRisk: number;
 }
 
-export function RiskGroupedControlList({ 
-  controls, 
-  onControlEdit, 
-  onControlDelete 
+const severityTone: Record<string, string> = {
+  critical: "border-rose-400/30 bg-rose-500/10 text-rose-100",
+  high: "border-amber-400/30 bg-amber-500/10 text-amber-100",
+  medium: "border-yellow-400/30 bg-yellow-500/10 text-yellow-100",
+  low: "border-emerald-400/30 bg-emerald-500/10 text-emerald-100",
+};
+
+export function RiskGroupedControlList({
+  controls,
+  onControlEdit,
+  onControlDelete,
 }: RiskGroupedControlListProps) {
   const [expandedRisks, setExpandedRisks] = useState<Set<string>>(new Set());
   const [controlToDelete, setControlToDelete] = useState<Control | null>(null);
 
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  // Fetch risks for risk names and details
   const { data: risksResponse } = useQuery({
     queryKey: ["/api/risks"],
   });
-  const risks = (risksResponse as any)?.data || [];
+  const risks: Risk[] = (risksResponse as any)?.data || (risksResponse || []);
 
-  // Create risk lookup map
   const riskLookup = useMemo(() => {
-    const lookup = new Map();
-    risks.forEach((risk: Risk) => {
-      lookup.set(risk.riskId, {
+    const map = new Map<string, { name: string; severity: string; residualRisk: number }>();
+    risks.forEach((risk) => {
+      map.set(risk.riskId, {
         name: risk.name,
         severity: risk.severity,
-        residualRisk: Number(risk.residualRisk) || 0
+        residualRisk: Number(risk.residualRisk) || 0,
       });
     });
-    return lookup;
+    return map;
   }, [risks]);
 
-  const calculateControlCost = (control: Control) => {
-    if (control.implementationStatus === "fully_implemented") {
-      if (control.isPerAgentPricing) {
-        return Number(control.costPerAgent) || 0;
-      } else {
-        return Number(control.implementationCost) || 0;
-      }
-    } else if (control.implementationStatus === "in_progress") {
-      const deployed = Number(control.deployedAgentCount) || 0;
-      const costPerAgent = Number(control.costPerAgent) || 0;
-      return deployed * costPerAgent;
-    }
-    return 0;
-  };
-
-  // Group controls by associated risks
-  const riskGroups = useMemo(() => {
+  const riskGroups = useMemo<RiskControlGroup[]>(() => {
     const groups = new Map<string, RiskControlGroup>();
-    
-    controls.forEach(control => {
-      const associatedRisks = Array.isArray(control.associatedRisks) 
-        ? control.associatedRisks 
-        : typeof control.associatedRisks === 'string' 
-          ? (control.associatedRisks as string).split(',').map((r: string) => r.trim())
+
+    controls.forEach((control) => {
+      const associatedRisks = Array.isArray(control.associatedRisks)
+        ? control.associatedRisks
+        : typeof control.associatedRisks === "string"
+          ? (control.associatedRisks as string).split(",").map((r) => r.trim())
           : [];
 
-      // If no associated risks, group under "Unassigned"
-      const risksToProcess = associatedRisks.length > 0 ? associatedRisks : ['unassigned'];
+      const targets = associatedRisks.length ? associatedRisks : ["unassigned"];
 
-      risksToProcess.forEach((riskId: any) => {
-        const groupKey = riskId;
-        const riskInfo = riskId === 'unassigned' 
-          ? { name: 'Unassigned Controls', severity: 'low', residualRisk: 0 }
-          : (riskLookup.get(riskId) || { name: riskId, severity: 'low', residualRisk: 0 });
+      targets.forEach((riskId) => {
+        const details =
+          riskId === "unassigned"
+            ? { name: "Unassigned Controls", severity: "low", residualRisk: 0 }
+            : riskLookup.get(riskId) || { name: riskId, severity: "low", residualRisk: 0 };
 
-        if (!groups.has(groupKey)) {
-          groups.set(groupKey, {
-            riskId: groupKey,
-            riskName: riskInfo.name,
+        if (!groups.has(riskId)) {
+          groups.set(riskId, {
+            riskId,
+            riskName: details.name,
+            riskSeverity: details.severity ?? "low",
+            residualRisk: details.residualRisk ?? 0,
             controls: [],
             totalCost: 0,
             averageEffectiveness: 0,
@@ -146,287 +118,218 @@ export function RiskGroupedControlList({
               total: 0,
               fully_implemented: 0,
               in_progress: 0,
-              not_implemented: 0
+              not_implemented: 0,
             },
-            riskSeverity: riskInfo.severity,
-            residualRisk: riskInfo.residualRisk
           });
         }
-        
-        const group = groups.get(groupKey)!;
+
+        const group = groups.get(riskId)!;
         group.controls.push(control);
         group.totalCost += calculateControlCost(control);
-        
-        // Update counts
         group.controlCounts.total++;
         group.controlCounts[control.implementationStatus as keyof typeof group.controlCounts]++;
       });
     });
 
-    // Calculate averages and rates
-    groups.forEach(group => {
-      const implementedCount = group.controlCounts.fully_implemented + (group.controlCounts.in_progress * 0.5);
-      group.implementationRate = (implementedCount / group.controlCounts.total) * 100;
-      
-      const totalEffectiveness = group.controls.reduce((sum, control) => sum + (control.controlEffectiveness || 0), 0);
-      group.averageEffectiveness = totalEffectiveness / group.controls.length;
+    groups.forEach((group) => {
+      const implemented =
+        group.controlCounts.fully_implemented + group.controlCounts.in_progress * 0.5;
+      group.implementationRate =
+        group.controlCounts.total > 0 ? (implemented / group.controlCounts.total) * 100 : 0;
+      group.averageEffectiveness =
+        group.controls.reduce((sum, control) => sum + (control.controlEffectiveness || 0), 0) /
+        (group.controls.length || 1);
     });
 
-    return Array.from(groups.values())
-      .sort((a, b) => {
-        // Sort by residual risk (highest first), then by implementation rate (lowest first)
-        if (b.residualRisk !== a.residualRisk) {
-          return b.residualRisk - a.residualRisk;
-        }
-        return a.implementationRate - b.implementationRate;
-      });
+    return Array.from(groups.values()).sort((a, b) => {
+      if (b.residualRisk !== a.residualRisk) {
+        return b.residualRisk - a.residualRisk;
+      }
+      return a.implementationRate - b.implementationRate;
+    });
   }, [controls, riskLookup]);
 
   const toggleRiskExpansion = (riskId: string) => {
-    const newExpanded = new Set(expandedRisks);
-    if (newExpanded.has(riskId)) {
-      newExpanded.delete(riskId);
+    const clone = new Set(expandedRisks);
+    if (clone.has(riskId)) {
+      clone.delete(riskId);
     } else {
-      newExpanded.add(riskId);
+      clone.add(riskId);
     }
-    setExpandedRisks(newExpanded);
+    setExpandedRisks(clone);
   };
-
-  const getSeverityColor = (severity: string) => {
-    const colors = {
-      critical: "bg-red-500 text-white",
-      high: "bg-orange-500 text-white",
-      medium: "bg-yellow-500 text-black",
-      low: "bg-green-500 text-white"
-    };
-    return colors[severity as keyof typeof colors] || "bg-gray-500 text-white";
-  };
-
-  const getStatusColor = (status: string) => {
-    const colors = {
-      fully_implemented: "bg-green-500 text-white",
-      in_progress: "bg-yellow-500 text-black",
-      not_implemented: "bg-red-500 text-white"
-    };
-    return colors[status as keyof typeof colors] || "bg-gray-500 text-white";
-  };
-
-  const getTypeColor = (type: string) => {
-    const colors = {
-      preventive: "bg-blue-500 text-white",
-      detective: "bg-purple-500 text-white",
-      corrective: "bg-orange-500 text-white"
-    };
-    return colors[type as keyof typeof colors] || "bg-gray-500 text-white";
-  };
-
-  const formatImplementationStatus = (status: string) => {
-    const labels = {
-      fully_implemented: "Fully Implemented",
-      in_progress: "In Progress",
-      not_implemented: "Not Implemented"
-    };
-    return labels[status as keyof typeof labels] || status;
-  };
-
-  // Delete control mutation
-  const deleteControlMutation = useMutation({
-    mutationFn: async (controlId: number) => {
-      return apiRequest("DELETE", `/api/controls/${controlId}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/controls"] });
-      toast({
-        title: "Control deleted",
-        description: "The control has been successfully deleted.",
-      });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to delete control",
-        variant: "destructive",
-      });
-    },
-  });
 
   return (
     <div className="space-y-4">
-      {riskGroups.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No controls found</h3>
-            <p className="text-muted-foreground">
-              No controls match your current filter criteria.
-            </p>
-          </CardContent>
-        </Card>
+      {!riskGroups.length ? (
+        <div className="rounded-[28px] border border-white/10 bg-white/5 p-10 text-center text-white/70">
+          <Activity className="mx-auto mb-4 h-12 w-12 text-white/40" />
+          <p className="text-lg font-semibold text-white">No risk mappings detected</p>
+          <p className="text-sm text-white/60">Associate controls with risks to populate this view.</p>
+        </div>
       ) : (
-        riskGroups.map(group => (
-          <Card key={group.riskId} className="overflow-hidden">
-            <Collapsible 
-              open={expandedRisks.has(group.riskId)}
-              onOpenChange={() => toggleRiskExpansion(group.riskId)}
-            >
+        riskGroups.map((group) => (
+          <div
+            key={group.riskId}
+            className="overflow-hidden rounded-[32px] border border-white/10 bg-gradient-to-br from-[#2a1a2f]/80 via-[#120d1a]/95 to-[#08060d]/95 shadow-[0_35px_110px_rgba(8,6,13,0.75)]"
+          >
+            <Collapsible open={expandedRisks.has(group.riskId)} onOpenChange={() => toggleRiskExpansion(group.riskId)}>
               <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                  <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between px-6 py-5 text-left transition hover:bg-white/5"
+                >
+                  <div className="flex flex-1 items-center gap-4">
+                    {expandedRisks.has(group.riskId) ? (
+                      <ChevronDown className="h-5 w-5 text-white/60" />
+                    ) : (
+                      <ChevronRight className="h-5 w-5 text-white/60" />
+                    )}
                     <div className="flex items-center gap-3">
-                      {expandedRisks.has(group.riskId) ? (
-                        <ChevronDown className="w-5 h-5" />
-                      ) : (
-                        <ChevronRight className="w-5 h-5" />
-                      )}
-                      <ShieldCheck className="w-5 h-5 text-muted-foreground" />
+                      <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
+                        <ShieldCheck className="h-5 w-5 text-white/70" />
+                      </span>
                       <div>
-                        <CardTitle className="text-lg">{group.riskName}</CardTitle>
-                        <div className="flex items-center gap-4 mt-1">
-                          <Badge variant="outline" className="text-xs">
-                            {group.controlCounts.total} control{group.controlCounts.total !== 1 ? 's' : ''}
+                        <p className="text-lg font-semibold text-white">{group.riskName}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-white/60">
+                          <Badge className={`rounded-full px-3 py-0.5 text-[11px] ${severityTone[group.riskSeverity] || severityTone.low}`}>
+                            {group.riskSeverity || "low"} severity
                           </Badge>
-                          <Badge className={`text-xs ${getSeverityColor(group.riskSeverity)}`}>
-                            {group.riskSeverity} severity
-                          </Badge>
-                          <span className="text-sm text-muted-foreground">
-                            Total Cost: {formatCurrency(group.totalCost)}
-                          </span>
-                          {group.riskId !== 'unassigned' && (
-                            <span className="text-sm text-muted-foreground">
-                              Risk Exposure: {formatCurrency(group.residualRisk)}
-                            </span>
-                          )}
+                          <span>Residual Risk · {group.residualRisk.toFixed(1)}</span>
+                          <span>Controls · {group.controlCounts.total}</span>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">Implementation:</span>
-                        <Progress value={group.implementationRate} className="w-20 h-2" />
-                        <span className="text-sm text-muted-foreground">
-                          {group.implementationRate.toFixed(0)}%
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {group.controlCounts.fully_implemented > 0 && (
-                          <Badge className="bg-green-500 text-white text-xs">
-                            {group.controlCounts.fully_implemented} Implemented
-                          </Badge>
-                        )}
-                        {group.controlCounts.in_progress > 0 && (
-                          <Badge className="bg-yellow-500 text-black text-xs">
-                            {group.controlCounts.in_progress} In Progress
-                          </Badge>
-                        )}
-                        {group.controlCounts.not_implemented > 0 && (
-                          <Badge className="bg-red-500 text-white text-xs">
-                            {group.controlCounts.not_implemented} Not Implemented
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
                   </div>
-                </CardHeader>
+                  <div className="hidden items-center gap-2 text-xs text-white/70 md:flex">
+                    <Badge className="rounded-full border-white/10 bg-emerald-500/10 text-emerald-100">
+                      Avg Eff {(group.averageEffectiveness || 0).toFixed(1)}/10
+                    </Badge>
+                    <Badge className="rounded-full border-white/10 bg-sky-500/10 text-sky-100">
+                      Implementation {group.implementationRate.toFixed(0)}%
+                    </Badge>
+                    <Badge className="rounded-full border-white/10 bg-white/10 text-white">
+                      Cost {formatCurrency(group.totalCost)}
+                    </Badge>
+                  </div>
+                </button>
               </CollapsibleTrigger>
-              
+
               <CollapsibleContent>
-                <CardContent className="pt-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Control</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Effectiveness</TableHead>
-                        <TableHead>Cost</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {group.controls.map(control => (
-                        <TableRow key={control.id} className="hover:bg-muted/50">
-                          <TableCell>
-                            <div>
-                              <div className="font-medium">{control.name}</div>
-                              <div className="text-sm text-muted-foreground">{control.controlId}</div>
-                              {control.description && (
-                                <div className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                                  {control.description}
-                                </div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getTypeColor(control.controlType)}>
-                              {control.controlType}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={getStatusColor(control.implementationStatus)}>
-                              {formatImplementationStatus(control.implementationStatus)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Progress value={(control.controlEffectiveness || 0) * 10} className="w-16 h-2" />
-                              <span className="text-sm">{(control.controlEffectiveness || 0).toFixed(1)}/10</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {formatCurrency(calculateControlCost(control))}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => onControlEdit?.(control)}
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setControlToDelete(control)}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                <div className="border-t border-white/10 px-6 pb-6">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader className="bg-white/5 text-xs uppercase tracking-wide text-white/50">
+                        <TableRow>
+                          <TableHead className="text-white/70">Control</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Effectiveness</TableHead>
+                          <TableHead>Cost</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
+                      </TableHeader>
+                      <TableBody>
+                        {group.controls.map((control) => (
+                          <TableRow key={control.id} className="border-b border-white/5">
+                            <TableCell className="align-top">
+                              <div className="text-sm font-semibold text-white">{control.name}</div>
+                              <div className="text-xs uppercase tracking-wide text-white/40">{control.controlId}</div>
+                              {control.description && (
+                                <p className="mt-1 text-xs text-white/60 line-clamp-2">{control.description}</p>
+                              )}
+                            </TableCell>
+                            <TableCell className="align-top">
+                              <Badge
+                                className={`rounded-full px-3 py-0.5 text-xs capitalize ${badgeTone(
+                                  typeToneMap,
+                                  control.controlType,
+                                )}`}
+                              >
+                                {control.controlType}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="align-top">
+                              <Badge
+                                className={`rounded-full px-3 py-0.5 text-xs capitalize ${badgeTone(
+                                  statusToneMap,
+                                  control.implementationStatus,
+                                )}`}
+                              >
+                                {formatImplementationStatus(control.implementationStatus)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="align-top">
+                              <div className="space-y-1 text-xs text-white/60">
+                                <div className="flex items-center justify-between">
+                                  <span>Score</span>
+                                  <span className="font-semibold text-white">
+                                    {(control.controlEffectiveness || 0).toFixed(1)}/10
+                                  </span>
+                                </div>
+                                <div className="h-2 rounded-full bg-white/5">
+                                  <div
+                                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-indigo-400"
+                                    style={{ width: `${Math.min((control.controlEffectiveness || 0) * 10, 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="align-top text-sm font-semibold text-white">
+                              {formatControlCost(control)}
+                            </TableCell>
+                            <TableCell className="align-top text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-9 w-9 rounded-full border border-white/10 text-white/70 hover:bg-white/10"
+                                  onClick={() => onControlEdit?.(control)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-9 w-9 rounded-full border border-rose-400/20 text-rose-200 hover:bg-rose-500/10"
+                                  onClick={() => setControlToDelete(control)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
               </CollapsibleContent>
             </Collapsible>
-          </Card>
+          </div>
         ))
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog 
-        open={!!controlToDelete} 
-        onOpenChange={() => setControlToDelete(null)}
-      >
-        <AlertDialogContent>
+      <AlertDialog open={!!controlToDelete} onOpenChange={() => setControlToDelete(null)}>
+        <AlertDialogContent className="rounded-[28px] border border-white/10 bg-slate-950/90 text-white">
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Control</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete "{controlToDelete?.name}"? This action cannot be undone.
+            <AlertDialogTitle>Delete control</AlertDialogTitle>
+            <AlertDialogDescription className="text-white/70">
+              Are you sure you want to delete “{controlToDelete?.name}”? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel className="rounded-full border-white/10 bg-white/5 text-white hover:bg-white/10">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
+              className="rounded-full bg-rose-500 text-white hover:bg-rose-400"
               onClick={() => {
                 if (controlToDelete) {
                   onControlDelete?.(controlToDelete);
                   setControlToDelete(null);
                 }
               }}
-              className="bg-red-600 hover:bg-red-700"
             >
               Delete
             </AlertDialogAction>

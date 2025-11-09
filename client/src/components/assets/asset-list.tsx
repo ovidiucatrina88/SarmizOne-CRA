@@ -41,6 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { GlowCard } from "@/components/ui/glow-card";
 
 type AssetListProps = {
   assets: Asset[] | any;
@@ -168,23 +169,29 @@ export function AssetList({ assets, onEdit }: AssetListProps) {
     setDeleteConfirmOpen(false);
   };
   
-  // Get CIA rating badge color
   const getCIARatingColor = (rating: string) => {
-    switch(rating) {
-      case "high": return "bg-red-100 text-red-800";
-      case "medium": return "bg-amber-100 text-amber-800";
-      case "low": return "bg-green-100 text-green-800";
-      default: return "bg-gray-100 text-gray-800";
+    switch (rating) {
+      case "high":
+        return "border-rose-400/40 bg-rose-500/15 text-rose-100";
+      case "medium":
+        return "border-amber-400/40 bg-amber-500/15 text-amber-100";
+      case "low":
+        return "border-emerald-400/40 bg-emerald-500/15 text-emerald-100";
+      default:
+        return "border-white/10 bg-white/5 text-white/70";
     }
   };
-  
-  // Get asset status badge color
+
   const getStatusColor = (status: string) => {
-    switch(status) {
-      case "Active": return "bg-green-100 text-green-800";
-      case "Decommissioned": return "bg-red-100 text-red-800";
-      case "To Adopt": return "bg-blue-100 text-blue-800";
-      default: return "bg-gray-100 text-gray-800";
+    switch (status) {
+      case "Active":
+        return "border-emerald-400/40 bg-emerald-500/15 text-emerald-100";
+      case "Decommissioned":
+        return "border-rose-400/40 bg-rose-500/15 text-rose-100";
+      case "To Adopt":
+        return "border-sky-400/40 bg-sky-500/15 text-sky-100";
+      default:
+        return "border-white/10 bg-white/5 text-white/70";
     }
   };
   
@@ -192,20 +199,19 @@ export function AssetList({ assets, onEdit }: AssetListProps) {
 
   return (
     <>
-      <div className="bg-gray-800 rounded-lg border border-gray-600">
-        {/* Search and Filter Controls */}
-        <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
-          <div className="flex items-center space-x-3">
+      <GlowCard className="p-0">
+        <div className="border-b border-white/10 px-6 py-5">
+          <div className="flex flex-wrap items-center gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+              <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-white/40" />
               <Input
                 type="search"
-                placeholder="Search assets..."
-                className="w-full pl-8 bg-gray-600 border-gray-500 text-white placeholder-gray-400 focus:border-blue-500"
+                placeholder="Search assets by name, ID, or owner"
+                className="w-full rounded-2xl border border-white/10 bg-white/5 pl-9 text-white placeholder:text-white/40 focus-visible:ring-0"
                 value={searchQuery}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   setSearchQuery(e.target.value);
-                  setCurrentPage(1); // Reset to first page on search
+                  setCurrentPage(1);
                 }}
               />
             </div>
@@ -213,34 +219,32 @@ export function AssetList({ assets, onEdit }: AssetListProps) {
               value={filterType}
               onValueChange={(value) => {
                 setFilterType(value);
-                setCurrentPage(1); // Reset to first page on filter change
+                setCurrentPage(1);
               }}
             >
-              <SelectTrigger className="w-40 bg-gray-600 border-gray-500 text-white">
+              <SelectTrigger className="w-48 rounded-2xl border border-white/10 bg-white/5 text-white">
                 <SelectValue placeholder="Filter by type" />
               </SelectTrigger>
-              <SelectContent className="bg-gray-700 border-gray-600">
-                <SelectItem value="all" className="text-white hover:bg-gray-600">All Types</SelectItem>
-                <SelectItem value="data" className="text-white hover:bg-gray-600">Data</SelectItem>
-                <SelectItem value="application" className="text-white hover:bg-gray-600">Application</SelectItem>
-                <SelectItem value="device" className="text-white hover:bg-gray-600">Device</SelectItem>
-                <SelectItem value="system" className="text-white hover:bg-gray-600">System</SelectItem>
-                <SelectItem value="network" className="text-white hover:bg-gray-600">Network</SelectItem>
-                <SelectItem value="facility" className="text-white hover:bg-gray-600">Facility</SelectItem>
-                <SelectItem value="personnel" className="text-white hover:bg-gray-600">Personnel</SelectItem>
-                <SelectItem value="other" className="text-white hover:bg-gray-600">Other</SelectItem>
+              <SelectContent className="border-white/10 bg-surface-muted text-white">
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="data">Data</SelectItem>
+                <SelectItem value="application">Application</SelectItem>
+                <SelectItem value="device">Device</SelectItem>
+                <SelectItem value="system">System</SelectItem>
+                <SelectItem value="network">Network</SelectItem>
+                <SelectItem value="facility">Facility</SelectItem>
+                <SelectItem value="personnel">Personnel</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
-        
-        {/* Content area */}
+
         <div className="p-0">
           {paginatedAssets.length > 0 ? (
             <>
-              {/* Grid Header */}
-              <div className="bg-gray-700 px-6 py-3 border-b border-gray-600">
-                <div className="grid grid-cols-5 gap-4 text-xs font-medium text-gray-300 uppercase tracking-wider">
+              <div className="border-b border-white/5 bg-white/5 px-6 py-3">
+                <div className="grid grid-cols-5 gap-4 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
                   <div>Asset Information</div>
                   <div>Type & Status</div>
                   <div>Business Details</div>
@@ -249,8 +253,7 @@ export function AssetList({ assets, onEdit }: AssetListProps) {
                 </div>
               </div>
               
-              {/* Asset rows */}
-              <div className="divide-y divide-gray-600">
+              <div className="divide-y divide-white/5">
                 {paginatedAssets.map((asset: Asset) => {
                   const getAssetTypeAbbr = (type: string) => {
                     switch(type) {
@@ -266,46 +269,54 @@ export function AssetList({ assets, onEdit }: AssetListProps) {
                   };
                   
                   return (
-                    <div key={asset.id} className="px-6 py-4 hover:bg-gray-700 transition-colors">
+                    <div key={asset.id} className="px-6 py-4 transition-colors hover:bg-white/5">
                       <div className="grid grid-cols-5 gap-4 items-center">
                         {/* Asset Information */}
                         <div className="flex items-center space-x-3">
                           <div className="flex-shrink-0">
-                            <div className="w-12 h-8 bg-gray-600 rounded flex items-center justify-center border border-gray-500">
-                              <span className="text-xs font-medium text-gray-200">{getAssetTypeAbbr(asset.type)}</span>
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/10">
+                              <span className="text-xs font-semibold text-white">{getAssetTypeAbbr(asset.type)}</span>
                             </div>
                           </div>
                           <div>
-                            <div className="font-medium text-white text-sm">{asset.name}</div>
-                            <div className="text-xs text-gray-400">ID: {asset.assetId}</div>
+                            <div className="text-sm font-semibold text-white">{asset.name}</div>
+                            <div className="text-xs text-white/50">ID: {asset.assetId}</div>
                           </div>
                         </div>
 
                         {/* Type & Status */}
                         <div>
-                          <div className="text-sm text-gray-300 capitalize">{asset.type}</div>
-                          <div className="mt-1">
-                            <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${getStatusColor(asset.status || "Active")}`}>
-                              {asset.status || "Active"}
-                            </span>
-                          </div>
+                          <div className="text-sm text-white/80 capitalize">{asset.type}</div>
+                          <Badge className={`mt-2 border ${getStatusColor(asset.status || "Active")}`}>
+                            {asset.status || "Active"}
+                          </Badge>
                         </div>
 
-                        {/* Business Details */}
                         <div>
-                          <div className="text-sm text-gray-300">{asset.business_unit || 'N/A'}</div>
-                          <div className="text-xs text-gray-400">Owner: {asset.owner}</div>
+                          <div className="text-sm text-white/85">{asset.business_unit || "N/A"}</div>
+                          <div className="text-xs text-white/50">Owner: {asset.owner}</div>
                         </div>
 
-                        {/* CIA Rating */}
                         <div className="flex space-x-1">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${getCIARatingColor(asset.confidentiality)}`}>
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getCIARatingColor(
+                              asset.confidentiality,
+                            )}`}
+                          >
                             C:{asset.confidentiality.charAt(0).toUpperCase()}
                           </span>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${getCIARatingColor(asset.integrity)}`}>
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getCIARatingColor(
+                              asset.integrity,
+                            )}`}
+                          >
                             I:{asset.integrity.charAt(0).toUpperCase()}
                           </span>
-                          <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium border ${getCIARatingColor(asset.availability)}`}>
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getCIARatingColor(
+                              asset.availability,
+                            )}`}
+                          >
                             A:{asset.availability.charAt(0).toUpperCase()}
                           </span>
                         </div>
@@ -313,12 +324,10 @@ export function AssetList({ assets, onEdit }: AssetListProps) {
                         {/* Value & Actions */}
                         <div className="flex items-center justify-end space-x-3">
                           <div className="text-right">
-                            <div className="text-sm font-medium text-green-400">
+                            <div className="text-sm font-semibold text-emerald-200">
                               {formatCurrency(Number(asset.assetValue), asset.currency)}
                             </div>
-                            <div className="text-xs text-gray-400">
-                              {asset.currency} value
-                            </div>
+                            <div className="text-xs text-white/40">{asset.currency} value</div>
                           </div>
                           <div className="flex space-x-1">
                             {selectForRiskId ? (
@@ -327,7 +336,7 @@ export function AssetList({ assets, onEdit }: AssetListProps) {
                                 size="sm"
                                 onClick={() => handleSelectAssetForRisk(asset)}
                                 disabled={createRiskFromTemplateMutation.isPending}
-                                className="bg-blue-600 hover:bg-blue-700"
+                                className="rounded-full bg-primary px-4 text-primary-foreground"
                               >
                                 <Plus className="h-4 w-4 mr-1" />
                                 Select
@@ -335,10 +344,10 @@ export function AssetList({ assets, onEdit }: AssetListProps) {
                             ) : (
                               <>
                                 <Button
-                                  variant="outline"
+                                  variant="ghost"
                                   size="sm"
                                   onClick={() => navigate(`/assets/${asset.assetId}`)}
-                                  className="border-gray-500 text-gray-300 hover:bg-gray-600"
+                                  className="rounded-full border border-white/10 text-white hover:bg-white/10"
                                 >
                                   <ExternalLink className="h-4 w-4" />
                                 </Button>
@@ -346,7 +355,7 @@ export function AssetList({ assets, onEdit }: AssetListProps) {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => onEdit(asset)}
-                                  className="text-gray-300 hover:bg-gray-600"
+                                  className="rounded-full text-white hover:bg-white/10"
                                 >
                                   <Edit className="h-4 w-4" />
                                 </Button>
@@ -354,7 +363,7 @@ export function AssetList({ assets, onEdit }: AssetListProps) {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => handleDeleteClick(asset)}
-                                  className="text-gray-300 hover:bg-gray-600 hover:text-red-400"
+                                  className="rounded-full text-white hover:bg-rose-500/20 hover:text-rose-200"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -376,26 +385,26 @@ export function AssetList({ assets, onEdit }: AssetListProps) {
           
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-end space-x-2 py-4 px-6 bg-gray-800 border-t border-gray-600 rounded-b-lg">
+            <div className="flex items-center justify-end space-x-2 border-t border-white/5 bg-white/5 px-6 py-4">
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="border-gray-500 text-gray-300 hover:bg-gray-600"
+                className="rounded-full border border-white/10 text-white hover:bg-white/10 disabled:opacity-40"
               >
                 <ChevronLeft className="h-4 w-4" />
                 <span className="sr-only">Previous Page</span>
               </Button>
-              <div className="text-sm text-gray-400">
+              <div className="text-sm text-white/60">
                 Page {currentPage} of {totalPages}
               </div>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="border-gray-500 text-gray-300 hover:bg-gray-600"
+                className="rounded-full border border-white/10 text-white hover:bg-white/10 disabled:opacity-40"
               >
                 <ChevronRight className="h-4 w-4" />
                 <span className="sr-only">Next Page</span>
@@ -403,7 +412,7 @@ export function AssetList({ assets, onEdit }: AssetListProps) {
             </div>
           )}
         </div>
-      </div>
+      </GlowCard>
 
       {/* Delete confirmation dialog */}
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
