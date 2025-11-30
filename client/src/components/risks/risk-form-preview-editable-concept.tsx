@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 import {
     FormControl,
@@ -9,7 +9,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useQuery } from "@tanstack/react-query";
-import { Asset } from "@shared/schema";
 import {
     Select,
     SelectContent,
@@ -20,7 +19,6 @@ import {
 import {
     formatCurrency,
     formatNumberAbbreviated,
-    calculatePrimaryLossFromAssets,
 } from "@shared/utils/calculations";
 
 // Confidence levels for risk parameters
@@ -48,6 +46,7 @@ interface TriangularFormFieldProps {
     hideTitle?: boolean;
     darkMode?: boolean;
     compact?: boolean;
+    readOnly?: boolean;
 }
 
 // Triangular form field component
@@ -66,6 +65,7 @@ function TriangularFormField({
     hideTitle = false,
     darkMode = false,
     compact = false,
+    readOnly = false,
 }: TriangularFormFieldProps) {
     const textColor = darkMode ? "text-white" : "text-slate-800";
     const labelColor = darkMode ? "text-slate-400" : "text-slate-600";
@@ -151,8 +151,10 @@ function TriangularFormField({
                                 {...field}
                                 type="text"
                                 inputMode="numeric"
-                                className={`h-6 text-right text-[10px] ${inputBgColor} ${textColor} ${borderColor} px-1 ${noSpinnerClass} rounded-sm`}
-                                onChange={(e) => handler(e, field)}
+                                readOnly={readOnly}
+                                disabled={readOnly}
+                                className={`h-6 text-right text-[10px] ${inputBgColor} ${textColor} ${borderColor} px-1 ${noSpinnerClass} rounded-sm ${readOnly ? "pointer-events-none opacity-75" : ""}`}
+                                onChange={readOnly ? undefined : (e) => handler(e, field)}
                             />
                         </div>
                     </FormControl>
@@ -183,9 +185,9 @@ function TriangularFormField({
                     render={({ field }) => (
                         <FormItem className="flex items-center gap-2 space-y-0">
                             <FormLabel className={`text-[10px] ${labelColor}`}>Conf.</FormLabel>
-                            <Select value={field.value || "medium"} onValueChange={field.onChange}>
+                            <Select value={field.value || "medium"} onValueChange={readOnly ? undefined : field.onChange} disabled={readOnly}>
                                 <FormControl>
-                                    <SelectTrigger className={`h-6 w-[80px] text-[10px] ${inputBgColor} ${textColor} ${borderColor} rounded-md`}>
+                                    <SelectTrigger className={`h-6 w-[80px] text-[10px] ${inputBgColor} ${textColor} ${borderColor} rounded-md ${readOnly ? "pointer-events-none opacity-75" : ""}`}>
                                         <SelectValue placeholder="Select" />
                                     </SelectTrigger>
                                 </FormControl>
@@ -205,6 +207,32 @@ function TriangularFormField({
         </div>
     );
 }
+
+type CalculatedRiskData = {
+    inherentRisk?: number | string;
+    residualRisk?: number | string;
+    threatEventFrequencyMin?: number | string;
+    threatEventFrequencyAvg?: number | string;
+    threatEventFrequencyMax?: number | string;
+    lossEventFrequencyMin?: number | string;
+    lossEventFrequencyAvg?: number | string;
+    lossEventFrequencyMax?: number | string;
+    susceptibilityMin?: number | string;
+    susceptibilityAvg?: number | string;
+    susceptibilityMax?: number | string;
+    lossMagnitudeMin?: number | string;
+    lossMagnitudeAvg?: number | string;
+    lossMagnitudeMax?: number | string;
+    primaryLossMagnitudeMin?: number | string;
+    primaryLossMagnitudeAvg?: number | string;
+    primaryLossMagnitudeMax?: number | string;
+    secondaryLossEventFrequencyMin?: number | string;
+    secondaryLossEventFrequencyAvg?: number | string;
+    secondaryLossEventFrequencyMax?: number | string;
+    secondaryLossMagnitudeMin?: number | string;
+    secondaryLossMagnitudeAvg?: number | string;
+    secondaryLossMagnitudeMax?: number | string;
+};
 
 // Helper component for Tree Nodes
 const TreeNode = ({
@@ -256,23 +284,13 @@ const VerticalLine = ({ height = "h-8" }) => (
     <div className={`w-px ${height} bg-slate-700/50`}></div>
 );
 
-const HorizontalBranch = ({ width = "w-full" }) => (
-    <div className="flex w-full justify-center">
-        <div className={`h-px ${width} bg-slate-700/50 relative top-0`}>
-            <div className="absolute left-0 top-0 h-2 w-px bg-slate-700/50 -translate-y-full"></div>
-            <div className="absolute right-0 top-0 h-2 w-px bg-slate-700/50 -translate-y-full"></div>
-            <div className="absolute left-1/2 top-0 h-4 w-px bg-slate-700/50 -translate-x-1/2"></div>
-        </div>
-    </div>
-);
-
 export function RiskFormPreviewEditableConcept({
     form,
-    selectedAssets = [],
+    selectedAssets: _selectedAssets = [],
 }: RiskFormPreviewEditableProps) {
-    // ... (Keep existing data fetching and calculation logic)
+    // All calculated values are expected to come from the server/database
     const riskId = form.watch("riskId");
-    const { data: calculatedRiskData } = useQuery<{ data: { inherentRisk?: number; residualRisk?: number } }>({
+    const { data: calculatedRiskData } = useQuery<{ data: Partial<CalculatedRiskData> }>({
         queryKey: ["/api/risks", riskId, "calculate"],
         enabled: !!riskId,
         refetchInterval: 5000,
@@ -285,49 +303,52 @@ export function RiskFormPreviewEditableConcept({
     });
 
     const calcValues = calculatedRiskData?.data;
-    const inherentRisk = calcValues?.inherentRisk ?? Number(form.watch("inherentRisk") || 0);
-    const residualRisk = calcValues?.residualRisk ?? calcValues?.inherentRisk ?? Number(form.watch("residualRisk") || 0);
-
-    const { data: assetsResponse } = useQuery<{ data: Asset[] }>({ queryKey: ["/api/assets"] });
-    const allAssets = useMemo<Asset[]>(() => {
-        if (assetsResponse?.data) return assetsResponse.data as Asset[];
-        if (Array.isArray(assetsResponse)) return assetsResponse as Asset[];
-        return [];
-    }, [assetsResponse]);
+    const inherentRisk = Number(calcValues?.inherentRisk ?? form.watch("inherentRisk") ?? 0) || 0;
+    const residualRisk = Number(calcValues?.residualRisk ?? calcValues?.inherentRisk ?? form.watch("residualRisk") ?? 0) || 0;
 
     useEffect(() => {
-        if (allAssets.length === 0) return;
-        if (!window.__ASSET_CACHE__) window.__ASSET_CACHE__ = {};
-        allAssets.forEach((asset) => {
-            window.__ASSET_CACHE__![asset.assetId] = {
-                id: asset.id,
-                name: asset.name,
-                assetValue: asset.assetValue,
-                currency: asset.currency,
-            };
+        if (!calcValues) return;
+        const numericFields: (keyof CalculatedRiskData)[] = [
+            "threatEventFrequencyMin",
+            "threatEventFrequencyAvg",
+            "threatEventFrequencyMax",
+            "lossEventFrequencyMin",
+            "lossEventFrequencyAvg",
+            "lossEventFrequencyMax",
+            "susceptibilityMin",
+            "susceptibilityAvg",
+            "susceptibilityMax",
+            "lossMagnitudeMin",
+            "lossMagnitudeAvg",
+            "lossMagnitudeMax",
+            "primaryLossMagnitudeMin",
+            "primaryLossMagnitudeAvg",
+            "primaryLossMagnitudeMax",
+            "secondaryLossEventFrequencyMin",
+            "secondaryLossEventFrequencyAvg",
+            "secondaryLossEventFrequencyMax",
+            "secondaryLossMagnitudeMin",
+            "secondaryLossMagnitudeAvg",
+            "secondaryLossMagnitudeMax",
+        ];
+
+        numericFields.forEach((field) => {
+            const raw = calcValues[field];
+            const num = typeof raw === "string" ? Number(raw) : raw;
+            if (typeof num === "number" && Number.isFinite(num)) {
+                form.setValue(field as any, num, { shouldValidate: false, shouldDirty: false });
+            }
         });
-    }, [allAssets]);
 
-    const selectedAssetObjects = useMemo(() => {
-        if (!selectedAssets?.length) return [];
-        return allAssets.filter((asset) => selectedAssets.includes(asset.assetId));
-    }, [allAssets, selectedAssets]);
-
-    useEffect(() => {
-        if (selectedAssetObjects.length === 0) return;
-        const severity = form.getValues("severity") || "medium";
-        const impactFactor = {
-            min: severity === "critical" ? 0.2 : severity === "high" ? 0.1 : 0.05,
-            avg: severity === "critical" ? 0.5 : severity === "high" ? 0.3 : 0.15,
-            max: severity === "critical" ? 0.8 : severity === "high" ? 0.6 : 0.3,
-        };
-        const primaryLossValues = calculatePrimaryLossFromAssets(selectedAssetObjects, impactFactor);
-        if (primaryLossValues.min > 0) {
-            form.setValue("primaryLossMagnitudeMin", primaryLossValues.min, { shouldValidate: true });
-            form.setValue("primaryLossMagnitudeAvg", primaryLossValues.avg, { shouldValidate: true });
-            form.setValue("primaryLossMagnitudeMax", primaryLossValues.max, { shouldValidate: true });
+        const serverInherent = typeof calcValues.inherentRisk === "string" ? Number(calcValues.inherentRisk) : calcValues.inherentRisk;
+        const serverResidual = typeof calcValues.residualRisk === "string" ? Number(calcValues.residualRisk) : calcValues.residualRisk;
+        if (typeof serverInherent === "number" && Number.isFinite(serverInherent)) {
+            form.setValue("inherentRisk" as any, serverInherent, { shouldValidate: false, shouldDirty: false });
         }
-    }, [selectedAssetObjects, form]);
+        if (typeof serverResidual === "number" && Number.isFinite(serverResidual)) {
+            form.setValue("residualRisk" as any, serverResidual, { shouldValidate: false, shouldDirty: false });
+        }
+    }, [calcValues, form]);
 
     const watchNumber = (field: string) => {
         const value = form.watch(field as any);
@@ -358,6 +379,15 @@ export function RiskFormPreviewEditableConcept({
     const lossMagnitudeMin = watchNumber("lossMagnitudeMin");
     const lossMagnitudeAvg = watchNumber("lossMagnitudeAvg");
     const lossMagnitudeMax = watchNumber("lossMagnitudeMax");
+    const primaryLossMin = watchNumber("primaryLossMagnitudeMin");
+    const primaryLossAvg = watchNumber("primaryLossMagnitudeAvg");
+    const primaryLossMax = watchNumber("primaryLossMagnitudeMax");
+    const secondaryLossEventFrequencyMin = watchNumber("secondaryLossEventFrequencyMin");
+    const secondaryLossEventFrequencyAvg = watchNumber("secondaryLossEventFrequencyAvg");
+    const secondaryLossEventFrequencyMax = watchNumber("secondaryLossEventFrequencyMax");
+    const secondaryLossMagnitudeMin = watchNumber("secondaryLossMagnitudeMin");
+    const secondaryLossMagnitudeAvg = watchNumber("secondaryLossMagnitudeAvg");
+    const secondaryLossMagnitudeMax = watchNumber("secondaryLossMagnitudeMax");
 
     return (
         <div className="w-full overflow-x-auto pb-4">
@@ -398,8 +428,22 @@ export function RiskFormPreviewEditableConcept({
                             title="Loss Event Freq"
                             subtitle="TEF × Vuln"
                             valueRange={formatRange(lossEventFrequencyMin, lossEventFrequencyAvg, lossEventFrequencyMax, { unit: "evt/yr" })}
-                            className="w-[200px]"
-                        />
+                            type="calculated"
+                            className="w-[220px]"
+                        >
+                            <TriangularFormField
+                                form={form}
+                                title="Loss Event Freq"
+                                minField="lossEventFrequencyMin"
+                                avgField="lossEventFrequencyAvg"
+                                maxField="lossEventFrequencyMax"
+                                confidenceField="lossEventFrequencyConfidence"
+                                unit="/yr"
+                                min={0} max={365} step={0.1}
+                                hideTitle compact darkMode
+                                readOnly
+                            />
+                        </TreeNode>
                         <VerticalLine height="h-3" />
 
                         {/* Branching to TEF and Susceptibility */}
@@ -407,16 +451,30 @@ export function RiskFormPreviewEditableConcept({
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-2 border-t border-l border-r border-slate-700/50 rounded-t-lg"></div>
 
                             {/* TEF Node */}
-                            <div className="flex flex-col items-center pt-2">
+                            <div className="flex flex-col items-center pt-2 ml-6">
                                 <TreeNode
                                     title="Threat Event Freq"
                                     subtitle="Contact × Action"
                                     valueRange={formatRange(tefMin, tefAvg, tefMax, { unit: "evt/yr" })}
-                                    className="w-[180px]"
-                                />
+                                    type="calculated"
+                                    className="w-[200px]"
+                                >
+                                    <TriangularFormField
+                                        form={form}
+                                        title="Threat Event Freq"
+                                        minField="threatEventFrequencyMin"
+                                        avgField="threatEventFrequencyAvg"
+                                        maxField="threatEventFrequencyMax"
+                                        confidenceField="threatEventFrequencyConfidence"
+                                        unit="/yr"
+                                        min={0} max={365} step={0.1}
+                                        hideTitle compact darkMode
+                                        readOnly
+                                    />
+                                </TreeNode>
                                 <VerticalLine height="h-2" />
-                                <div className="flex gap-1">
-                                    <TreeNode title="Contact Freq" type="input" className="mt-1 w-[140px]">
+                                <div className="flex gap-2">
+                                    <TreeNode title="Contact Freq" type="input" className="mt-1 w-[180px]">
                                         <TriangularFormField
                                             form={form}
                                             title="Contact Freq"
@@ -429,7 +487,7 @@ export function RiskFormPreviewEditableConcept({
                                             hideTitle compact darkMode
                                         />
                                     </TreeNode>
-                                    <TreeNode title="Prob of Action" type="input" className="mt-1 w-[140px]">
+                                    <TreeNode title="Prob of Action" type="input" className="mt-1 w-[180px]">
                                         <TriangularFormField
                                             form={form}
                                             title="Prob Action"
@@ -451,11 +509,25 @@ export function RiskFormPreviewEditableConcept({
                                     title="Susceptibility"
                                     subtitle="Cap ÷ Resist"
                                     valueRange={formatRange(susceptibilityMin, susceptibilityAvg, susceptibilityMax)}
-                                    className="w-[180px]"
-                                />
+                                    type="calculated"
+                                    className="w-[200px]"
+                                >
+                                    <TriangularFormField
+                                        form={form}
+                                        title="Susceptibility"
+                                        minField="susceptibilityMin"
+                                        avgField="susceptibilityAvg"
+                                        maxField="susceptibilityMax"
+                                        confidenceField="susceptibilityConfidence"
+                                        unit=""
+                                        min={0} max={10} step={0.1}
+                                        hideTitle compact darkMode
+                                        readOnly
+                                    />
+                                </TreeNode>
                                 <VerticalLine height="h-2" />
-                                <div className="flex gap-1">
-                                    <TreeNode title="Threat Cap" type="input" className="mt-1 w-[140px]">
+                                <div className="flex gap-2">
+                                    <TreeNode title="Threat Cap" type="input" className="mt-1 w-[180px]">
                                         <TriangularFormField
                                             form={form}
                                             title="Threat Cap"
@@ -468,7 +540,7 @@ export function RiskFormPreviewEditableConcept({
                                             hideTitle compact darkMode
                                         />
                                     </TreeNode>
-                                    <TreeNode title="Resistance" type="input" className="mt-1 w-[140px]">
+                                    <TreeNode title="Resistance" type="input" className="mt-1 w-[180px]">
                                         <TriangularFormField
                                             form={form}
                                             title="Resistance"
@@ -492,8 +564,22 @@ export function RiskFormPreviewEditableConcept({
                             title="Loss Magnitude"
                             subtitle="Pri + Sec"
                             valueRange={formatRange(lossMagnitudeMin, lossMagnitudeAvg, lossMagnitudeMax, { currency: true })}
-                            className="w-[200px]"
-                        />
+                            type="calculated"
+                            className="w-[240px]"
+                        >
+                            <TriangularFormField
+                                form={form}
+                                title="Loss Magnitude"
+                                minField="lossMagnitudeMin"
+                                avgField="lossMagnitudeAvg"
+                                maxField="lossMagnitudeMax"
+                                confidenceField="lossMagnitudeConfidence"
+                                unit="$"
+                                min={0} max={1000000000} step={1000}
+                                hideTitle compact darkMode
+                                readOnly
+                            />
+                        </TreeNode>
                         <VerticalLine height="h-3" />
 
                         {/* Branching to Primary and Secondary Loss */}
@@ -503,12 +589,12 @@ export function RiskFormPreviewEditableConcept({
                             {/* Primary Loss Node */}
                             <div className="flex flex-col items-center pt-2">
                                 {/* Spacer to align with Level 3 nodes (TEF, Susc, Sec Loss) */}
-                                <div className="h-[60px] w-px bg-slate-700/50 mb-2"></div>
                                 <TreeNode
                                     title="Primary Loss"
                                     subtitle="Asset × Impact"
-                                    type="input"
-                                    className="w-[160px]"
+                                    valueRange={formatRange(primaryLossMin, primaryLossAvg, primaryLossMax, { currency: true })}
+                                    type="calculated"
+                                    className="w-[200px]"
                                 >
                                     <TriangularFormField
                                         form={form}
@@ -520,21 +606,51 @@ export function RiskFormPreviewEditableConcept({
                                         unit="$"
                                         min={0} max={1000000000} step={1000}
                                         hideTitle compact darkMode
+                                        readOnly
                                     />
                                 </TreeNode>
                             </div>
 
                             {/* Secondary Loss Node */}
-                            <div className="flex flex-col items-center pt-2">
+                            <div className="flex flex-col items-center pt-2 ml-6">
                                 <TreeNode
                                     title="Secondary Loss"
                                     subtitle="SLEF × SLM"
+                                    valueRange={formatRange(secondaryLossMagnitudeMin, secondaryLossMagnitudeAvg, secondaryLossMagnitudeMax, { currency: true })}
                                     type="calculated"
-                                    className="w-[180px]"
-                                />
+                                    className="w-[220px]">
+                                    <TriangularFormField
+                                        form={form}
+                                        title="Secondary Loss"
+                                        minField="secondaryLossMagnitudeMin"
+                                        avgField="secondaryLossMagnitudeAvg"
+                                        maxField="secondaryLossMagnitudeMax"
+                                        confidenceField="secondaryLossMagnitudeConfidence"
+                                        unit="$"
+                                        min={0} max={1000000000} step={1000}
+                                        hideTitle compact darkMode
+                                        readOnly
+                                    />
+                                    <div className="text-[10px] text-slate-300 space-y-1 mt-2">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="uppercase tracking-wide">SLEF</span>
+                                            <span className="text-right">{formatRange(secondaryLossEventFrequencyMin, secondaryLossEventFrequencyAvg, secondaryLossEventFrequencyMax, { unit: "%" })}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between gap-2">
+                                            <span className="uppercase tracking-wide">SLM</span>
+                                            <span className="text-right">{formatRange(secondaryLossMagnitudeMin, secondaryLossMagnitudeAvg, secondaryLossMagnitudeMax, { currency: true })}</span>
+                                        </div>
+                                    </div>
+                                </TreeNode>
                                 <VerticalLine height="h-2" />
-                                <div className="flex gap-1">
-                                    <TreeNode title="Sec Loss Freq" type="input" className="mt-1 w-[140px]">
+                                <div className="flex gap-5">
+                                    <TreeNode
+                                        title="Sec Loss Freq"
+                                        subtitle="Server value"
+                                        valueRange={formatRange(secondaryLossEventFrequencyMin, secondaryLossEventFrequencyAvg, secondaryLossEventFrequencyMax, { unit: "%" })}
+                                        type="calculated"
+                                        className="mt-1 w-[200px]"
+                                    >
                                         <TriangularFormField
                                             form={form}
                                             title="SLEF"
@@ -545,9 +661,16 @@ export function RiskFormPreviewEditableConcept({
                                             unit="%"
                                             min={0} max={1} step={0.01}
                                             hideTitle compact darkMode
+                                            readOnly
                                         />
                                     </TreeNode>
-                                    <TreeNode title="Sec Loss Mag" type="input" className="mt-1 w-[140px]">
+                                    <TreeNode
+                                        title="Sec Loss Mag"
+                                        subtitle="Cost modules"
+                                        valueRange={formatRange(secondaryLossMagnitudeMin, secondaryLossMagnitudeAvg, secondaryLossMagnitudeMax, { currency: true })}
+                                        type="calculated"
+                                        className="mt-1 w-[200px]"
+                                    >
                                         <TriangularFormField
                                             form={form}
                                             title="SLM"
@@ -558,6 +681,7 @@ export function RiskFormPreviewEditableConcept({
                                             unit="$"
                                             min={0} max={1000000000} step={1000}
                                             hideTitle compact darkMode
+                                            readOnly
                                         />
                                     </TreeNode>
                                 </div>

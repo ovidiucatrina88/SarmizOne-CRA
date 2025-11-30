@@ -33,17 +33,32 @@ export default function Risks() {
   } = useQuery({
     queryKey: ["/api/risks"],
   });
-  
+
+  // Fetch risk summary with trends
+  const { data: summaryResponse } = useQuery({
+    queryKey: ["/api/risks/summary"],
+  });
+
+  const summary = summaryResponse?.data || {
+    stats: { total: 0, open: 0, mitigated: 0, high: 0 },
+    trends: {
+      total: { series: [], delta: "0% vs last month" },
+      open: { series: [], delta: "0% vs last month" },
+      mitigated: { series: [], delta: "0% vs last month" },
+      high: { series: [], delta: "0% vs last month" }
+    }
+  };
+
   // Extract risks array from the API response and ensure it's always an array
   const allRisks = ((risksResponse as any)?.data || []) as Risk[];
-  
+
   console.log("Loaded", allRisks.length, "total risks from the server");
-  
+
   // Filter risks based on their type (only instances)
   const risks = React.useMemo(() => {
     return allRisks.filter((risk: Risk) => risk.itemType === 'instance' || !risk.itemType);
   }, [allRisks]);
-  
+
   // Function to manually refresh risk data
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -64,7 +79,7 @@ export default function Risks() {
       setIsRefreshing(false);
     }
   };
-  
+
   // Log loaded risks data (only when initially loaded, prevent infinite loops)
   useEffect(() => {
     if (Array.isArray(risks) && risks.length > 0) {
@@ -94,24 +109,7 @@ export default function Risks() {
   };
 
 
-  const stats = useMemo(() => {
-    const open = risks.filter((risk) => risk.status === "open").length;
-    const mitigated = risks.filter((risk) => risk.status === "mitigated").length;
-    const high = risks.filter((risk) => risk.severity === "High" || risk.severity === "Critical").length;
-    return {
-      total: risks.length,
-      open,
-      mitigated,
-      high,
-    };
-  }, [risks]);
 
-  const generateSeries = (seed: number) => {
-    const base = seed || 10;
-    return Array.from({ length: 7 }).map((_, index) =>
-      Number((base * (1 + Math.sin(index / 1.4) * 0.08)).toFixed(2)),
-    );
-  };
 
   if (isLoading) {
     return (
@@ -146,7 +144,7 @@ export default function Risks() {
       </Layout>
     );
   }
-  
+
   return (
     <Layout
       pageTitle="Risk Register"
@@ -172,26 +170,31 @@ export default function Risks() {
     >
       <div className="space-y-8">
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard label="Total Risks" value={stats.total.toLocaleString()} delta="+4% vs last month" trendSeries={generateSeries(stats.total)} />
+          <KpiCard
+            label="Total Risks"
+            value={summary.stats.total.toLocaleString()}
+            delta={summary.trends.total.delta}
+            trendSeries={summary.trends.total.series}
+          />
           <KpiCard
             label="Critical/High"
-            value={stats.high.toLocaleString()}
-            delta="-1% QoQ"
-            trendSeries={generateSeries(stats.high)}
+            value={summary.stats.high.toLocaleString()}
+            delta={summary.trends.high.delta}
+            trendSeries={summary.trends.high.series}
             trendColor="#fca5a5"
           />
           <KpiCard
             label="Open"
-            value={stats.open.toLocaleString()}
-            delta="+2 backlog"
-            trendSeries={generateSeries(stats.open)}
+            value={summary.stats.open.toLocaleString()}
+            delta={summary.trends.open.delta}
+            trendSeries={summary.trends.open.series}
             trendColor="#fdba74"
           />
           <KpiCard
             label="Mitigated"
-            value={stats.mitigated.toLocaleString()}
-            delta="+5 this week"
-            trendSeries={generateSeries(stats.mitigated)}
+            value={summary.stats.mitigated.toLocaleString()}
+            delta={summary.trends.mitigated.delta}
+            trendSeries={summary.trends.mitigated.series}
             trendColor="#86efac"
           />
         </section>
@@ -219,12 +222,16 @@ export default function Risks() {
         </GlowCard>
 
         <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto rounded-[32px] border-white/10 bg-background/95">
+          <DialogContent className="h-[92vh] w-[96vw] max-w-[96vw] overflow-y-auto rounded-[32px] border-white/10 bg-[#040b1c]/95">
             <DialogHeader>
               <DialogTitle>{selectedRisk ? "Edit Risk" : "Create New Risk"}</DialogTitle>
               <DialogDescription>Define parameters using the FAIR-U methodology.</DialogDescription>
             </DialogHeader>
-            <RiskForm risk={selectedRisk} onClose={handleClose} />
+            <RiskForm
+              risk={selectedRisk}
+              onClose={handleClose}
+              variant={selectedRisk ? "concept" : "default"}
+            />
           </DialogContent>
         </Dialog>
       </div>

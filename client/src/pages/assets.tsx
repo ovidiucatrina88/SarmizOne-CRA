@@ -19,7 +19,7 @@ export default function Assets() {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  
+
   // Parse URL parameters
   const [, params] = useRoute('/assets');
   const queryParams = new URLSearchParams(window.location.search);
@@ -29,7 +29,22 @@ export default function Assets() {
   const { data: assetsResponse, isLoading, error } = useQuery<{ success: boolean; data: Asset[] }>({
     queryKey: ["/api/assets"],
   });
-  
+
+  // Fetch asset summary with trends
+  const { data: summaryResponse } = useQuery({
+    queryKey: ["/api/assets/summary"],
+  });
+
+  const summary = summaryResponse?.data || {
+    stats: { total: 0, active: 0, apps: 0, totalValue: 0 },
+    trends: {
+      total: { series: [], delta: "0% vs last month" },
+      active: { series: [], delta: "0% vs last month" },
+      apps: { series: [], delta: "0% vs last month" },
+      totalValue: { series: [], delta: "0% vs last month" }
+    }
+  };
+
   // Extract the assets array from the API response
   const assets = assetsResponse?.data || [];
 
@@ -60,23 +75,7 @@ export default function Assets() {
   };
 
 
-  const stats = useMemo(() => {
-    const total = assets.length;
-    const active = assets.filter((asset) => asset.status === "Active").length;
-    const apps = assets.filter((asset) => asset.type === "application" || asset.type === "application_service").length;
-    const totalValue = assets.reduce((sum, asset) => {
-      const value = typeof asset.assetValue === "number" ? asset.assetValue : parseFloat(asset.assetValue || "0");
-      return sum + (isNaN(value) ? 0 : value);
-    }, 0);
-    return { total, active, apps, totalValue };
-  }, [assets]);
 
-  const generateSeries = (seed: number) => {
-    const base = seed || 20;
-    return Array.from({ length: 7 }).map((_, index) =>
-      Number((base * (1 + Math.sin(index / 1.3) * 0.08)).toFixed(2)),
-    );
-  };
 
   if (isLoading) {
     return (
@@ -127,29 +126,29 @@ export default function Assets() {
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <KpiCard
             label="Total Assets"
-            value={stats.total.toLocaleString()}
-            delta="+3% vs last month"
-            trendSeries={generateSeries(stats.total || 20)}
+            value={summary.stats.total.toLocaleString()}
+            delta={summary.trends.total.delta}
+            trendSeries={summary.trends.total.series}
           />
           <KpiCard
             label="Active Assets"
-            value={stats.active.toLocaleString()}
-            delta="+5% vs last month"
-            trendSeries={generateSeries(stats.active || 15)}
+            value={summary.stats.active.toLocaleString()}
+            delta={summary.trends.active.delta}
+            trendSeries={summary.trends.active.series}
             trendColor="#93c5fd"
           />
           <KpiCard
             label="Application Services"
-            value={stats.apps.toLocaleString()}
-            delta="+2 onboarding"
-            trendSeries={generateSeries(stats.apps || 10)}
+            value={summary.stats.apps.toLocaleString()}
+            delta={summary.trends.apps.delta}
+            trendSeries={summary.trends.apps.series}
             trendColor="#c4b5fd"
           />
           <KpiCard
             label="Portfolio Value"
-            value={formatCurrency(stats.totalValue)}
-            delta="+$1.2M YoY"
-            trendSeries={generateSeries(Math.max(stats.totalValue / 1_000_000, 5))}
+            value={formatCurrency(summary.stats.totalValue)}
+            delta={summary.trends.totalValue.delta}
+            trendSeries={summary.trends.totalValue.series}
             trendColor="#fef08a"
           />
         </section>

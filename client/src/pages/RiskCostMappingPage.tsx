@@ -6,9 +6,10 @@ import { GlowCard } from "@/components/ui/glow-card";
 import { KpiCard } from "@/components/ui/kpi-card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Search, RefreshCw } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Treemap } from "recharts";
+import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Treemap, Cell } from "recharts";
 import { LegalEntityCostMatrix } from "@/components/legal-entity/legal-entity-cost-matrix";
 
 interface RiskCostRecord {
@@ -40,6 +41,21 @@ export default function RiskCostMappingPage() {
   } = useQuery({ queryKey: ["/api/risk-costs/calculate/all"] });
   const { data: legalEntitiesResponse, isLoading: isLoadingEntities } = useQuery({ queryKey: ["/api/legal-entities"] });
   const { data: assetsResponse, isLoading: isLoadingAssets } = useQuery({ queryKey: ["/api/assets"] });
+
+  // Fetch risk cost summary with trends
+  const { data: summaryResponse } = useQuery({
+    queryKey: ["/api/risk-costs/summary"],
+  });
+
+  const summary = summaryResponse?.data || {
+    stats: { totalMapped: 0, totalCost: 0, avgCost: 0, highSeverity: 0 },
+    trends: {
+      totalMapped: { series: [], delta: "0% vs last month" },
+      totalCost: { series: [], delta: "0% vs last month" },
+      avgCost: { series: [], delta: "0% vs last month" },
+      highSeverity: { series: [], delta: "0% vs last month" }
+    }
+  };
 
   const risks = (risksResponse?.data as any[]) ?? [];
   const costModules: CostModule[] = ((costModulesResponse?.data as any[]) ?? []).map((module) => ({
@@ -73,15 +89,7 @@ export default function RiskCostMappingPage() {
     );
   }, [enrichedRisks, searchTerm]);
 
-  const stats = useMemo(() => {
-    const totalMapped = riskCosts.length;
-    const totalCost = riskCosts.reduce((sum, record) => sum + (record.totalCost || record.costImpact || 0), 0);
-    const avgCost = totalMapped ? totalCost / totalMapped : 0;
-    const highSeverity = enrichedRisks.filter(
-      (risk) => (risk.severity || "medium").toLowerCase() === "high",
-    ).length;
-    return { totalMapped, totalCost, avgCost, highSeverity };
-  }, [riskCosts, enrichedRisks]);
+
 
   const moduleCostData = useMemo(() => {
     const totals = new Map<string, number>();
@@ -112,24 +120,32 @@ export default function RiskCostMappingPage() {
       pageDescription="Understand how each risk translates into financial exposure across modules, entities, and assets."
     >
       <div className="space-y-8">
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard label="Mapped Risks" value={stats.totalMapped.toString()} delta="Calculated with cost modules" />
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <KpiCard
+            label="Mapped Risks"
+            value={summary.stats.totalMapped.toString()}
+            delta={summary.trends.totalMapped.delta}
+            trendSeries={summary.trends.totalMapped.series}
+          />
           <KpiCard
             label="Total Cost Exposure"
-            value={formatCurrency(stats.totalCost)}
-            delta="Aggregate modeled cost"
+            value={formatCurrency(summary.stats.totalCost)}
+            delta={summary.trends.totalCost.delta}
+            trendSeries={summary.trends.totalCost.series}
             trendColor="#fda4af"
           />
           <KpiCard
             label="Average Cost / Risk"
-            value={formatCurrency(stats.avgCost)}
-            delta="Mean modeled impact"
+            value={formatCurrency(summary.stats.avgCost)}
+            delta={summary.trends.avgCost.delta}
+            trendSeries={summary.trends.avgCost.series}
             trendColor="#c4b5fd"
           />
           <KpiCard
             label="High Severity Risks"
-            value={stats.highSeverity.toString()}
-            delta="High risks in scope"
+            value={summary.stats.highSeverity.toString()}
+            delta={summary.trends.highSeverity.delta}
+            trendSeries={summary.trends.highSeverity.series}
             trendColor="#86efac"
           />
         </section>
@@ -265,6 +281,7 @@ export default function RiskCostMappingPage() {
             legalEntities={legalEntities}
             assets={assets}
             riskCosts={riskCosts}
+            risks={risks}
             isLoading={isLoadingEntities || isLoadingAssets || isLoadingCosts}
           />
         </GlowCard>

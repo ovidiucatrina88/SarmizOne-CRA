@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Risk } from "@shared/schema";
+import { RiskWithParams } from "@shared/schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -41,8 +41,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type RiskListProps = {
-  risks: Risk[];
-  onEdit: (risk: Risk) => void;
+  risks: RiskWithParams[];
+  onEdit: (risk: RiskWithParams) => void;
   isTemplateView?: boolean;
   onCreateFromTemplate?: (templateId: number) => void;
 };
@@ -58,8 +58,8 @@ export function RiskList({
   const [filterSeverity, setFilterSeverity] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [riskToDelete, setRiskToDelete] = useState<Risk | null>(null);
-  const [detailsRisk, setDetailsRisk] = useState<Risk | null>(null);
+  const [riskToDelete, setRiskToDelete] = useState<RiskWithParams | null>(null);
+  const [detailsRisk, setDetailsRisk] = useState<RiskWithParams | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [showFactorsView, setShowFactorsView] = useState(false);
   
@@ -74,7 +74,7 @@ export function RiskList({
       const matchesSearch =
         risk.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         risk.riskId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        risk.threatCommunity.toLowerCase().includes(searchQuery.toLowerCase());
+        (risk.threatCommunity || "").toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesCategory =
         filterCategory === "all" || risk.riskCategory?.toLowerCase() === filterCategory;
@@ -92,7 +92,7 @@ export function RiskList({
   );
 
   // Handle risk deletion confirmation
-  const handleDeleteClick = (risk: Risk) => {
+  const handleDeleteClick = (risk: RiskWithParams) => {
     setRiskToDelete(risk);
     setDeleteConfirmOpen(true);
   };
@@ -161,7 +161,7 @@ export function RiskList({
         
         // Immediately update local UI by filtering out the deleted risk
         // This makes the deletion appear to happen instantly
-        const currentRisks = queryClient.getQueryData<Risk[]>(["/api/risks"]) || [];
+        const currentRisks = queryClient.getQueryData<RiskWithParams[]>(["/api/risks"]) || [];
         const updatedRisks = currentRisks.filter(r => r.id !== riskToDelete.id);
         
         // Update the cache directly for instant UI feedback
@@ -215,12 +215,12 @@ export function RiskList({
   });
 
   // Handle calculate risk
-  const handleCalculate = (risk: Risk) => {
+  const handleCalculate = (risk: RiskWithParams) => {
     calculateMutation.mutate(risk.riskId);
   };
   
   // Handle view details
-  const handleViewDetails = (risk: Risk) => {
+  const handleViewDetails = (risk: RiskWithParams) => {
     setDetailsRisk(risk);
     setDetailsOpen(true);
   };
@@ -332,12 +332,12 @@ export function RiskList({
                         );
                       })()}
                       <div>
-                        <div className="text-sm font-semibold text-white/90">{formatCurrency(risk.inherentRisk || 0)}</div>
+                        <div className="text-sm font-semibold text-white/90">{formatCurrency(Number(risk.inherentRisk || 0))}</div>
                         <div className="text-xs text-white/50">Inherent</div>
                       </div>
                       <div>
                         <div className="text-sm font-semibold text-emerald-200">
-                          {formatCurrency(risk.residualRisk || 0)}
+                          {formatCurrency(Number(risk.residualRisk || 0))}
                         </div>
                         <div className="text-xs text-white/50">Residual</div>
                       </div>
@@ -482,7 +482,12 @@ export function RiskList({
                   Annualized Loss Factors Analysis
                 </DialogDescription>
               </div>
-              <AnnualizedLossFactors risk={detailsRisk} />
+              {(() => {
+                const inherent = Number(detailsRisk.inherentRisk || 0);
+                const residual = Number(detailsRisk.residualRisk || 0);
+                const aleFactor = inherent > 0 ? residual / inherent : 0;
+                return <AnnualizedLossFactors aleFactor={aleFactor} aleValue={residual} />;
+              })()}
             </>
           )}
         </DialogContent>

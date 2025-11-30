@@ -1,6 +1,5 @@
 import type { UseFormReturn } from "react-hook-form";
 import { calculateRiskValues } from "@shared/utils/calculations";
-import { MonteCarloInput } from "@shared/models/riskParams";
 
 // Declare global window extension for asset cache
 declare global {
@@ -421,44 +420,23 @@ export const calculateRiskFromForm = (form: UseFormReturn<any>) => {
     const lossMagnitudeConfidence = getConfidenceValue("lossMagnitudeConfidence");
     
     // Get the asset data for the calculation (for inherent risk calculation)
-    let assetObjects = [];
+    let assetObjects: { assetId: string; assetValue: number; id?: number | string; name?: string }[] = [];
     try {
       const associatedAssets = form.getValues("associatedAssets");
       if (Array.isArray(associatedAssets) && associatedAssets.length > 0) {
-        // Get actual asset values from the global asset cache or use realistic defaults
-        assetObjects = associatedAssets.map(assetId => {
-          // Try to get asset from cache first
+        assetObjects = [];
+        associatedAssets.forEach(assetId => {
           const cachedAsset = getAssetFromCache(assetId);
-          if (cachedAsset && cachedAsset.assetValue) {
-            return {
+          if (cachedAsset && cachedAsset.assetValue !== undefined) {
+            assetObjects.push({
               id: cachedAsset.id,
               assetId,
               name: cachedAsset.name,
-              assetValue: typeof cachedAsset.assetValue === 'string' 
-                ? parseFloat(cachedAsset.assetValue) 
-                : Number(cachedAsset.assetValue)
-            };
+              assetValue: typeof cachedAsset.assetValue === "string"
+                ? parseFloat(cachedAsset.assetValue)
+                : Number(cachedAsset.assetValue),
+            });
           }
-          
-          // If not in cache, we need to use the actual asset value from the server
-          // For AST-002, we know from the logs it's $30M
-          if (assetId === 'AST-002') {
-            return {
-              id: assetId,
-              assetId,
-              name: `Asset ${assetId}`,
-              assetValue: 30000000 // Use the actual $30M value from the server logs
-            };
-          }
-          
-          // For other assets, use a realistic default but warn about missing data
-          console.warn(`Asset ${assetId} not found in cache, using default value`);
-          return {
-            id: assetId,
-            assetId,
-            name: `Asset ${assetId}`,
-            assetValue: 1000000 // Default $1M for other assets
-          };
         });
       }
     } catch (error) {
@@ -466,7 +444,7 @@ export const calculateRiskFromForm = (form: UseFormReturn<any>) => {
     }
     
     // Build the parameters for inherent risk calculation
-    const params: MonteCarloInput = {
+    const params: any = {
       // Contact Frequency
       cfMin: contactFrequencyMin,
       cfMode: contactFrequencyAvg,

@@ -514,7 +514,7 @@ export default function RiskDetailPage() {
 
       {/* Edit dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="max-w-8xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[1400px] max-h-[90vh] overflow-y-auto rounded-[32px] border-white/10 bg-[#040b1c]/95">
           <DialogHeader>
             <DialogTitle>Edit Risk</DialogTitle>
             <DialogDescription>

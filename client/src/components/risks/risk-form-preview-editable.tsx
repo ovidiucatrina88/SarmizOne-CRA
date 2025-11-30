@@ -144,8 +144,10 @@ function TriangularFormField({
     
     // Only validate if we have a complete number (not ending with decimal)
     if (!isNaN(numVal) && !val.endsWith('.')) {
-      const minValue = parseFloat(form.getValues(minField)) || min;
-      const maxValue = parseFloat(form.getValues(maxField)) || max;
+      const minValueRaw = form.getValues(minField);
+      const maxValueRaw = form.getValues(maxField);
+      const minValue = Number(minValueRaw);
+      const maxValue = Number(maxValueRaw);
       
       // Ensure avg is between min and max
       if (numVal < minValue) {
@@ -153,7 +155,7 @@ function TriangularFormField({
         return;
       }
       
-      if (maxValue !== undefined && maxValue !== '' && numVal > maxValue) {
+      if (!Number.isNaN(maxValue) && maxValueRaw !== '' && numVal > maxValue) {
         field.onChange(maxValue);
         return;
       }
@@ -194,8 +196,9 @@ function TriangularFormField({
       }
       
       // Ensure max isn't less than current min value
-      const minValue = parseFloat(form.getValues(minField));
-      if (minValue !== undefined && !isNaN(minValue) && numVal < minValue) {
+      const minValueRaw = form.getValues(minField);
+      const minValue = Number(minValueRaw);
+      if (!Number.isNaN(minValue) && numVal < minValue) {
         field.onChange(minValue);
         return;
       }
@@ -356,7 +359,7 @@ export function RiskFormPreviewEditable({
 }: RiskFormPreviewEditableProps) {
   const riskId = form.watch("riskId");
 
-  const { data: calculatedRiskData } = useQuery({
+  const { data: calculatedRiskData } = useQuery<{ data: { inherentRisk?: number; residualRisk?: number } }>({
     queryKey: ["/api/risks", riskId, "calculate"],
     enabled: !!riskId,
     refetchInterval: 5000,
@@ -368,14 +371,15 @@ export function RiskFormPreviewEditable({
     },
   });
 
+  const calcValues = calculatedRiskData?.data;
   const inherentRisk =
-    calculatedRiskData?.inherentRisk ?? Number(form.watch("inherentRisk") || 0);
+    calcValues?.inherentRisk ?? Number(form.watch("inherentRisk") || 0);
   const residualRisk =
-    calculatedRiskData?.residualRisk ??
-    calculatedRiskData?.inherentRisk ??
+    calcValues?.residualRisk ??
+    calcValues?.inherentRisk ??
     Number(form.watch("residualRisk") || 0);
 
-  const { data: assetsResponse } = useQuery({
+  const { data: assetsResponse } = useQuery<{ data: Asset[] }>({
     queryKey: ["/api/assets"],
   });
 

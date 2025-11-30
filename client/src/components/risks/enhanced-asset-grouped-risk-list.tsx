@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Risk } from "@shared/schema";
+import { RiskWithParams } from "@shared/schema";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -55,16 +55,16 @@ import {
 } from "lucide-react";
 
 interface AssetGroupedRiskListProps {
-  risks: Risk[];
-  onRiskSelect?: (risk: Risk) => void;
-  onRiskEdit?: (risk: Risk) => void;
-  onRiskDelete?: (risk: Risk) => void;
+  risks: RiskWithParams[];
+  onRiskSelect?: (risk: RiskWithParams) => void;
+  onRiskEdit?: (risk: RiskWithParams) => void;
+  onRiskDelete?: (risk: RiskWithParams) => void;
 }
 
 interface AssetRiskGroup {
   assetId: string;
   assetName: string;
-  risks: Risk[];
+  risks: RiskWithParams[];
   totalExposure: number;
   highestSeverity: 'low' | 'medium' | 'high' | 'critical';
   riskCounts: {
@@ -87,15 +87,15 @@ export function EnhancedAssetGroupedRiskList({
     category: ''
   });
   const [expandedAssets, setExpandedAssets] = useState<Set<string>>(new Set());
-  const [selectedRisk, setSelectedRisk] = useState<Risk | null>(null);
+  const [selectedRisk, setSelectedRisk] = useState<RiskWithParams | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-  const [riskToDelete, setRiskToDelete] = useState<Risk | null>(null);
+  const [riskToDelete, setRiskToDelete] = useState<RiskWithParams | null>(null);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   // Fetch assets for asset names
-  const { data: assetsResponse } = useQuery({
+  const { data: assetsResponse } = useQuery<{ data: { assetId: string; name: string }[] }>({
     queryKey: ["/api/assets"],
   });
   const assets = (assetsResponse as any)?.data || [];
@@ -224,7 +224,7 @@ export function EnhancedAssetGroupedRiskList({
     setExpandedAssets(newExpanded);
   };
 
-  const handleRiskClick = (risk: Risk) => {
+  const handleRiskClick = (risk: RiskWithParams) => {
     setSelectedRisk(risk);
     setIsDetailDialogOpen(true);
     onRiskSelect?.(risk);

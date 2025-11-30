@@ -30,7 +30,7 @@ export function AssetSelection({
   // Use either selectedAssetIds (new prop) or selectedAssets (old prop)
   const effectiveSelectedAssets = selectedAssetIds || selectedAssets || [];
   // Fetch assets for selection
-  const { data: assetsResponse } = useQuery({
+  const { data: assetsResponse } = useQuery<{ data: Asset[] }>({
     queryKey: ["/api/assets"],
   });
 
@@ -135,6 +135,7 @@ export function AssetSelection({
                     </p>
                   )}
                 </div>
+              </div>
             </div>
           ))
         ) : (

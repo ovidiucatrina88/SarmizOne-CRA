@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Control, insertControlSchema } from "@shared/schema";
+import { Asset, Control, Risk, insertControlSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
@@ -31,6 +31,34 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 
+type ApiListResponse<T> = {
+  data: T[];
+};
+
+type LegacyControl = Control & {
+  associatedRisks?: (string | number)[];
+  isPerAgentPricing?: boolean | null;
+  deployedAgentCount?: number | null;
+  costPerAgent?: number | null;
+  notes?: string | null;
+  itemType?: "template" | "instance" | null;
+  assetId?: string | null;
+  legalEntityId?: string | null;
+};
+
+type ControlApiResponse = {
+  data?: LegacyControl;
+};
+
+type AssetWithCapacity = Asset & {
+  hierarchy_level?: string;
+};
+
+const extractList = <T,>(source?: ApiListResponse<T> | T[]): T[] => {
+  if (!source) return [];
+  return Array.isArray(source) ? source : source.data ?? [];
+};
+
 // Extended schema with validation - simplified without entity associations
 const controlFormSchema = insertControlSchema.extend({
   controlId: z.string().min(1, "Control ID is required"),
@@ -54,10 +82,12 @@ const controlFormSchema = insertControlSchema.extend({
   // Template/instance classification
   libraryItemId: z.number().optional(),
   itemType: z.enum(["template", "instance"]).default("instance"),
+  assetId: z.string().optional(),
+  legalEntityId: z.string().optional(),
 });
 
 type ControlFormProps = {
-  control: Control | null;
+  control: LegacyControl | null;
   onClose: () => void;
   isTemplate?: boolean;
 };
@@ -70,28 +100,42 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
   const [pricingType, setPricingType] = useState<string>(
     control?.isPerAgentPricing ? "agent" : "total"
   );
+  const [selectedRisks, setSelectedRisks] = useState<string[]>(
+    control?.associatedRisks?.map((riskId) => String(riskId)) || []
+  );
+
+  useEffect(() => {
+    if (control?.associatedRisks) {
+      setSelectedRisks(control.associatedRisks.map((riskId) => String(riskId)));
+    } else {
+      setSelectedRisks([]);
+    }
+  }, [control?.associatedRisks]);
 
   // Fetch risks for read-only display
-  const { data: risks } = useQuery({
+  const { data: risksResponse } = useQuery<ApiListResponse<Risk> | Risk[]>({
     queryKey: ["/api/risks"],
   });
 
   // Fetch assets for agent count validation
-  const { data: assets } = useQuery({
+  const { data: assetsResponse } = useQuery<ApiListResponse<AssetWithCapacity> | AssetWithCapacity[]>({
     queryKey: ["/api/assets"],
   });
 
+  const risksList = useMemo<Risk[]>(() => extractList<Risk>(risksResponse), [risksResponse]);
+  const assetsList = useMemo<AssetWithCapacity[]>(() => extractList<AssetWithCapacity>(assetsResponse), [assetsResponse]);
+
   // Calculate total available agent capacity for control deployment
   const calculateAvailableAgentCapacity = () => {
-    if (!assets?.data) return 0;
+    if (!assetsList.length) return 0;
     
     // For simplified controls, calculate capacity based on all assets
     let totalCapacity = 0;
     const processedAssets = new Set();
     
-    assets.data.forEach((asset: any) => {
+    assetsList.forEach((asset) => {
       if (!processedAssets.has(asset.assetId)) {
-        const hierarchyCapacity = calculateAssetHierarchyCapacity(asset.assetId, assets.data);
+        const hierarchyCapacity = calculateAssetHierarchyCapacity(asset.assetId, assetsList);
         totalCapacity += hierarchyCapacity;
         processedAssets.add(asset.assetId);
       }
@@ -101,7 +145,7 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
   };
 
   // Calculate agent capacity for an asset and its entire hierarchy tree
-  const calculateAssetHierarchyCapacity = (rootAssetId: string, allAssets: any[]) => {
+  const calculateAssetHierarchyCapacity = (rootAssetId: string, allAssets: AssetWithCapacity[]) => {
     let hierarchyCapacity = 0;
     const processedInHierarchy = new Set();
     
@@ -165,25 +209,27 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
   });
 
   // Create mutation for adding/updating control
-  const mutation = useMutation({
+  const mutation = useMutation<ControlApiResponse, Error, z.infer<typeof controlFormSchema>>({
     mutationFn: async (values: z.infer<typeof controlFormSchema>) => {
       // Add itemType based on whether this is a template or instance
       values.itemType = isTemplate ? "template" : "instance";
 
       // Use different endpoints based on isTemplate
+      let res: Response;
       if (control) {
         // Update existing control/template
         const endpoint = isTemplate 
           ? `/api/control-library/${control.id}` 
           : `/api/controls/${control.id}`;
-        return apiRequest("PUT", endpoint, values);
+        res = await apiRequest("PUT", endpoint, values);
       } else {
         // Create new control/template
         const endpoint = isTemplate 
           ? "/api/control-library" 
           : "/api/controls";
-        return apiRequest("POST", endpoint, values);
+        res = await apiRequest("POST", endpoint, values);
       }
+      return res.json() as Promise<ControlApiResponse>;
     },
     onSuccess: (updatedControl) => {
       console.log("Form update successful, updated control:", updatedControl);
@@ -203,18 +249,34 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
       
       // Update form with the server response to show correct values
       if (control && updatedControl?.data) {
-        form.reset({
-          ...updatedControl.data,
+        const normalizedData: z.infer<typeof controlFormSchema> = {
+          controlId: updatedControl.data.controlId,
+          name: updatedControl.data.name,
+          description: updatedControl.data.description || "",
+          controlType: updatedControl.data.controlType,
+          controlCategory: updatedControl.data.controlCategory,
+          implementationStatus: updatedControl.data.implementationStatus,
           controlEffectiveness: Number(updatedControl.data.controlEffectiveness || 0),
           implementationCost: Number(updatedControl.data.implementationCost || 0),
           costPerAgent: Number(updatedControl.data.costPerAgent || 0),
-          deployedAgentCount: Number(updatedControl.data.deployedAgentCount || 0),
           isPerAgentPricing: Boolean(updatedControl.data.isPerAgentPricing),
-          associatedRisks: updatedControl.data.associatedRisks || []
-        });
+          deployedAgentCount: Number(updatedControl.data.deployedAgentCount || 0),
+          notes: updatedControl.data.notes || "",
+          libraryItemId: updatedControl.data.libraryItemId ?? undefined,
+          itemType:
+            (updatedControl.data.itemType as "template" | "instance") ||
+            (isTemplate ? "template" : "instance"),
+          assetId: updatedControl.data.assetId ?? "",
+          legalEntityId: updatedControl.data.legalEntityId ?? "",
+        };
+        form.reset(normalizedData);
         
         // Update pricing type state
         setPricingType(updatedControl.data.isPerAgentPricing ? "agent" : "total");
+        setSelectedRisks(
+          updatedControl.data.associatedRisks?.map((riskId) => String(riskId)) ||
+            [],
+        );
       }
       
       // Show success message with appropriate template/instance language
@@ -285,12 +347,28 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
 
   // Get associated risks for read-only display
   const getAssociatedRisks = () => {
-    if (!control?.associatedRisks || !risks?.data) return [];
-    
-    return control.associatedRisks.map(dbId => {
-      const risk = risks.data.find((r: any) => r.id.toString() === dbId.toString());
-      return risk ? { id: risk.id, riskId: risk.riskId, name: risk.name, severity: risk.severity } : null;
-    }).filter(Boolean);
+    if (!selectedRisks.length || !risksList.length) return [];
+
+    return selectedRisks
+      .map((riskId) =>
+        risksList.find((risk) => String(risk.riskId) === String(riskId)),
+      )
+      .filter(Boolean)
+      .map((risk) => ({
+        id: risk!.id,
+        riskId: risk!.riskId,
+        name: risk!.name,
+        severity: risk!.severity,
+      }));
+  };
+
+  const handleRiskChange = (checked: boolean, riskId: string) => {
+    setSelectedRisks((prev) => {
+      if (checked) {
+        return prev.includes(riskId) ? prev : [...prev, riskId];
+      }
+      return prev.filter((id) => id !== riskId);
+    });
   };
 
   // Format currency for display
@@ -605,9 +683,9 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
         {/* Associated Risks field */}
         <div>
           <FormLabel>Associated Risks</FormLabel>
-          {risks?.data && Array.isArray(risks.data) && risks.data.length > 0 ? (
+          {risksList.length > 0 ? (
             <div className="grid grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto border rounded-md p-2">
-              {risks.data.map((risk: any) => (
+              {risksList.map((risk) => (
                 <div className="flex items-center space-x-2" key={risk.id}>
                   <Checkbox
                     id={`risk-${risk.id}`}
@@ -689,20 +767,20 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
                     onValueChange={field.onChange}
                     value={field.value || ""}
                   >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select an asset" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">No Asset</SelectItem>
-                      {assets?.data?.map((asset: any) => (
-                        <SelectItem key={asset.assetId} value={asset.assetId}>
-                          {asset.name} ({asset.assetId})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select an asset" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="none">No Asset</SelectItem>
+                    {assetsList.map((asset) => (
+                      <SelectItem key={asset.assetId} value={asset.assetId}>
+                        {asset.name} ({asset.assetId})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                   <FormDescription>
                     Link this control to a specific asset for targeted protection
                   </FormDescription>

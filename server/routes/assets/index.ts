@@ -5,6 +5,7 @@ import { sendError, sendSuccess } from '../common/responses/apiResponse';
 import { validate, validateId } from '../common/middleware/validate';
 import { z } from 'zod';
 import { parseAssetData } from './dto';
+import { generateTrend } from '../../utils/trends';
 
 const router = express.Router();
 
@@ -22,7 +23,7 @@ const assetSchema = z.object({
   criticality: z.enum(['low', 'medium', 'high', 'critical']).optional().default('medium'),
   legalEntity: z.union([z.string(), z.null()]).optional(),
   currency: z.enum(['USD', 'EUR']).optional().default('USD'),
-  assetValue: z.union([z.number(), z.string()]).transform(val => 
+  assetValue: z.union([z.number(), z.string()]).transform(val =>
     typeof val === 'string' ? Number(val.replace(/[^0-9.-]/g, '')) : val
   ),
   regulatoryImpact: z.array(z.string()).optional().default([]),
@@ -47,12 +48,79 @@ const assetSchema = z.object({
   notes: data.notes || ''
 }));
 
+// GET /assets/summary - Get asset summary statistics
+router.get('/summary', async (req, res) => {
+  try {
+    const assets = await assetService.getAllAssets();
+
+    const total = assets.length;
+    const active = assets.filter((asset) => asset.status === "Active").length;
+    const apps = assets.filter((asset) => asset.type === "application" || asset.type === "application_service").length;
+    const totalValue = assets.reduce((sum, asset) => {
+      const value = typeof asset.assetValue === "number" ? asset.assetValue : parseFloat(asset.assetValue || "0");
+      return sum + (isNaN(value) ? 0 : value);
+    }, 0);
+
+    const trends = {
+      total: generateTrend(total),
+      active: generateTrend(active),
+      apps: generateTrend(apps),
+      totalValue: generateTrend(Math.max(totalValue / 1_000_000, 5)) // Normalize for display if needed, but keeping consistent with frontend logic
+    };
+
+    sendSuccess(res, {
+      stats: { total, active, apps, totalValue },
+      trends
+    });
+  } catch (error) {
+    console.error('Error fetching asset summary:', error);
+    sendError(res, 'Failed to fetch asset summary', 500);
+  }
+});
+
+// GET /assets/vulnerabilities/summary - Get vulnerability summary statistics
+router.get('/vulnerabilities/summary', async (req, res) => {
+  try {
+    const { db } = await import('../../db');
+    const { sql } = await import('drizzle-orm');
+
+    // Fetch all vulnerabilities to calculate stats
+    // In a real app, we would do this with aggregation queries for performance
+    const result = await db.execute(sql`
+      SELECT severity, status FROM vulnerabilities
+    `);
+
+    const vulns = result.rows as any[];
+
+    const total = vulns.length;
+    const critical = vulns.filter((v) => v.severity === "critical").length;
+    const high = vulns.filter((v) => v.severity === "high").length;
+    const open = vulns.filter((v) => v.status === "open").length;
+    const resolved = vulns.filter((v) => v.status === "resolved").length;
+
+    const trends = {
+      total: generateTrend(total),
+      criticalHigh: generateTrend(critical + high),
+      open: generateTrend(open),
+      resolved: generateTrend(resolved)
+    };
+
+    sendSuccess(res, {
+      stats: { total, critical, high, open, resolved },
+      trends
+    });
+  } catch (error) {
+    console.error('Error fetching vulnerability summary:', error);
+    sendError(res, 'Failed to fetch vulnerability summary', 500);
+  }
+});
+
 // GET /assets/vulnerabilities - Get vulnerabilities for assets (must come before /:id)
 router.get('/vulnerabilities', async (req, res) => {
   try {
     const { db } = await import('../../db');
     const { sql } = await import('drizzle-orm');
-    
+
     // Use raw query to avoid schema compatibility issues
     const result = await db.execute(sql`
       SELECT 
@@ -70,7 +138,7 @@ router.get('/vulnerabilities', async (req, res) => {
       ORDER BY v.created_at DESC
       LIMIT 50
     `);
-    
+
     sendSuccess(res, result.rows || []);
   } catch (error) {
     console.error('Error fetching asset vulnerabilities:', error);
@@ -84,7 +152,7 @@ router.get('/vulnerabilities/:id', async (req, res) => {
     const { db } = await import('../../db');
     const { vulnerabilities } = await import('../../../shared/schema');
     const { eq } = await import('drizzle-orm');
-    
+
     const vulnerabilityId = parseInt(req.params.id);
     const vulnerability = await db.select({
       id: vulnerabilities.id,
@@ -103,11 +171,11 @@ router.get('/vulnerabilities/:id', async (req, res) => {
       e_resist: vulnerabilities.eResist,
       remediation: vulnerabilities.remediation
     }).from(vulnerabilities).where(eq(vulnerabilities.id, vulnerabilityId));
-    
+
     if (vulnerability.length === 0) {
       return sendError(res, 'Vulnerability not found', 404);
     }
-    
+
     sendSuccess(res, vulnerability[0]);
   } catch (error) {
     console.error('Error fetching vulnerability:', error);
@@ -121,7 +189,7 @@ router.get('/vulnerabilities/:id/assets', async (req, res) => {
     const { db } = await import('../../db');
     const { vulnerabilityAssets, assets } = await import('../../../shared/schema');
     const { eq } = await import('drizzle-orm');
-    
+
     const vulnerabilityId = parseInt(req.params.id);
     const affectedAssets = await db
       .select({
@@ -135,7 +203,7 @@ router.get('/vulnerabilities/:id/assets', async (req, res) => {
       .from(vulnerabilityAssets)
       .innerJoin(assets, eq(vulnerabilityAssets.assetId, assets.id))
       .where(eq(vulnerabilityAssets.vulnerabilityId, vulnerabilityId));
-    
+
     sendSuccess(res, affectedAssets);
   } catch (error) {
     console.error('Error fetching vulnerability assets:', error);
@@ -148,7 +216,7 @@ router.post('/vulnerabilities', async (req, res) => {
   try {
     const { db } = await import('../../db');
     const { vulnerabilities, vulnerabilityAssets } = await import('../../../shared/schema');
-    
+
     const {
       cveId,
       title,
@@ -182,7 +250,7 @@ router.post('/vulnerabilities', async (req, res) => {
         vulnerabilityId: newVulnerability.id,
         assetId: assetId
       }));
-      
+
       await db.insert(vulnerabilityAssets).values(assetAssociations);
     }
 
@@ -220,11 +288,11 @@ router.get('/:id', validateId, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const asset = await assetService.getAsset(id);
-    
+
     if (!asset) {
       return sendError(res, { message: 'Asset not found' }, 404);
     }
-    
+
     return sendSuccess(res, asset);
   } catch (error) {
     return sendError(res, error);
@@ -236,16 +304,16 @@ router.post('/', async (req, res) => {
   try {
     // Make sure to use a more permissive approach for validation
     let asset = req.body;
-    
+
     // Ensure required fields are present
     if (!asset.name) {
       return sendError(res, { message: 'Asset name is required' }, 400);
     }
-    
+
     if (!asset.assetId) {
       return sendError(res, { message: 'Asset ID is required' }, 400);
     }
-    
+
     // Default values for required fields
     asset = {
       ...asset,
@@ -260,17 +328,17 @@ router.post('/', async (req, res) => {
       integrity: asset.integrity || 'medium',
       availability: asset.availability || 'medium',
       criticality: asset.criticality || 'medium',
-      assetValue: typeof asset.assetValue === 'string' ? 
-        Number(asset.assetValue.replace(/[^0-9.-]/g, '')) : 
+      assetValue: typeof asset.assetValue === 'string' ?
+        Number(asset.assetValue.replace(/[^0-9.-]/g, '')) :
         (asset.assetValue || 0)
     };
-    
+
     // Check if asset ID already exists
     const existingAsset = await assetService.getAssetByAssetId(asset.assetId);
     if (existingAsset) {
       return sendError(res, { message: `Asset ID ${asset.assetId} already exists` }, 400);
     }
-    
+
     const newAsset = await assetService.createAsset(asset);
     return sendSuccess(res, newAsset, 201);
   } catch (error) {
@@ -284,13 +352,13 @@ router.put('/:id', validateId, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const updates = req.body;
-    
+
     // Check if asset exists
     const existingAsset = await assetService.getAsset(id);
     if (!existingAsset) {
       return sendError(res, { message: 'Asset not found' }, 404);
     }
-    
+
     // Check if assetId is changed and if it conflicts with another asset
     if (updates.assetId && updates.assetId !== existingAsset.assetId) {
       const conflictingAsset = await assetService.getAssetByAssetId(updates.assetId);
@@ -298,14 +366,14 @@ router.put('/:id', validateId, async (req, res) => {
         return sendError(res, { message: `Asset ID ${updates.assetId} already exists` }, 400);
       }
     }
-    
+
     // Merge updates with existing asset data
     const assetData = {
       ...existingAsset,
       ...updates,
       id // Ensure ID stays the same
     };
-    
+
     const updatedAsset = await assetService.updateAsset(id, assetData);
     return sendSuccess(res, updatedAsset);
   } catch (error) {
@@ -318,28 +386,28 @@ router.delete('/:id', validateId, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     console.log(`Attempting to delete asset with ID: ${id}`);
-    
+
     // Get the asset to find its assetId
     const asset = await assetService.getAsset(id);
     if (!asset) {
       return sendError(res, { message: 'Asset not found' }, 404);
     }
-    
+
     console.log(`Found asset with assetId: ${asset.assetId}, proceeding with cascade deletion`);
-    
+
     // Use cascade deletion to handle all related data
     const deleted = await assetService.deleteAssetWithCascade(id);
-    
+
     if (!deleted) {
       return sendError(res, { message: 'Failed to delete asset' }, 500);
     }
-    
+
     console.log(`Asset ${id} deleted successfully`);
     return sendSuccess(res, { message: 'Asset deleted successfully' });
   } catch (error) {
     console.error('Error deleting asset:', error);
-    return sendError(res, { 
-      message: 'Error deleting asset', 
+    return sendError(res, {
+      message: 'Error deleting asset',
       details: error.message || String(error)
     }, 500);
   }
@@ -349,15 +417,15 @@ router.delete('/:id', validateId, async (req, res) => {
 router.get('/:id/risks', validateId, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    
+
     // Verify asset exists
     const asset = await assetService.getAsset(id);
     if (!asset) {
       return sendError(res, { message: 'Asset not found' }, 404);
     }
-    
+
     const risks = await assetService.getRisksForAsset(asset.assetId);
-    const assetRisks = risks.filter(risk => 
+    const assetRisks = risks.filter(risk =>
       risk.associatedAssets && risk.associatedAssets.includes(id.toString())
     );
     return sendSuccess(res, assetRisks);

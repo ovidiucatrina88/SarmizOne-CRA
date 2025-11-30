@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -31,6 +31,27 @@ import {
 import { Loader } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
+type ApiListResponse<T> = {
+  data: T[];
+};
+
+type EnterpriseItem = {
+  id: number;
+  name: string;
+  hierarchyLevel?: string;
+  level?: string;
+};
+
+type AssetOption = Asset & {
+  hierarchy_level?: string;
+  parentBusinessServiceId?: number | null;
+};
+
+const extractList = <T,>(source?: ApiListResponse<T> | T[]): T[] => {
+  if (!source) return [];
+  return Array.isArray(source) ? source : source.data ?? [];
+};
+
 // Simplified schema that matches the actual asset structure
 const assetFormSchema = z.object({
   assetId: z.string().optional(),
@@ -61,6 +82,10 @@ const assetFormSchema = z.object({
     z.number(),
     z.string().transform(val => val === "none" || val === "" ? null : parseInt(val))
   ]).optional().nullable(),
+  parentBusinessServiceId: z.union([
+    z.number(),
+    z.string().transform((val) => (val === "none" || val === "" ? null : parseInt(val)))
+  ]).optional().nullable(),
   agentCount: z.union([
     z.number(),
     z.string().transform(val => parseInt(val) || 1)
@@ -88,10 +113,6 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  // Track the current asset type to show appropriate parent options
-  const [selectedAssetType, setSelectedAssetType] = useState<string>(
-    asset?.type || 'application_service'
-  );
   const [selectedRegulations, setSelectedRegulations] = useState<string[]>(
     asset?.regulatoryImpact || []
   );
@@ -99,56 +120,33 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
   // Not needed anymore since we're handling the conversion directly in the Input component
   
   // Fetch legal entities for dropdown
-  const { data: legalEntitiesResponse, isLoading: isLoadingEntities } = useQuery({
+  const { data: legalEntitiesResponse, isLoading: isLoadingEntities } = useQuery<ApiListResponse<LegalEntity> | LegalEntity[]>({
     queryKey: ['/api/legal-entities'],
   });
   
   // Fetch assets for parent selection (L4 assets for L5 components)
-  const { data: assetsResponse, isLoading: isLoadingAssets } = useQuery({
+  const { data: assetsResponse, isLoading: isLoadingAssets } = useQuery<ApiListResponse<AssetOption> | AssetOption[]>({
     queryKey: ['/api/assets'],
   });
   
   // Fetch enterprise architecture items (L3 items for L4 assets)
-  const { data: enterpriseResponse, isLoading: isLoadingEnterprise } = useQuery({
+  const { data: enterpriseResponse, isLoading: isLoadingEnterprise } = useQuery<ApiListResponse<EnterpriseItem> | EnterpriseItem[]>({
     queryKey: ['/api/enterprise-architecture'],
   });
   
   // Process assets data to handle different response formats
-  const allAssets = useMemo(() => {
-    // Handle different response formats
-    if (assetsResponse?.data) {
-      return assetsResponse.data;
-    }
-    // If the response is in the old format (direct array)
-    if (Array.isArray(assetsResponse)) {
-      return assetsResponse;
-    }
-    // Default to empty array
-    return [];
-  }, [assetsResponse]);
+  const allAssets = useMemo<AssetOption[]>(() => extractList<AssetOption>(assetsResponse), [assetsResponse]);
   
   // Process enterprise architecture items (L3 level items)
-  const enterpriseItems = useMemo(() => {
-    // Handle different response formats
-    if (enterpriseResponse?.data) {
-      return enterpriseResponse.data.filter(item => 
-        item.hierarchyLevel === 'business_service' || 
-        item.level === 'L3'
-      );
-    }
-    // If the response is in the old format (direct array)
-    if (Array.isArray(enterpriseResponse)) {
-      return enterpriseResponse.filter(item => 
-        item.hierarchyLevel === 'business_service' || 
-        item.level === 'L3'
-      );
-    }
-    // Default to empty array
-    return [];
+  const enterpriseItems = useMemo<EnterpriseItem[]>(() => {
+    return extractList<EnterpriseItem>(enterpriseResponse).filter(
+      (item) =>
+        item.hierarchyLevel === "business_service" || item.level === "L3",
+    );
   }, [enterpriseResponse]);
   
   // Application service assets (L4) for L5 technical components
-  const applicationServiceAssets = useMemo(() => {
+  const applicationServiceAssets = useMemo<AssetOption[]>(() => {
     return allAssets.filter(asset => 
       asset.type === 'application_service' || 
       asset.hierarchy_level === 'application_service'
@@ -156,11 +154,7 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
   }, [allAssets]);
   
   // Ensure we handle both response formats (direct array or data.data structure)
-  const legalEntities = useState(() => {
-    if (!legalEntitiesResponse) return [];
-    if (Array.isArray(legalEntitiesResponse)) return legalEntitiesResponse;
-    return legalEntitiesResponse.data || [];
-  })[0];
+  const legalEntities = useMemo<LegalEntity[]>(() => extractList<LegalEntity>(legalEntitiesResponse), [legalEntitiesResponse]);
 
   // Initialize form with asset data or defaults
   const form = useForm<z.infer<typeof assetFormSchema>>({
@@ -183,6 +177,7 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
           agentCount: asset.agentCount || 1,
           description: asset.description || "",
           parentId: asset.parentId || null,
+          parentBusinessServiceId: (asset as AssetOption).parentBusinessServiceId ?? null,
           legalEntity: asset.legalEntity || null,
         }
       : {
@@ -202,6 +197,7 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
           agentCount: 1,
           description: "",
           parentId: null,
+          parentBusinessServiceId: null,
           legalEntity: null,
         },
   });
@@ -301,6 +297,7 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
       agentCount: values.agentCount || 1,
       description: values.description || "",
       parentId: values.parentId,
+      parentBusinessServiceId: values.parentBusinessServiceId ?? null,
     };
     
     console.log('Form values before processing:', values);
@@ -437,13 +434,32 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
           <FormField
             control={form.control}
             name="assetValue"
-            render={({ field }) => (
+          render={({ field }) => {
+            const value = field.value as string | number | undefined;
+            const hasDisplayValue =
+              typeof value === "number" ||
+              (typeof value === "string" && value.trim() !== "");
+
+            const formattedValue = () => {
+              if (typeof value === "number") {
+                return value.toLocaleString("en-US");
+              }
+              if (typeof value === "string") {
+                const numericValue = Number(value.replace(/[^0-9.-]/g, ""));
+                return Number.isFinite(numericValue)
+                  ? numericValue.toLocaleString("en-US")
+                  : "0";
+              }
+              return "0";
+            };
+
+            return (
               <FormItem>
                 <FormLabel>Asset Value</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                      {form.getValues().currency === 'EUR' ? '€' : '$'}
+                      {form.getValues().currency === "EUR" ? "€" : "$"}
                     </span>
                     <Input
                       type="text"
@@ -451,15 +467,12 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
                       className="pl-8 pr-20"
                       value={field.value || ""}
                       onChange={(e) => {
-                        // Just store the raw input value
                         field.onChange(e.target.value);
                       }}
                     />
-                    {field.value && (
+                    {hasDisplayValue && (
                       <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs bg-slate-700 text-white px-2 py-0.5 rounded pointer-events-none">
-                        {typeof field.value === 'number' 
-                          ? field.value.toLocaleString('en-US')
-                          : parseFloat(field.value.toString().replace(/[^0-9.-]/g, '')).toLocaleString('en-US') || '0'}
+                        {formattedValue()}
                       </div>
                     )}
                   </div>
@@ -469,8 +482,9 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
                 </FormDescription>
                 <FormMessage />
               </FormItem>
-            )}
-          />
+            );
+          }}
+        />
           
           {/* Application service parent to Business Service (L4 to L3) */}
           {assetType === 'application_service' && (
@@ -719,8 +733,8 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
               <FormItem>
                 <FormLabel>Legal Entity</FormLabel>
                 <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
+                  onValueChange={(value) => field.onChange(value || null)}
+                  value={field.value ?? ""}
                   disabled={isLoadingEntities}
                 >
                   <FormControl>
@@ -729,11 +743,14 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {!legalEntities || legalEntities.length === 0 ? (
-                      <SelectItem value="Unknown">No legal entities found</SelectItem>
+                    {legalEntities.length === 0 ? (
+                      <SelectItem value="">No legal entities found</SelectItem>
                     ) : (
                       legalEntities.map((entity) => (
-                        <SelectItem key={`${entity.entityId}-${entity.id}`} value={entity.name}>
+                        <SelectItem
+                          key={entity.entityId ?? entity.id ?? entity.name}
+                          value={entity.name}
+                        >
                           {entity.name}
                         </SelectItem>
                       ))

@@ -53,7 +53,7 @@ export function RiskCostAssignment({ riskId }: RiskCostAssignmentProps) {
   const { 
     data: costModulesResponse, 
     isLoading: isLoadingModules 
-  } = useQuery({
+  } = useQuery<{ data: CostModule[] }>({
     queryKey: ["/api/cost-modules"],
   });
   
@@ -67,7 +67,7 @@ export function RiskCostAssignment({ riskId }: RiskCostAssignmentProps) {
     data: existingAssignmentsResponse, 
     isLoading: isLoadingAssignments,
     refetch: refetchAssignments
-  } = useQuery({
+  } = useQuery<{ data: Assignment[] }>({
     queryKey: [`/api/risk-costs/${riskId}`],
     enabled: !!riskId,
   });
@@ -80,10 +80,11 @@ export function RiskCostAssignment({ riskId }: RiskCostAssignmentProps) {
     data: costCalculation,
     isLoading: isCalculating,
     refetch: refetchCalculation
-  } = useQuery({
+  } = useQuery<{ data: { totalCost: number; weightedCosts?: Record<string, { name?: string; cost?: number }> } }>({
     queryKey: [`/api/risk-costs/${riskId}/calculate`],
     enabled: !!riskId,
   });
+  const costCalc = costCalculation?.data;
   
   // Save assignments mutation
   const saveAssignmentsMutation = useMutation({
@@ -424,8 +425,8 @@ export function RiskCostAssignment({ riskId }: RiskCostAssignmentProps) {
         )}
         
         {/* Cost calculation results */}
-        {costCalculation && typeof costCalculation === 'object' && 
-         'totalCost' in costCalculation && costCalculation.totalCost > 0 && (
+        {costCalc && typeof costCalc === 'object' && 
+         'totalCost' in costCalc && costCalc.totalCost > 0 && (
           <div className="mt-6 border-t pt-4">
             <h3 className="text-lg font-medium mb-2">
               Materiality-Weighted Cost Impact
@@ -434,17 +435,17 @@ export function RiskCostAssignment({ riskId }: RiskCostAssignmentProps) {
               <div className="flex justify-between items-center mb-2">
                 <span className="font-medium">Total Cost Impact:</span>
                 <span className="text-xl font-bold">
-                  {formatCurrency(costCalculation.totalCost)}
+                  {formatCurrency(costCalc.totalCost)}
                 </span>
               </div>
               
               <Separator className="my-2" />
               
               <div className="mt-2 space-y-1">
-                {'weightedCosts' in costCalculation && 
-                 typeof costCalculation.weightedCosts === 'object' &&
-                 costCalculation.weightedCosts && 
-                 Object.entries(costCalculation.weightedCosts).map(([id, details]: [string, any]) => (
+                {'weightedCosts' in costCalc && 
+                 typeof costCalc.weightedCosts === 'object' &&
+                 costCalc.weightedCosts && 
+                 Object.entries(costCalc.weightedCosts).map(([id, details]: [string, any]) => (
                   <div key={id} className="flex justify-between">
                     <span className="text-sm">{details?.name || 'Unknown Module'}:</span>
                     <span className="text-sm font-medium">

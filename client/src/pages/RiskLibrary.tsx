@@ -414,7 +414,7 @@ export default function RiskLibrary() {
       </div>
 
       <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto rounded-[32px] border border-white/10 bg-background/95">
+        <DialogContent className="max-w-[1400px] max-h-[90vh] overflow-y-auto rounded-[32px] border-white/10 bg-[#040b1c]/95">
           <DialogHeader>
             <DialogTitle>{selectedRisk ? "Edit Risk Template" : "Create Risk Template"}</DialogTitle>
           </DialogHeader>

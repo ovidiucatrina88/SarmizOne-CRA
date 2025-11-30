@@ -1,6 +1,12 @@
 import { Pool } from 'pg';
 import { drizzle } from 'drizzle-orm/node-postgres';
+import dotenv from 'dotenv';
 import * as schema from "@shared/schema";
+
+// Load environment variables early so local dev picks up .env.development
+const envFile = process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : '.env';
+dotenv.config({ path: envFile });
+dotenv.config();
 
 if (!process.env.DATABASE_URL) {
   throw new Error(

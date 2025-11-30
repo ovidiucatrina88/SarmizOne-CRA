@@ -33,13 +33,29 @@ export default function Controls() {
   const queryClient = useQueryClient();
 
   // Fetch all control instances
-  const { 
-    data: controlsResponse, 
-    isLoading: isLoadingControls, 
-    error: controlsError 
+  const {
+    data: controlsResponse,
+    isLoading: isLoadingControls,
+    error: controlsError
   } = useQuery<{ success: boolean; data: Control[] }>({
     queryKey: ["/api/controls"],
   });
+
+  // Fetch control summary with trends
+  const { data: summaryResponse } = useQuery({
+    queryKey: ["/api/controls/summary"],
+  });
+
+  const summary = summaryResponse?.data || {
+    stats: { total: 0, fully: 0, progress: 0, corrective: 0, totalCost: 0 },
+    trends: {
+      total: { series: [], delta: "0% vs last month" },
+      fully: { series: [], delta: "0% vs last month" },
+      progress: { series: [], delta: "0% vs last month" },
+      corrective: { series: [], delta: "0% vs last month" },
+      totalCost: { series: [], delta: "0% vs last month" }
+    }
+  };
 
   // Extract the controls array from the API response and ensure it's always an array
   const allControls = (controlsResponse?.data || []) as Control[];
@@ -50,7 +66,7 @@ export default function Controls() {
       // Search filter
       if (filters.search) {
         const searchLower = filters.search.toLowerCase();
-        const matchesSearch = 
+        const matchesSearch =
           control.name.toLowerCase().includes(searchLower) ||
           control.controlId.toLowerCase().includes(searchLower) ||
           (control.description && control.description.toLowerCase().includes(searchLower));
@@ -89,7 +105,7 @@ export default function Controls() {
       filtered: filteredControls.length
     };
   }, [allControls.length, filteredControls.length]);
-  
+
   // Filter controls to only show instances (not templates)
   const controlInstances = React.useMemo(() => {
     return allControls.filter((control: Control) => control.itemType === 'instance' || !control.itemType);
@@ -147,26 +163,7 @@ export default function Controls() {
     </Button>
   );
 
-  const stats = useMemo(() => {
-    const fully = filteredControls.filter((c) => c.implementationStatus === "fully_implemented").length;
-    const progress = filteredControls.filter((c) => c.implementationStatus === "in_progress").length;
-    const corrective = filteredControls.filter((c) => c.controlType === "corrective").length;
-    const totalCost = filteredControls.reduce((sum, control) => sum + Number(control.implementationCost || 0), 0);
-    return {
-      total: allControls.length,
-      fully,
-      progress,
-      corrective,
-      totalCost,
-    };
-  }, [filteredControls, allControls.length]);
 
-  const generateSeries = (seed: number) => {
-    const base = seed || 10;
-    return Array.from({ length: 7 }).map((_, index) =>
-      Number((base * (1 + Math.sin(index / 1.3) * 0.08)).toFixed(2)),
-    );
-  };
 
   if (isLoading) {
     return (
@@ -225,26 +222,31 @@ export default function Controls() {
     >
       <div className="space-y-8">
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard label="Total Controls" value={stats.total.toLocaleString()} delta="+3 added" trendSeries={generateSeries(stats.total)} />
+          <KpiCard
+            label="Total Controls"
+            value={summary.stats.total.toLocaleString()}
+            delta={summary.trends.total.delta}
+            trendSeries={summary.trends.total.series}
+          />
           <KpiCard
             label="Fully Implemented"
-            value={stats.fully.toLocaleString()}
-            delta="+2 vs last sprint"
-            trendSeries={generateSeries(stats.fully)}
+            value={summary.stats.fully.toLocaleString()}
+            delta={summary.trends.fully.delta}
+            trendSeries={summary.trends.fully.series}
             trendColor="#86efac"
           />
           <KpiCard
             label="In Progress"
-            value={stats.progress.toLocaleString()}
-            delta="+1 onboarding"
-            trendSeries={generateSeries(stats.progress)}
+            value={summary.stats.progress.toLocaleString()}
+            delta={summary.trends.progress.delta}
+            trendSeries={summary.trends.progress.series}
             trendColor="#fde68a"
           />
           <KpiCard
             label="Corrective Coverage"
-            value={stats.corrective.toLocaleString()}
-            delta="Top remediation"
-            trendSeries={generateSeries(stats.corrective)}
+            value={summary.stats.corrective.toLocaleString()}
+            delta={summary.trends.corrective.delta}
+            trendSeries={summary.trends.corrective.series}
             trendColor="#c4b5fd"
           />
         </section>

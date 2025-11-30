@@ -74,12 +74,7 @@ const TOP_CONTROLS = [
   { code: "CSP", name: "Cyber Security Policies", score: "95%" },
 ];
 
-const generateSeries = (base: number) => {
-  const seed = base || 50;
-  return Array.from({ length: 7 }).map((_, index) =>
-    Number((seed * (1 + Math.sin(index / 1.5) * 0.08)).toFixed(2)),
-  );
-};
+
 
 function DashboardSkeleton() {
   return (
@@ -173,29 +168,29 @@ export default function Dashboard() {
     {
       label: "Total Assets",
       value: totalAssets.toLocaleString(),
-      delta: "+7% vs last month",
-      series: generateSeries(totalAssets || 40),
+      delta: apiData?.trends?.assets?.delta || "0% vs last month",
+      series: apiData?.trends?.assets?.series || [],
       color: "#5ef1c7",
     },
     {
       label: "Identified Risks",
       value: totalRisks.toLocaleString(),
-      delta: "+12% vs last month",
-      series: generateSeries(totalRisks || 30),
+      delta: apiData?.trends?.risks?.delta || "0% vs last month",
+      series: apiData?.trends?.risks?.series || [],
       color: "#fda4af",
     },
     {
       label: "Implemented Controls",
       value: implementedControls.toLocaleString(),
-      delta: "+4% vs last month",
-      series: generateSeries(implementedControls || 25),
+      delta: apiData?.trends?.controls?.delta || "0% vs last month",
+      series: apiData?.trends?.controls?.series || [],
       color: "#93c5fd",
     },
     {
       label: "Risk Exposure",
       value: formatCurrency(residualExposure),
-      delta: "-1.2% QoQ",
-      series: generateSeries(residualExposure || 10),
+      delta: apiData?.trends?.exposure?.delta || "0% QoQ",
+      series: apiData?.trends?.exposure?.series || [],
       color: "#fef08a",
     },
   ];
@@ -209,29 +204,29 @@ export default function Dashboard() {
   const scenarioTrends =
     safeRisks.length > 0
       ? safeRisks.slice(0, 3).map((risk, index) => ({
-          name: risk?.name || FALLBACK_SCENARIOS[index]?.name || `Scenario ${index + 1}`,
-          likelihood: risk?.likelihoodChange || FALLBACK_SCENARIOS[index]?.likelihood || "±0%",
-          loss: risk?.lossChange || FALLBACK_SCENARIOS[index]?.loss || "±$0",
-          descriptor: risk?.category || "Key Scenario",
-        }))
+        name: risk?.name || FALLBACK_SCENARIOS[index]?.name || `Scenario ${index + 1}`,
+        likelihood: risk?.likelihoodChange || FALLBACK_SCENARIOS[index]?.likelihood || "±0%",
+        loss: risk?.lossChange || FALLBACK_SCENARIOS[index]?.loss || "±$0",
+        descriptor: risk?.category || "Key Scenario",
+      }))
       : FALLBACK_SCENARIOS.map((scenario) => ({ ...scenario, descriptor: "Key Scenario" }));
 
   const watchlistData: WatchlistRow[] =
     safeRisks.length > 0
       ? safeRisks.slice(0, 4).map((risk, index) => ({
-          name: risk?.name || FALLBACK_WATCHLIST[index]?.name || `Scenario ${index + 1}`,
-          likelihood: risk?.likelihood ? `${risk.likelihood}%` : FALLBACK_WATCHLIST[index]?.likelihood || "N/A",
-          loss: risk?.loss
-            ? formatCurrency(risk.loss)
-            : FALLBACK_WATCHLIST[index]?.loss || formatCurrency((index + 1) * 10000),
-          actor: risk?.threatActor || FALLBACK_WATCHLIST[index]?.actor || "Unknown Actor",
-          category: risk?.category || FALLBACK_WATCHLIST[index]?.category || "Unknown",
-          trend:
-            FALLBACK_WATCHLIST[index]?.trend || {
-              direction: index % 2 === 0 ? "up" : "down",
-              value: index % 2 === 0 ? "+4%" : "-3%",
-            },
-        }))
+        name: risk?.name || FALLBACK_WATCHLIST[index]?.name || `Scenario ${index + 1}`,
+        likelihood: risk?.likelihood ? `${risk.likelihood}%` : FALLBACK_WATCHLIST[index]?.likelihood || "N/A",
+        loss: risk?.loss
+          ? formatCurrency(risk.loss)
+          : FALLBACK_WATCHLIST[index]?.loss || formatCurrency((index + 1) * 10000),
+        actor: risk?.threatActor || FALLBACK_WATCHLIST[index]?.actor || "Unknown Actor",
+        category: risk?.category || FALLBACK_WATCHLIST[index]?.category || "Unknown",
+        trend:
+          FALLBACK_WATCHLIST[index]?.trend || {
+            direction: index % 2 === 0 ? "up" : "down",
+            value: index % 2 === 0 ? "+4%" : "-3%",
+          },
+      }))
       : FALLBACK_WATCHLIST;
 
   const riskBySeverity = {
@@ -415,35 +410,35 @@ export default function Dashboard() {
                   currentExposure={
                     apiData?.riskSummary
                       ? {
-                          minimumExposure: apiData.riskSummary.minimumExposure,
-                          averageExposure: apiData.riskSummary.meanExposure,
-                          maximumExposure: apiData.riskSummary.maximumExposure,
-                          tenthPercentile: apiData.riskSummary.minimumExposure,
-                          mostLikely: apiData.riskSummary.meanExposure,
-                          ninetiethPercentile: apiData.riskSummary.maximumExposure,
-                          exposureCurveData: apiData.riskSummary.exposureCurveData,
-                        }
+                        minimumExposure: apiData.riskSummary.minimumExposure,
+                        averageExposure: apiData.riskSummary.meanExposure,
+                        maximumExposure: apiData.riskSummary.maximumExposure,
+                        tenthPercentile: apiData.riskSummary.minimumExposure,
+                        mostLikely: apiData.riskSummary.meanExposure,
+                        ninetiethPercentile: apiData.riskSummary.maximumExposure,
+                        exposureCurveData: apiData.riskSummary.exposureCurveData,
+                      }
                       : undefined
                   }
                   previousExposure={
                     showHistoricalComparison && riskSummaryData?.previous
                       ? {
-                          minimumExposure: riskSummaryData.previous.minimumExposure,
-                          averageExposure: riskSummaryData.previous.averageExposure,
-                          maximumExposure: riskSummaryData.previous.maximumExposure,
-                          tenthPercentile: riskSummaryData.previous.tenthPercentileExposure,
-                          mostLikely: riskSummaryData.previous.mostLikelyExposure,
-                          ninetiethPercentile: riskSummaryData.previous.ninetiethPercentileExposure,
-                          exposureCurveData: riskSummaryData.previous.exposureCurveData,
-                        }
+                        minimumExposure: riskSummaryData.previous.minimumExposure,
+                        averageExposure: riskSummaryData.previous.averageExposure,
+                        maximumExposure: riskSummaryData.previous.maximumExposure,
+                        tenthPercentile: riskSummaryData.previous.tenthPercentileExposure,
+                        mostLikely: riskSummaryData.previous.mostLikelyExposure,
+                        ninetiethPercentile: riskSummaryData.previous.ninetiethPercentileExposure,
+                        exposureCurveData: riskSummaryData.previous.exposureCurveData,
+                      }
                       : undefined
                   }
                   irisBenchmarks={
                     irisData?.data
                       ? {
-                          smb: irisData.data.exceedanceCurves?.smb || [],
-                          enterprise: irisData.data.exceedanceCurves?.enterprise || [],
-                        }
+                        smb: irisData.data.exceedanceCurves?.smb || [],
+                        enterprise: irisData.data.exceedanceCurves?.enterprise || [],
+                      }
                       : undefined
                   }
                   filterType={filterType}

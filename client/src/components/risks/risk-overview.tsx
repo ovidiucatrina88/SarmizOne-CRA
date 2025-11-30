@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { Risk, RiskCalculationParams, Control } from "@shared/schema";
+import { RiskWithParams, RiskCalculationParams, Control } from "@shared/schema";
 import XyflowFairVisualization from "./XyflowFairVisualization";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 
 interface RiskOverviewProps {
-  risk: Risk;
+  risk: RiskWithParams;
 }
 
 interface RiskQuantifyProps {
@@ -139,10 +139,10 @@ function RiskOverviewComponent({ risk }: RiskOverviewProps) {
   const {
     data: latestRiskCalculation,
     isLoading: calculationLoading,
-  } = useQuery({
+  } = useQuery<{ inherentRisk?: number; residualRisk?: number }>({
     queryKey: ["risk-calculation", effectiveRiskId],
     enabled: !!effectiveRiskId,
-    queryFn: () => apiRequest("GET", `/api/risks/${effectiveRiskId}/calculate`),
+    queryFn: async () => apiRequest("GET", `/api/risks/${effectiveRiskId}/calculate`) as any,
   });
 
   // Always use the most recently calculated values from the server if available
@@ -159,14 +159,19 @@ function RiskOverviewComponent({ risk }: RiskOverviewProps) {
   }, [risk, latestRiskCalculation]);
 
   const {
-    data: controls = [],
+    data: controlsResponse,
     isLoading: controlsLoading,
     error: controlsError,
-  } = useQuery({
+  } = useQuery<{ data: Control[] }>({
     queryKey: ["risk-controls", effectiveRiskId],
     enabled: !!effectiveRiskId,
-    queryFn: () => apiRequest("GET", `/api/risks/${effectiveRiskId}/controls`),
+    queryFn: async () => apiRequest("GET", `/api/risks/${effectiveRiskId}/controls`) as any,
   });
+  const controls = Array.isArray((controlsResponse as any)?.data)
+    ? (controlsResponse as any).data
+    : Array.isArray(controlsResponse)
+      ? (controlsResponse as any)
+      : [];
 
   // Log controls data for debugging
   useEffect(() => {

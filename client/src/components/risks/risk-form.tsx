@@ -8,7 +8,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@/common/react-import";
-import { Risk, insertRiskSchema } from "@shared/schema";
+import { Risk, RiskWithParams, insertRiskSchema } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { MonteCarloInput } from "@shared/models/riskParams";
@@ -24,6 +24,7 @@ import { BasicRiskInfo } from "./form-sections";
 import { AssetSelection } from "./form-sections/AssetSelection";
 
 import { RiskFormPreviewEditable } from "./risk-form-preview-editable";
+import { RiskFormPreviewEditableConcept } from "./risk-form-preview-editable-concept";
 import { calculateRiskFromForm } from "./risk-utils";
 import {
   formatCurrency,
@@ -31,7 +32,6 @@ import {
   calculateThreatEventFrequency,
   calculateLossEventFrequency,
   calculateLossMagnitude,
-  inherentRisk,
 } from "@shared/utils/calculations";
 
 // Default FAIR-U parameter values for new risks
@@ -314,6 +314,7 @@ const riskFormSchema = insertRiskSchema.extend({
   severity: z.enum(["low", "medium", "high", "critical"], {
     required_error: "Severity is required",
   }),
+  itemType: z.enum(["template", "instance"]).optional(),
 
   // FAIR-U Parameters - Contact Frequency
   contactFrequencyMin: z.number().min(0, "Must be a positive number"),
@@ -441,9 +442,10 @@ export type RiskFormData = z.infer<typeof riskFormSchema>;
 
 // Component props
 type RiskFormProps = {
-  risk: Risk | null;
+  risk: RiskWithParams | null;
   onClose: () => void;
   isTemplate?: boolean;
+  variant?: "default" | "concept";
 };
 
 // Helper function to get asset-dependent risk values
@@ -481,12 +483,11 @@ const getAssetDependentRiskValues = (
 };
 
 // Main component
-export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): JSX.Element {
+export function RiskForm({ risk, onClose, isTemplate = false, variant = "default" }: RiskFormProps): JSX.Element {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedAssets, setSelectedAssets] = useState<string[]>(
-    risk?.associatedAssets || [],
-  );
+  const useConceptLayout = variant === "concept";
+  const [selectedAssets, setSelectedAssets] = useState<string[]>(risk?.associatedAssets || []);
   const [calculatedInherentRisk, setCalculatedInherentRisk] = useState<number>(
     risk?.inherentRisk ? Number(risk.inherentRisk) : 0,
   );
@@ -512,6 +513,7 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
     ...ZERO_CALCULATED_VALUES,
     rankPercentile: 50,
     notes: "",
+    probableLossMagnitude: 0,
   };
 
   // Convert existing risk data to the proper format for the form
@@ -529,9 +531,10 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
         vulnerability: risk.vulnerability,
         riskCategory: risk.riskCategory as any,
         severity: risk.severity as any,
+        probableLossMagnitude: Number((risk as RiskWithParams).probableLossMagnitude) || 0,
 
         // Convert all numeric fields safely with Number()
-        ...Object.keys(risk).reduce((acc, key) => {
+        ...Object.keys(risk as RiskWithParams).reduce((acc, key) => {
           // Skip string fields and arrays
           if (
             key !== "riskId" &&
@@ -542,13 +545,14 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
             key !== "vulnerability" &&
             key !== "riskCategory" &&
             key !== "severity" &&
+            key !== "itemType" &&
             key !== "createdAt" &&
             key !== "updatedAt" &&
             key !== "notes" &&
-            !Array.isArray(risk[key as keyof Risk])
+            !Array.isArray((risk as any)[key])
           ) {
             // Convert to number
-            acc[key as keyof RiskFormData] = Number(risk[key as keyof Risk]);
+            acc[key as keyof RiskFormData] = Number((risk as any)[key]);
           }
           return acc;
         }, {} as any),
@@ -590,13 +594,19 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
 
         // Include notes if available
         notes: risk.notes || "",
+        itemType: risk.itemType || (isTemplate ? "template" : "instance"),
       }
     : null;
 
   // Initialize form with default values or existing risk values
+  const initialValues = existingRiskValues || {
+    ...defaultRiskValues,
+    itemType: isTemplate ? "template" : "instance",
+  };
+
   const form = useForm<RiskFormData>({
     resolver: zodResolver(riskFormSchema),
-    defaultValues: existingRiskValues || defaultRiskValues,
+    defaultValues: initialValues,
   });
   
   // When editing an existing risk, fetch the latest calculated values from the server
@@ -634,8 +644,8 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
       const values = form.getValues();
       
       // Check for existing risk values in edit mode
-      const existingInherentRisk = risk?.inherentRisk && Number(risk.inherentRisk);
-      const existingResidualRisk = risk?.residualRisk && Number(risk.residualRisk);
+      const existingInherentRisk = Number(risk?.inherentRisk ?? 0);
+      const existingResidualRisk = Number(risk?.residualRisk ?? 0);
       
       // If we're editing an existing risk with valid values, prioritize preserving those values
       const isExistingRiskWithValues = risk && existingInherentRisk > 0;
@@ -767,7 +777,7 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
           console.log(
             `Making API request: ${calculationMethod} ${calculationEndpoint}`,
           );
-          const response = await apiRequest(
+          const response: any = await apiRequest(
             calculationMethod,
             calculationEndpoint,
             requestData,
@@ -775,11 +785,7 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
 
           console.log("Server calculation response:", response);
 
-          if (
-            response &&
-            typeof response === "object" &&
-            "inherentRisk" in response
-          ) {
+          if (response && typeof response === "object" && "inherentRisk" in response) {
             // Update with values from server
             const inherentRiskValue = Number(response.inherentRisk) || 0;
             const residualRiskValue = Number(response.residualRisk) || 0;
@@ -1121,12 +1127,12 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
       const values: RiskFormData = { ...formValues };
       
       // Ensure we have valid numeric values for inherentRisk and residualRisk
-      if (!values.inherentRisk || isNaN(Number(values.inherentRisk))) {
-        values.inherentRisk = "0";
+      if (values.inherentRisk === undefined || isNaN(Number(values.inherentRisk))) {
+        values.inherentRisk = 0;
       }
       
-      if (!values.residualRisk || isNaN(Number(values.residualRisk))) {
-        values.residualRisk = "0";
+      if (values.residualRisk === undefined || isNaN(Number(values.residualRisk))) {
+        values.residualRisk = 0;
       }
       
       console.log("Submitting with inherentRisk:", values.inherentRisk, "residualRisk:", values.residualRisk);
@@ -1144,26 +1150,13 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
       // Set calculated values from risk-utils.ts calculation
       // Make sure calculated values are converted to strings for database storage
       // This ensures compatibility with the database schema
-      values.inherentRisk = calculationResult.inherentRisk
-        ? String(calculationResult.inherentRisk)
-        : "0";
-      values.residualRisk = calculationResult.residualRisk
-        ? String(calculationResult.residualRisk)
-        : "0";
+      values.inherentRisk = calculationResult.inherentRisk || 0;
+      values.residualRisk = calculationResult.residualRisk || 0;
 
       // Also ensure the main susceptibility value is included
       // Use the single susceptibility value (avg) from calculation result
       if (calculationResult.susceptibility !== undefined) {
-        values.susceptibilityAvg = String(
-          calculationResult.susceptibility || 0,
-        );
-      }
-
-      // Include loss event frequency calculated values if available
-      if (calculationResult.lossEventFrequency !== undefined) {
-        values.lossEventFrequency = String(
-          calculationResult.lossEventFrequency || 0,
-        );
+        values.susceptibilityAvg = calculationResult.susceptibility || 0;
       }
 
       // For logging/debugging
@@ -1293,17 +1286,29 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pb-8">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className={
+          useConceptLayout
+            ? "space-y-10 rounded-[28px] bg-gradient-to-b from-white/[0.02] via-transparent to-white/[0.02] p-1 pb-10"
+            : "space-y-8 pb-8"
+        }
+      >
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-white/5 bg-[#040915]/80 px-6 py-5">
           <div className="space-y-2">
-            <p className="text-[11px] uppercase tracking-[0.35em] text-white/50">
-              {isTemplate ? "Risk Template" : risk ? "Edit Risk" : "New Risk"}
-            </p>
+            <div className="flex items-center gap-3">
+              <p className="text-[11px] uppercase tracking-[0.35em] text-white/50">
+                {useConceptLayout ? "Fair Studio" : isTemplate ? "Risk Template" : risk ? "Edit Risk" : "New Risk"}
+              </p>
+              {useConceptLayout && <Badge className="bg-emerald-500/15 text-emerald-200">Concept Shell</Badge>}
+            </div>
             <h2 className="text-3xl font-semibold text-white">
               {risk ? risk.name : isTemplate ? "Create Risk Template" : "Create Risk"}
             </h2>
             <p className="text-sm text-white/60">
-              Configure FAIR parameters, associate assets, and quantify exposure without leaving the page.
+              {useConceptLayout
+                ? "Polished FAIR-U workspace for editing risks with dependency-aware calculations."
+                : "Configure FAIR parameters, associate assets, and quantify exposure without leaving the page."}
             </p>
           </div>
 
@@ -1445,209 +1450,27 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
               </Button>
             ) : (
               // For create, use the React Query mutation
-              <Button
-                type="button"
-                disabled={mutation.isPending}
-                className="gap-1 rounded-full bg-primary px-6 text-primary-foreground hover:bg-primary/90"
-                onClick={() => {
-                  console.log("Create button clicked using React Query mutation");
+            <Button
+              type="button"
+              disabled={mutation.isPending}
+              className="gap-1 rounded-full bg-primary px-6 text-primary-foreground hover:bg-primary/90"
+              onClick={() => {
+                console.log("Create button clicked using React Query mutation");
+                try {
+                  // Get current form values
+                  const values = form.getValues();
+                  // Calculate the risk values
                   try {
-                    // Get current form values
-                    const values = form.getValues();
-
-                    // Calculate the risk values
-                    try {
-                      // Calculate using the form object
-                      const calculationResult = calculateRiskFromForm(form);
-                      values.inherentRisk = calculationResult.inherentRisk;
-                      values.residualRisk = calculationResult.residualRisk;
-                    } catch (error) {
-                      console.error("Error calculating risk values:", error);
-                      values.inherentRisk = values.inherentRisk || 0;
-                      values.residualRisk = values.residualRisk || 0;
-                    }
-                    
-                    // Make sure to set the correct item type
-                    values.itemType = isTemplate ? "template" : "instance";
-                    console.log(`Creating ${isTemplate ? 'template' : 'risk'} using mutation`);
-                    
-                    // Use the React Query mutation (which uses the correct endpoint)
-                    mutation.mutate(values as RiskFormData);
-
-                    // Create risk data object using our helper function with extra fields
-                    const riskData = {
-                      // Use our helper function for FAIR-U parameters
-                      ...createRiskUpdateData(formValues, selectedAssets),
-
-                      // Add extra fields specific to risk creation
-                      riskId:
-                        formValues.riskId ||
-                        `RISK-${Math.floor(Math.random() * 10000)}`,
-                      threatCommunity:
-                        formValues.threatCommunity || "External Actor",
-                      vulnerability:
-                        formValues.vulnerability || "System Vulnerability",
-
-                      // Calculate FAIR-U parameters differently based on asset association
-                      ...(selectedAssets.length > 0
-                        ? {
-                            // Calculate Threat Event Frequency (TEF = CF * POA) using shared utility
-                            threatEventFrequencyMin:
-                              calculateThreatEventFrequency(
-                                createRiskObjectFromFormValues(formValues),
-                                "min",
-                              ),
-                            threatEventFrequencyAvg:
-                              calculateThreatEventFrequency(
-                                createRiskObjectFromFormValues(formValues),
-                                "avg",
-                              ),
-                            threatEventFrequencyMax:
-                              calculateThreatEventFrequency(
-                                createRiskObjectFromFormValues(formValues),
-                                "max",
-                              ),
-                            threatEventFrequencyConfidence:
-                              formValues.contactFrequencyConfidence || "medium",
-
-                            // Calculate Susceptibility (vulnerability) using shared utility functions
-                            susceptibilityMin: calculateSusceptibility(
-                              createRiskObjectFromFormValues(formValues),
-                              "min",
-                            ),
-                            susceptibilityAvg: calculateSusceptibility(
-                              createRiskObjectFromFormValues(formValues),
-                              "avg",
-                            ),
-                            susceptibilityMax: calculateSusceptibility(
-                              createRiskObjectFromFormValues(formValues),
-                              "max",
-                            ),
-                            susceptibilityConfidence: "medium",
-
-                            // Calculate Loss Event Frequency (LEF = TEF * Vulnerability) using shared utility
-                            lossEventFrequencyMin: calculateLossEventFrequency(
-                              createRiskObjectFromFormValues(formValues),
-                              "min",
-                            ),
-                            lossEventFrequencyAvg: calculateLossEventFrequency(
-                              createRiskObjectFromFormValues(formValues),
-                              "avg",
-                            ),
-                            lossEventFrequencyMax: calculateLossEventFrequency(
-                              createRiskObjectFromFormValues(formValues),
-                              "max",
-                            ),
-                            lossEventFrequencyConfidence: "medium",
-
-                            // Use server-calculated Loss Magnitude values if available, otherwise calculate
-                            lossMagnitudeMin: risk?.lossMagnitudeMin || calculateLossMagnitude(
-                              createRiskObjectFromFormValues(formValues),
-                              "min",
-                            ),
-                            lossMagnitudeAvg: risk?.lossMagnitudeAvg || calculateLossMagnitude(
-                              createRiskObjectFromFormValues(formValues),
-                              "avg",
-                            ),
-                            lossMagnitudeMax: risk?.lossMagnitudeMax || calculateLossMagnitude(
-                              createRiskObjectFromFormValues(formValues),
-                              "max",
-                            ),
-                            lossMagnitudeConfidence: "medium",
-                          }
-                        : {
-                            // Set minimal values if no assets are associated
-                            threatEventFrequencyMin: 0,
-                            threatEventFrequencyAvg: 0,
-                            threatEventFrequencyMax: 0,
-                            threatEventFrequencyConfidence: "medium",
-
-                            susceptibilityMin: 0,
-                            susceptibilityAvg: 0,
-                            susceptibilityMax: 0,
-                            susceptibilityConfidence: "medium",
-
-                            lossEventFrequencyMin: 0,
-                            lossEventFrequencyAvg: 0,
-                            lossEventFrequencyMax: 0,
-                            lossEventFrequencyConfidence: "medium",
-
-                            lossMagnitudeMin: 0,
-                            lossMagnitudeAvg: 0,
-                            lossMagnitudeMax: 0,
-                            lossMagnitudeConfidence: "medium",
-                          }),
-
-                      // Calculate risk values - stored as strings in the database
-                      inherentRisk: String(formValues.inherentRisk || 0),
-                      residualRisk: String(formValues.residualRisk || 0),
-                      rankPercentile: Number(formValues.rankPercentile || 50),
-
-                      notes: formValues.notes || "",
-                    };
-
-                    console.log(
-                      "Manually sending create request with data:",
-                      riskData,
-                    );
-
-                    // Use the right endpoint based on whether we're creating a template or instance
-                    const endpoint = isTemplate ? "/api/risk-templates" : "/api/risks";
-                    console.log(`Creating ${isTemplate ? 'template' : 'instance'} with endpoint: ${endpoint}`);
-                    
-                    // Set itemType explicitly
-                    riskData.itemType = isTemplate ? "template" : "instance";
-                    
-                    // Send request to the appropriate endpoint
-                    fetch(endpoint, {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                      body: JSON.stringify(riskData),
-                    })
-                      .then((response) => {
-                        if (!response.ok) {
-                          throw new Error(`HTTP error ${response.status}`);
-                        }
-                        return response.json();
-                      })
-                      .then((data) => {
-                        console.log("Risk created successfully:", data);
-
-                        // Invalidate queries
-                        queryClient.invalidateQueries({
-                          queryKey: ["/api/risks"],
-                        });
-                        queryClient.invalidateQueries({
-                          queryKey: ["/api/assets"],
-                        });
-                        queryClient.invalidateQueries({
-                          queryKey: ["/api/dashboard/summary"],
-                        });
-                        // Invalidate risk summary for Loss Exceedance Curve
-                        queryClient.invalidateQueries({
-                          queryKey: ["/api/risk-summary/latest"],
-                        });
-
-                        // Show success toast
-                        toast({
-                          title: "Risk created",
-                          description:
-                            "The risk has been created successfully.",
-                        });
-
-                        // Close form
-                        onClose();
-                      })
-                      .catch((error) => {
-                        console.error("Error creating risk:", error);
-                        toast({
-                          title: "Error",
-                          description: `Failed to create risk: ${error.message}`,
-                          variant: "destructive",
-                        });
-                      });
+                    const calculationResult = calculateRiskFromForm(form);
+                    values.inherentRisk = calculationResult.inherentRisk;
+                    values.residualRisk = calculationResult.residualRisk;
+                  } catch (error) {
+                    console.error("Error calculating risk values:", error);
+                    values.inherentRisk = values.inherentRisk || 0;
+                    values.residualRisk = values.residualRisk || 0;
+                  }
+                  values.itemType = isTemplate ? "template" : "instance";
+                  mutation.mutate(values as RiskFormData);
                   } catch (error: any) {
                     console.error("Error in manual create:", error);
                     toast({
@@ -1667,12 +1490,16 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
           </div>
         </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.9fr]">
+        <div className="grid gap-6 xl:grid-cols-[1.15fr_0.95fr]">
+          {/* Left column: risk overview */}
           <div className="space-y-6">
             <GlowCard className="space-y-8">
               <BasicRiskInfo form={form} />
             </GlowCard>
+          </div>
 
+          {/* Right column: associations, notes, calculations */}
+          <div className="space-y-6">
             <GlowCard className="space-y-6">
               <AssetSelection
                 form={form}
@@ -1696,9 +1523,7 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
                 {...form.register("notes")}
               />
             </GlowCard>
-          </div>
 
-          <div className="space-y-6">
             <GlowCard className="space-y-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
@@ -1735,24 +1560,24 @@ export function RiskForm({ risk, onClose, isTemplate = false }: RiskFormProps): 
                 Susceptibility Avg: {susceptibilityValue.toFixed(2)}
               </div>
             </GlowCard>
-
-            <GlowCard className="space-y-6">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h3 className="text-xl font-semibold text-white">FAIR Parameter Editor</h3>
-                  <p className="text-sm text-white/60">
-                    Linked assets: {selectedAssets.length || 0}
-                  </p>
-                </div>
-              </div>
-              <RiskFormPreviewEditable
-                form={form}
-                selectedAssets={selectedAssets}
-              />
-            </GlowCard>
           </div>
         </div>
-      </form>
+
+        <div className="space-y-6">
+          <GlowCard className="space-y-6">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-semibold text-white">
+                  {useConceptLayout ? "FAIR Parameter Editor (Concept)" : "FAIR Parameter Editor"}
+                </h3>
+                <p className="text-sm text-white/60">Linked assets: {selectedAssets.length || 0}</p>
+              </div>
+            </div>
+            <div className="w-full">
+              <RiskFormPreviewEditableConcept form={form} selectedAssets={selectedAssets} />
+            </div>
+          </GlowCard>
+        </div>
       </form>
     </Form>
   );

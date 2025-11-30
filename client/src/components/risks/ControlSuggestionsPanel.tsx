@@ -48,13 +48,13 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
   const queryClient = useQueryClient();
   const [selectedControls, setSelectedControls] = useState<string[]>([]);
 
-  const { data: response, isLoading, error } = useQuery({
+  const { data: response, isLoading, error } = useQuery<{ data: ControlSuggestionsResponse }>({
     queryKey: [`/api/risks/${riskId}/control-suggestions`],
     enabled: !!riskId
   });
 
   // Extract the data from the API response structure  
-  const suggestions = response?.data as ControlSuggestionsResponse;
+  const suggestions = response?.data;
 
   const associateControlMutation = useMutation({
     mutationFn: async (controlId: string) => {

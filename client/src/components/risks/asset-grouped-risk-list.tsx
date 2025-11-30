@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Risk } from "@shared/schema";
+import { RiskWithParams } from "@shared/schema";
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -69,16 +69,16 @@ import {
 } from "lucide-react";
 
 interface AssetGroupedRiskListProps {
-  risks: Risk[];
-  onRiskSelect?: (risk: Risk) => void;
-  onRiskEdit?: (risk: Risk) => void;
-  onRiskDelete?: (risk: Risk) => void;
+  risks: RiskWithParams[];
+  onRiskSelect?: (risk: RiskWithParams) => void;
+  onRiskEdit?: (risk: RiskWithParams) => void;
+  onRiskDelete?: (risk: RiskWithParams) => void;
 }
 
 interface AssetRiskGroup {
   assetId: string;
   assetName: string;
-  risks: Risk[];
+  risks: RiskWithParams[];
   totalExposure: number;
   highestSeverity: 'low' | 'medium' | 'high' | 'critical';
   riskCounts: {
@@ -120,19 +120,23 @@ export function AssetGroupedRiskList({
     severity: '',
     category: ''
   });
+  const [searchTerm, setSearchTerm] = useState("");
+  const [severityFilter, setSeverityFilter] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [assetFilter, setAssetFilter] = useState<string>("all");
   const [expandedAssets, setExpandedAssets] = useState<Set<string>>(new Set());
-  const [selectedRisk, setSelectedRisk] = useState<Risk | null>(null);
+  const [selectedRisk, setSelectedRisk] = useState<RiskWithParams | null>(null);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-  const [riskToDelete, setRiskToDelete] = useState<Risk | null>(null);
+  const [riskToDelete, setRiskToDelete] = useState<RiskWithParams | null>(null);
 
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   // Fetch assets for asset names
-  const { data: assetsResponse } = useQuery({
+  const { data: assetsResponse } = useQuery<{ data: { assetId: string; name: string }[] }>({
     queryKey: ["/api/assets"],
   });
-  const assets = (assetsResponse as any)?.data || [];
+  const assets = assetsResponse?.data || [];
 
   // Create asset lookup map
   const assetLookup = useMemo(() => {
@@ -148,10 +152,11 @@ export function AssetGroupedRiskList({
     const groups = new Map<string, AssetRiskGroup>();
 
     risks.forEach(risk => {
-      const associatedAssets = Array.isArray(risk.associatedAssets) 
-        ? risk.associatedAssets 
-        : typeof risk.associatedAssets === 'string' 
-          ? risk.associatedAssets.split(',').map(a => a.trim())
+      const rawAssets = risk.associatedAssets as string[] | string | null | undefined;
+      const associatedAssets = Array.isArray(rawAssets)
+        ? rawAssets
+        : typeof rawAssets === "string"
+          ? rawAssets.split(",").map((a: string) => a.trim())
           : [];
 
       // If no associated assets, create an "Unassigned" group
@@ -182,7 +187,7 @@ export function AssetGroupedRiskList({
         }
       } else {
         // Create groups for each associated asset
-        associatedAssets.forEach(assetId => {
+        associatedAssets.forEach((assetId: string) => {
           if (!groups.has(assetId)) {
             groups.set(assetId, {
               assetId,
@@ -273,7 +278,7 @@ export function AssetGroupedRiskList({
     setExpandedAssets(newExpanded);
   };
 
-  const handleRiskClick = (risk: Risk) => {
+  const handleRiskClick = (risk: RiskWithParams) => {
     setSelectedRisk(risk);
     setIsDetailDialogOpen(true);
     onRiskSelect?.(risk);

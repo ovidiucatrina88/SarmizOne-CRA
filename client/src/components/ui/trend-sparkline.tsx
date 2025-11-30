@@ -1,4 +1,4 @@
-import { memo } from "react";
+import { memo, useMemo } from "react";
 
 type TrendSparklineProps = {
   values: number[];
@@ -24,6 +24,7 @@ export const TrendSparkline = memo(function TrendSparkline({
   const range = max - min || 1;
   const normalize = (v: number) => height - ((v - min) / range) * height;
   const step = values.length > 1 ? width / (values.length - 1) : width;
+  const gradientId = useMemo(() => `spark-fill-${Math.random().toString(36).slice(2, 8)}`, []);
 
   const path = values.reduce((acc, value, idx) => {
     const x = idx * step;
@@ -46,14 +47,15 @@ export const TrendSparkline = memo(function TrendSparkline({
     <svg viewBox={`0 0 ${width} ${height}`} className="w-full">
       {showFill && (
         <defs>
-          <linearGradient id="spark-fill" x1="0" y1="0" x2="0" y2="1">
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity="0.6" />
+            <stop offset="75%" stopColor={color} stopOpacity="0.15" />
             <stop offset="100%" stopColor={color} stopOpacity="0" />
           </linearGradient>
         </defs>
       )}
-      {showFill && <path d={area} fill="url(#spark-fill)" opacity="0.35" />}
-      <path d={path} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" />
+      {showFill && <path d={area} fill={`url(#${gradientId})`} opacity="0.45" />}
+      <path d={path} fill="none" stroke={color} strokeWidth="3.25" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 });

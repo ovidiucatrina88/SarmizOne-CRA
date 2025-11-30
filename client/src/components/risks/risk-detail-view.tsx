@@ -1,4 +1,4 @@
-import { Risk, Control } from "@shared/schema";
+import { RiskWithParams, Control } from "@shared/schema";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { ControlSuggestionsPanel } from "./ControlSuggestionsPanel";
 import { LossExceedanceCurveModern } from "@/components/ui/loss-exceedance-curve-modern";
 
 interface RiskDetailViewProps {
-  risk: Risk;
+  risk: RiskWithParams;
   onBack: () => void;
 }
 
@@ -57,23 +57,23 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
   const [activeTab, setActiveTab] = useState("suggestions");
   
   // Fetch controls associated with this risk
-  const { data: controlsData } = useQuery<Control[]>({
+  const { data: controlsData } = useQuery<{ data: Control[] }>({
     queryKey: ["/api/risks", risk.riskId, "controls"],
     enabled: !!risk.riskId,
   });
   
   // Ensure controls is always an array
-  const controls = Array.isArray(controlsData) ? controlsData : [];
+  const controls = Array.isArray(controlsData?.data) ? controlsData.data : Array.isArray(controlsData) ? (controlsData as any) : [];
   
   // Fetch IRIS benchmark data (same endpoint as dashboard)
-  const { data: irisData } = useQuery({
+  const { data: irisData } = useQuery<{ data?: any }>({
     queryKey: ["/api/dashboard/iris-benchmarks"],
   });
 
   // Construct exposure data from risk's inherent and residual risk values
   const currentExposure = useMemo(() => {
-    const inherent = parseFloat(risk.inherentRisk || '0');
-    const residual = parseFloat(risk.residualRisk || '0');
+    const inherent = Number(risk.inherentRisk || 0);
+    const residual = Number(risk.residualRisk || 0);
     
     if (residual === 0) return undefined;
     

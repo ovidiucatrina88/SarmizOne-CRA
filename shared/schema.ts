@@ -402,6 +402,44 @@ export const insertAssetRelationshipSchema = createInsertSchema(assetRelationshi
 });
 export type InsertAssetRelationship = z.infer<typeof insertAssetRelationshipSchema>;
 
+// Extended Risk shape that matches API payloads (FAIR parameters + metadata)
+export type RiskWithParams = Risk &
+  Partial<RiskCalculationParams> & {
+    threatCommunity?: string | null;
+    vulnerability?: string | null;
+    threatEventFrequency?: number | string | null;
+    threatEventFrequencyML?: number | string | null;
+    vulnerabilityRating?: number | string | null;
+    vulnerabilityRatingMin?: number | string | null;
+    vulnerabilityRatingMax?: number | string | null;
+    vulnerabilityRatingML?: number | string | null;
+    vulnerabilityRatingConfidence?: string | null;
+    primaryLossMin?: number | string | null;
+    primaryLossMax?: number | string | null;
+    primaryLossML?: number | string | null;
+    primaryLossConfidence?: string | null;
+    secondaryLossMin?: number | string | null;
+    secondaryLossMax?: number | string | null;
+    secondaryLossML?: number | string | null;
+    secondaryLossConfidence?: string | null;
+    threatEventFrequencyNotes?: string | null;
+    vulnerabilityNotes?: string | null;
+    primaryLossNotes?: string | null;
+    secondaryLossNotes?: string | null;
+    threatCapability?: number | string | null;
+    threatCapabilityML?: number | string | null;
+    controlStrength?: number | string | null;
+    controlStrengthMin?: number | string | null;
+    controlStrengthMax?: number | string | null;
+    controlStrengthML?: number | string | null;
+    controlStrengthConfidence?: string | null;
+    lossMagnitude?: number | string | null;
+    lossMagnitudeML?: number | string | null;
+    notes?: string | null;
+    itemType?: "template" | "instance" | null;
+    probableLossMagnitude?: number | string | null;
+  };
+
 /**
  * Risk Summary table to store comprehensive risk analytics and exposure data
  * Used for dashboard metrics and Loss Exceedance Curve calculations
@@ -556,6 +594,21 @@ export interface RiskCalculationParams {
   secondaryLossMagnitudeAvg?: number;
   secondaryLossMagnitudeMax?: number;
   secondaryLossMagnitudeConfidence?: string;
+
+  // Loss Event Frequency (calculated)
+  lossEventFrequencyMin?: number;
+  lossEventFrequencyAvg?: number;
+  lossEventFrequencyMax?: number;
+  lossEventFrequencyConfidence?: string;
+
+  // Loss Magnitude (calculated)
+  lossMagnitudeMin?: number;
+  lossMagnitudeAvg?: number;
+  lossMagnitudeMax?: number;
+  lossMagnitudeConfidence?: string;
+
+  // Probable loss magnitude
+  probableLossMagnitude?: number;
   
   // Pre-calculated risk values
   inherentRisk?: number;

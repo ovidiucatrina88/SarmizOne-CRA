@@ -38,87 +38,84 @@ export default function VulnerabilitiesPage() {
     queryKey: ["/api/assets/vulnerabilities"],
   });
 
+  // Fetch vulnerability summary with trends
+  const { data: summaryResponse } = useQuery({
+    queryKey: ["/api/assets/vulnerabilities/summary"],
+  });
+
+  const summary = summaryResponse?.data || {
+    stats: { total: 0, critical: 0, high: 0, open: 0, resolved: 0 },
+    trends: {
+      total: { series: [], delta: "0% vs last month" },
+      criticalHigh: { series: [], delta: "0% vs last month" },
+      open: { series: [], delta: "0% vs last month" },
+      resolved: { series: [], delta: "0% vs last month" }
+    }
+  };
+
   const vulns = vulnerabilities?.data || [];
 
-  const stats = useMemo(() => {
-    const critical = vulns.filter((v: any) => v.severity === "critical").length;
-    const high = vulns.filter((v: any) => v.severity === "high").length;
-    const open = vulns.filter((v: any) => v.status === "open").length;
-    const resolved = vulns.filter((v: any) => v.status === "resolved").length;
-    return {
-      total: vulns.length,
-      critical,
-      high,
-      open,
-      resolved,
-    };
-  }, [vulns]);
-
   const deleteMutation = useMutation({
-    mutationFn: (vulnerabilityId: number) => apiRequest("DELETE", `/api/vulnerabilities/${vulnerabilityId}`),
+    mutationFn: async (id: number) => {
+      await apiRequest("DELETE", `/api/assets/vulnerabilities/${id}`);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/assets/vulnerabilities"] });
-      toast({ title: "Success", description: "Vulnerability deleted successfully" });
+      queryClient.invalidateQueries({ queryKey: ["/api/assets/vulnerabilities/summary"] });
+      toast({
+        title: "Vulnerability deleted",
+        description: "The vulnerability has been removed successfully.",
+      });
     },
-    onError: (error: any) => {
+    onError: () => {
       toast({
         title: "Error",
-        description: error.message || "Failed to delete vulnerability",
+        description: "Failed to delete vulnerability.",
         variant: "destructive",
       });
     },
   });
 
-  const filteredVulns = vulns.filter((vuln: any) => {
-    const matchesSearch =
-      !searchTerm ||
-      vuln.cve_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vuln.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vuln.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSeverity = severityFilter === "all" || vuln.severity === severityFilter;
-    const matchesStatus = statusFilter === "all" || vuln.status === statusFilter;
-    return matchesSearch && matchesSeverity && matchesStatus;
-  });
-
   const severityStyles: Record<string, string> = {
-    critical: "bg-gradient-to-r from-rose-500/20 to-orange-500/20 text-rose-100 border border-rose-400/40",
-    high: "bg-rose-500/15 text-rose-100 border border-rose-400/40",
-    medium: "bg-amber-500/15 text-amber-100 border border-amber-400/40",
-    low: "bg-sky-500/15 text-sky-100 border border-sky-400/40",
-    info: "bg-white/10 border border-white/20 text-white/70",
+    critical: "bg-red-500/20 text-red-400 border border-red-500/30",
+    high: "bg-orange-500/20 text-orange-400 border border-orange-500/30",
+    medium: "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30",
+    low: "bg-blue-500/20 text-blue-400 border border-blue-500/30",
+    info: "bg-gray-500/20 text-gray-400 border border-gray-500/30",
   };
 
-  const statusConfig: Record<
-    string,
-    {
-      pill: string;
-      icon: React.ReactNode;
-    }
-  > = {
+  const statusConfig: Record<string, { pill: string; icon: React.ReactNode }> = {
     open: {
-      pill: "bg-rose-500/15 text-rose-200 border border-rose-400/30",
-      icon: <AlertTriangle className="h-4 w-4" />,
+      pill: "bg-red-500/10 text-red-400 border border-red-500/20",
+      icon: <AlertTriangle className="h-3 w-3" />,
     },
     in_progress: {
-      pill: "bg-amber-500/15 text-amber-200 border border-amber-400/30",
-      icon: <Clock className="h-4 w-4" />,
+      pill: "bg-blue-500/10 text-blue-400 border border-blue-500/20",
+      icon: <Clock className="h-3 w-3" />,
     },
     mitigated: {
-      pill: "bg-blue-500/15 text-blue-200 border border-blue-400/30",
-      icon: <Shield className="h-4 w-4" />,
+      pill: "bg-green-500/10 text-green-400 border border-green-500/20",
+      icon: <Shield className="h-3 w-3" />,
     },
     resolved: {
-      pill: "bg-emerald-500/15 text-emerald-200 border border-emerald-400/30",
-      icon: <CheckCircle className="h-4 w-4" />,
+      pill: "bg-gray-500/10 text-gray-400 border border-gray-500/20",
+      icon: <CheckCircle className="h-3 w-3" />,
     },
   };
 
-  const generateSeries = (seed: number) => {
-    const base = seed || 10;
-    return Array.from({ length: 7 }).map((_, index) =>
-      Number((base * (1 + Math.sin(index / 1.5) * 0.08)).toFixed(2)),
-    );
-  };
+  const filteredVulns = useMemo(() => {
+    return vulns.filter((vuln: any) => {
+      const matchesSearch =
+        vuln.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vuln.cve_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        vuln.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSeverity = severityFilter === "all" || vuln.severity === severityFilter;
+      const matchesStatus = statusFilter === "all" || vuln.status === statusFilter;
+      return matchesSearch && matchesSeverity && matchesStatus;
+    });
+  }, [vulns, searchTerm, severityFilter, statusFilter]);
+
+
 
   if (isLoading) {
     return (
@@ -164,26 +161,31 @@ export default function VulnerabilitiesPage() {
     >
       <div className="space-y-8">
         <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard label="Total Findings" value={stats.total.toLocaleString()} delta="+5% vs last month" trendSeries={generateSeries(stats.total)} />
+          <KpiCard
+            label="Total Findings"
+            value={summary.stats.total.toLocaleString()}
+            delta={summary.trends.total.delta}
+            trendSeries={summary.trends.total.series}
+          />
           <KpiCard
             label="Critical + High"
-            value={(stats.critical + stats.high).toLocaleString()}
-            delta="-2% WoW"
-            trendSeries={generateSeries(stats.critical + stats.high)}
+            value={(summary.stats.critical + summary.stats.high).toLocaleString()}
+            delta={summary.trends.criticalHigh.delta}
+            trendSeries={summary.trends.criticalHigh.series}
             trendColor="#fca5a5"
           />
           <KpiCard
             label="Open"
-            value={stats.open.toLocaleString()}
-            delta="+3 backlog"
-            trendSeries={generateSeries(stats.open)}
+            value={summary.stats.open.toLocaleString()}
+            delta={summary.trends.open.delta}
+            trendSeries={summary.trends.open.series}
             trendColor="#fdba74"
           />
           <KpiCard
             label="Resolved"
-            value={stats.resolved.toLocaleString()}
-            delta="+12 this week"
-            trendSeries={generateSeries(stats.resolved)}
+            value={summary.stats.resolved.toLocaleString()}
+            delta={summary.trends.resolved.delta}
+            trendSeries={summary.trends.resolved.series}
             trendColor="#86efac"
           />
         </section>
