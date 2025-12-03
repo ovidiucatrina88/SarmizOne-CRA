@@ -13,7 +13,7 @@ import IRISBenchmarkCard from "@/components/dashboard/iris-benchmark-card";
 import { RiskCategorySeverityCard } from "@/components/dashboard/risk-category-severity-card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-type TrendDirection = "up" | "down" | "flat";
+
 
 interface WatchlistRow {
   name: string;
@@ -21,17 +21,7 @@ interface WatchlistRow {
   loss: string;
   actor: string;
   category: string;
-  trend: {
-    direction: TrendDirection;
-    value: string;
-  };
 }
-
-const FALLBACK_SCENARIOS = [
-  { name: "Credit Monitoring – DDoS", likelihood: "↓ 25%", loss: "↓ $122" },
-  { name: "Ransomware + Exfiltration", likelihood: "↓ 21%", loss: "↓ $25" },
-  { name: "Digital – APTs", likelihood: "↓ 18%", loss: "↓ $21" },
-];
 
 const FALLBACK_WATCHLIST: WatchlistRow[] = [
   {
@@ -40,7 +30,6 @@ const FALLBACK_WATCHLIST: WatchlistRow[] = [
     loss: "$18K",
     actor: "Privileged Insider",
     category: "Data Exfiltration",
-    trend: { direction: "up", value: "+5%" },
   },
   {
     name: "Insider shares PII",
@@ -48,7 +37,6 @@ const FALLBACK_WATCHLIST: WatchlistRow[] = [
     loss: "$6.6M",
     actor: "Privileged Insider",
     category: "Data Exfiltration",
-    trend: { direction: "down", value: "-2%" },
   },
   {
     name: "Company IP leaked",
@@ -56,7 +44,6 @@ const FALLBACK_WATCHLIST: WatchlistRow[] = [
     loss: "$18K",
     actor: "Privileged Insider",
     category: "Data Exfiltration",
-    trend: { direction: "flat", value: "0%" },
   },
   {
     name: "Threat actor steals model",
@@ -64,15 +51,10 @@ const FALLBACK_WATCHLIST: WatchlistRow[] = [
     loss: "$348K",
     actor: "Cyber Criminal",
     category: "Data Exfiltration",
-    trend: { direction: "up", value: "+8%" },
   },
 ];
 
-const TOP_CONTROLS = [
-  { code: "THM", name: "Application Threat Modeling", score: "95%" },
-  { code: "NDR", name: "Network Detection & Response", score: "95%" },
-  { code: "CSP", name: "Cyber Security Policies", score: "95%" },
-];
+
 
 
 
@@ -164,6 +146,9 @@ export default function Dashboard() {
   const implementedControls = apiData?.controlSummary?.implementedControls ?? 0;
   const residualExposure = apiData?.riskSummary?.totalResidualRisk ?? 0;
 
+  console.log("Dashboard API Data:", apiData);
+  console.log("Top Controls:", apiData?.topControls);
+
   const kpiTiles = [
     {
       label: "Total Assets",
@@ -201,16 +186,6 @@ export default function Dashboard() {
       ? (risksData as any[])
       : [];
 
-  const scenarioTrends =
-    safeRisks.length > 0
-      ? safeRisks.slice(0, 3).map((risk, index) => ({
-        name: risk?.name || FALLBACK_SCENARIOS[index]?.name || `Scenario ${index + 1}`,
-        likelihood: risk?.likelihoodChange || FALLBACK_SCENARIOS[index]?.likelihood || "±0%",
-        loss: risk?.lossChange || FALLBACK_SCENARIOS[index]?.loss || "±$0",
-        descriptor: risk?.category || "Key Scenario",
-      }))
-      : FALLBACK_SCENARIOS.map((scenario) => ({ ...scenario, descriptor: "Key Scenario" }));
-
   const watchlistData: WatchlistRow[] =
     safeRisks.length > 0
       ? safeRisks.slice(0, 4).map((risk, index) => ({
@@ -221,11 +196,6 @@ export default function Dashboard() {
           : FALLBACK_WATCHLIST[index]?.loss || formatCurrency((index + 1) * 10000),
         actor: risk?.threatActor || FALLBACK_WATCHLIST[index]?.actor || "Unknown Actor",
         category: risk?.category || FALLBACK_WATCHLIST[index]?.category || "Unknown",
-        trend:
-          FALLBACK_WATCHLIST[index]?.trend || {
-            direction: index % 2 === 0 ? "up" : "down",
-            value: index % 2 === 0 ? "+4%" : "-3%",
-          },
       }))
       : FALLBACK_WATCHLIST;
 
@@ -453,30 +423,33 @@ export default function Dashboard() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-2">
-          <GlowCard variant="emerald" className="space-y-5">
+          <GlowCard variant="purple" className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs uppercase tracking-[0.35em] text-white/70">Scenario Trends</p>
-                <h3 className="text-2xl font-semibold text-white">Monitored Events</h3>
+                <p className="text-xs uppercase tracking-[0.35em] text-white/70">Risk Scenarios</p>
+                <h3 className="text-2xl font-semibold text-white">Data Exfiltration Watchlist</h3>
               </div>
-              <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/80">Live Feed</span>
+              <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/80">Updated 5 mins ago</span>
             </div>
-            <div className="space-y-3">
-              {scenarioTrends.map((scenario) => (
-                <div
-                  key={scenario.name}
-                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white"
-                >
-                  <div>
-                    <p className="font-medium">{scenario.name}</p>
-                    <p className="text-xs text-white/60">{scenario.descriptor}</p>
-                  </div>
-                  <div className="flex gap-5 text-emerald-200">
-                    <span>{scenario.likelihood}</span>
-                    <span>{scenario.loss}</span>
-                  </div>
-                </div>
-              ))}
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm text-white/80">
+                <thead className="text-xs uppercase tracking-[0.3em] text-white/40">
+                  <tr>
+                    <th className="px-4 py-3">Name</th>
+                    <th className="px-4 py-3">Likelihood</th>
+                    <th className="px-4 py-3">Loss Magnitude</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {watchlistData.map((row) => (
+                    <tr key={row.name}>
+                      <td className="px-4 py-4 font-medium text-white">{row.name}</td>
+                      <td className="px-4 py-4">{row.likelihood}</td>
+                      <td className="px-4 py-4">{row.loss}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </GlowCard>
 
@@ -489,66 +462,34 @@ export default function Dashboard() {
               <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/70">Maturity</span>
             </div>
             <div className="space-y-4">
-              {TOP_CONTROLS.map((control) => (
-                <div
-                  key={control.code}
-                  className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/3 px-4 py-3"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="rounded-2xl bg-gradient-to-br from-primary to-primary/70 px-4 py-2 text-sm font-semibold text-foreground">
-                      {control.code}
+              {apiData?.topControls && apiData.topControls.length > 0 ? (
+                apiData.topControls.map((control: any) => (
+                  <div
+                    key={control.code}
+                    className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/3 px-4 py-3"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="rounded-2xl bg-gradient-to-br from-primary to-primary/70 px-4 py-2 text-sm font-semibold text-foreground">
+                        {control.code}
+                      </div>
+                      <div>
+                        <p className="text-base font-medium text-white">{control.name}</p>
+                        <p className="text-xs text-white/60">ROI & Risk Reduction</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-base font-medium text-white">{control.name}</p>
-                      <p className="text-xs text-white/60">Continuous monitoring</p>
-                    </div>
+                    <span className="rounded-full bg-emerald-500/10 px-4 py-1 text-sm text-emerald-200">
+                      {control.score}
+                    </span>
                   </div>
-                  <span className="rounded-full bg-emerald-500/10 px-4 py-1 text-sm text-emerald-200">
-                    {control.score}
-                  </span>
+                ))
+              ) : (
+                <div className="flex h-32 items-center justify-center rounded-2xl border border-white/10 bg-white/3 px-4 text-center text-sm text-muted-foreground">
+                  No implemented controls found.
                 </div>
-              ))}
+              )}
             </div>
           </GlowCard>
         </section>
-
-        <GlowCard variant="purple" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs uppercase tracking-[0.35em] text-white/70">Risk Scenarios</p>
-              <h3 className="text-2xl font-semibold text-white">Data Exfiltration Watchlist</h3>
-            </div>
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs text-white/80">Updated 5 mins ago</span>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-left text-sm text-white/80">
-              <thead className="text-xs uppercase tracking-[0.3em] text-white/40">
-                <tr>
-                  <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">Likelihood</th>
-                  <th className="px-4 py-3">Loss Magnitude</th>
-                  <th className="px-4 py-3">Signal</th>
-                  <th className="px-4 py-3">Threat Actor</th>
-                  <th className="px-4 py-3">Category</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-white/5">
-                {watchlistData.map((row) => (
-                  <tr key={row.name}>
-                    <td className="px-4 py-4 font-medium text-white">{row.name}</td>
-                    <td className="px-4 py-4">{row.likelihood}</td>
-                    <td className="px-4 py-4">{row.loss}</td>
-                    <td className="px-4 py-4">
-                      <MetricPill direction={row.trend.direction} label={row.trend.value} />
-                    </td>
-                    <td className="px-4 py-4">{row.actor}</td>
-                    <td className="px-4 py-4">{row.category}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </GlowCard>
 
         <section className="grid gap-6 lg:grid-cols-2">
           <GlowCard>

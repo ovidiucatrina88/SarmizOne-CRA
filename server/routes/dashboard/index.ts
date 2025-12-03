@@ -17,65 +17,65 @@ router.get('/summary', async (req, res) => {
   try {
     // Get risks for summary calculations - remove filter parameter for compatibility
     const risks = await riskService.getAllRisks();
-    
+
     // Calculate risk metrics
     const totalRisks = risks.length;
     const criticalRisks = risks.filter(r => r.severity === 'critical').length;
     const highRisks = risks.filter(r => r.severity === 'high').length;
     const mediumRisks = risks.filter(r => r.severity === 'medium').length;
     const lowRisks = risks.filter(r => r.severity === 'low').length;
-    
+
     // Calculate risk category metrics
     const operationalRisks = risks.filter(r => r.riskCategory === 'operational').length;
     const strategicRisks = risks.filter(r => r.riskCategory === 'strategic').length;
     const complianceRisks = risks.filter(r => r.riskCategory === 'compliance').length;
     const financialRisks = risks.filter(r => r.riskCategory === 'financial').length;
-    
+
     // Calculate total risk exposure with detailed logging
     let totalInherentRisk = 0;
     let totalResidualRisk = 0;
-    
+
     console.log(`[Dashboard] Processing ${risks.length} risks for exposure calculation`);
-    
+
     risks.forEach((risk, index) => {
       const inherentRiskValue = parseFloat(risk.inherentRisk) || 0;
       const residualRiskValue = parseFloat(risk.residualRisk) || 0;
-      
+
       if (index < 3) { // Log first 3 risks for debugging
         console.log(`[Dashboard] Risk ${risk.riskId}: inherent=${risk.inherentRisk} (${inherentRiskValue}), residual=${risk.residualRisk} (${residualRiskValue})`);
       }
-      
+
       totalInherentRisk += inherentRiskValue;
       totalResidualRisk += residualRiskValue;
     });
-    
+
     console.log(`[Dashboard] Total calculated exposure - Inherent: ${totalInherentRisk}, Residual: ${totalResidualRisk}`);
-    
+
     // Get controls for dashboard - remove filter parameter for compatibility
     const controls = await controlService.getAllControls();
-    const implementedControls = controls.filter(c => 
+    const implementedControls = controls.filter(c =>
       c.implementationStatus === 'fully_implemented').length;
-    const inProgressControls = controls.filter(c => 
+    const inProgressControls = controls.filter(c =>
       c.implementationStatus === 'in_progress').length;
-    const plannedControls = controls.filter(c => 
+    const plannedControls = controls.filter(c =>
       c.implementationStatus === 'planned').length;
-    const notImplementedControls = controls.filter(c => 
+    const notImplementedControls = controls.filter(c =>
       c.implementationStatus === 'not_implemented').length;
-      
+
     // Get assets for dashboard - remove filter parameter for compatibility
     const assets = await assetService.getAllAssets();
-    
+
     // Get recent activity
     // Get recent activity logs using correct column names from database
     const activityQuery = await db.execute(sql`SELECT activity, "user", entity, entity_type, entity_id, created_at FROM activity_logs ORDER BY created_at DESC LIMIT 10`);
     const recentLogs = activityQuery.rows || [];
-    
+
     // Calculate exposure curve data from current risks
     const exposureCurveData = [];
     const sortedRisks = [...risks]
       .filter(r => parseFloat(r.residualRisk) > 0)
       .sort((a, b) => parseFloat(b.residualRisk) - parseFloat(a.residualRisk));
-    
+
     if (sortedRisks.length > 0) {
       sortedRisks.forEach((risk, index) => {
         const impact = parseFloat(risk.residualRisk);
@@ -83,7 +83,7 @@ router.get('/summary', async (req, res) => {
         exposureCurveData.push({ impact, probability });
       });
     }
-    
+
     // Calculate percentiles from current data
     const residualValues = risks.map(r => parseFloat(r.residualRisk)).filter(v => v > 0).sort((a, b) => b - a);
     const minimumExposure = residualValues.length > 0 ? Math.min(...residualValues) : 0;
@@ -92,9 +92,100 @@ router.get('/summary', async (req, res) => {
     const medianExposure = residualValues.length > 0 ? residualValues[Math.floor(residualValues.length / 2)] : 0;
     const percentile95Exposure = residualValues.length > 0 ? residualValues[Math.floor(residualValues.length * 0.05)] || maximumExposure : 0;
     const percentile99Exposure = residualValues.length > 0 ? residualValues[Math.floor(residualValues.length * 0.01)] || maximumExposure : 0;
-    
+
     console.log(`[Dashboard] Calculated exposure metrics - Min: ${minimumExposure}, Max: ${maximumExposure}, Mean: ${meanExposure}`);
-    
+
+    // Top performing controls based on ROI and Risk Reduction
+    const topControls = controls
+      .filter(c =>
+        c.implementationStatus === 'fully_implemented' ||
+        c.implementationStatus === 'in_progress'
+      )
+      .map(c => {
+        // 1. Calculate Risk Reduction
+        // Find all risks associated with this control
+        // Note: c.associatedRisks is an array of strings (risk IDs)
+        const associatedRiskIds = c.associatedRisks || [];
+        const associatedRisks = risks.filter(r => associatedRiskIds.includes(r.id.toString()) || associatedRiskIds.includes(r.riskId));
+
+        let totalRiskReduction = 0;
+
+        const uniqueAssetIds = new Set<string>();
+
+        associatedRisks.forEach(r => {
+          // Calculate Inherent Risk
+          // Use the pre-calculated inherentRisk column if available, otherwise try to calculate from parameters
+          let inherentRisk = parseFloat(r.inherentRisk || '0');
+
+          if (inherentRisk === 0 && r.parameters) {
+            // Try to calculate from JSON parameters if column is empty
+            const params = r.parameters as any;
+            const lossMagnitude = parseFloat(params.primaryLossMagnitude?.avg || '0');
+            const probability = parseFloat(params.probabilityOfAction?.avg || '0');
+            inherentRisk = lossMagnitude * probability;
+          }
+
+          // Calculate reduction based on Historical Data (Inherent - Residual)
+          // This aligns with the Control ROI page logic
+          let residualRisk = parseFloat(r.residualRisk || '0');
+
+          // Fallback if residual risk is missing (consistent with frontend logic)
+          if (residualRisk === 0) {
+            residualRisk = inherentRisk * 0.5;
+          }
+
+          const reduction = Math.max(0, inherentRisk - residualRisk);
+          totalRiskReduction += reduction;
+
+          // Collect associated assets for cost calculation
+          if (r.associatedAssets && Array.isArray(r.associatedAssets)) {
+            r.associatedAssets.forEach(assetId => uniqueAssetIds.add(assetId));
+          }
+        });
+
+        // 2. Calculate Total Cost (Hybrid Approach)
+        const implementationCost = parseFloat(c.implementationCost || '0');
+
+        // Calculate total agent count from all unique assets associated with the risks this control mitigates
+        let totalAgentCount = 0;
+        if (c.isPerAgent) {
+          uniqueAssetIds.forEach(assetId => {
+            const asset = assets.find(a => a.assetId === assetId);
+            if (asset) {
+              totalAgentCount += (asset.agentCount || 0);
+            }
+          });
+        }
+
+        const agentCost = c.isPerAgent
+          ? totalAgentCount * parseFloat(c.costPerAgent || '0')
+          : 0;
+
+        const totalCost = implementationCost + agentCost;
+
+        // 3. Calculate ROI
+        // ROI = (Gain from Investment - Cost of Investment) / Cost of Investment
+        // If cost is 0, ROI is theoretically infinite. We'll cap it or handle it gracefully.
+        let roi = 0;
+        if (totalCost > 0) {
+          roi = ((totalRiskReduction - totalCost) / totalCost) * 100;
+        } else if (totalRiskReduction > 0) {
+          roi = 9999; // Infinite ROI placeholder
+        }
+
+        return {
+          code: c.controlId,
+          name: c.name,
+          roi: roi,
+          riskReduction: totalRiskReduction,
+          cost: totalCost,
+          // Keep score for frontend compatibility, but format it as ROI
+          score: totalCost === 0 && totalRiskReduction > 0 ? "∞% ROI" : `${Math.round(roi)}% ROI`
+        };
+      })
+      .sort((a, b) => b.roi - a.roi)
+      .slice(0, 5);
+
     return sendSuccess(res, {
       riskSummary: {
         totalRisks,
@@ -104,8 +195,8 @@ router.get('/summary', async (req, res) => {
         lowRisks,
         totalInherentRisk,
         totalResidualRisk,
-        riskReduction: totalInherentRisk > 0 
-          ? (1 - (totalResidualRisk / totalInherentRisk)) * 100 
+        riskReduction: totalInherentRisk > 0
+          ? (1 - (totalResidualRisk / totalInherentRisk)) * 100
           : 0,
         // Use freshly calculated exposure curve data
         exposureCurveData,
@@ -128,8 +219,8 @@ router.get('/summary', async (req, res) => {
         inProgressControls,
         plannedControls,
         notImplementedControls,
-        implementationRate: controls.length > 0 
-          ? (implementedControls / controls.length) * 100 
+        implementationRate: controls.length > 0
+          ? (implementedControls / controls.length) * 100
           : 0
       },
       assetSummary: {
@@ -145,7 +236,8 @@ router.get('/summary', async (req, res) => {
           other: assets.filter(a => a.type === 'other').length,
         }
       },
-      recentActivity: recentLogs || []
+      recentActivity: recentLogs || [],
+      topControls // Add topControls to response
     });
   } catch (error) {
     return sendError(res, error);
@@ -157,11 +249,11 @@ router.get('/risk-summary/latest', async (req, res) => {
   try {
     const { entityId } = req.query;
     const summary = await riskSummaryService.getLatestRiskSummary(entityId as string);
-    
+
     if (!summary) {
       return sendError(res, { message: 'No risk summary found' }, 404);
     }
-    
+
     return sendSuccess(res, summary);
   } catch (error) {
     return sendError(res, error);

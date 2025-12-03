@@ -75,8 +75,6 @@ export default function Assets() {
   };
 
 
-
-
   if (isLoading) {
     return (
       <Layout pageTitle="Asset Inventory" pageDescription="Manage your organization's assets, architecture, and risk posture.">

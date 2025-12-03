@@ -605,6 +605,12 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
             )}
           />
 
+
+
+
+
+
+
           <FormField
             control={form.control}
             name="parentId"

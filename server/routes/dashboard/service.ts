@@ -199,6 +199,33 @@ export class DashboardService {
       const controlTrend = this.generateTrend(controlsByStatus.fully_implemented + controlsByStatus.in_progress);
       const exposureTrend = this.generateTrend(totalResidualRisk);
 
+      // Top performing controls
+      const topControls = controls
+        .filter(c =>
+          c.implementationStatus === 'fully_implemented' ||
+          c.implementationStatus === 'in_progress'
+        )
+        .sort((a, b) => (b.controlEffectiveness || 0) - (a.controlEffectiveness || 0))
+        .slice(0, 5)
+        .map(c => {
+          let score = c.controlEffectiveness || 0;
+          // Handle potential data issues where score is > 1
+          if (score > 1) {
+            // If score is like 8, 9, 10, maybe it's out of 10?
+            // If score is like 80, 90, 100, maybe it's out of 100?
+            if (score <= 10) score = score / 10;
+            else if (score <= 100) score = score / 100;
+            else score = 1; // Cap at 100%
+          }
+          return {
+            code: c.controlId,
+            name: c.name,
+            score: `${Math.round(score * 100)}%`
+          };
+        });
+
+      console.log("Dashboard Summary - Top Controls:", JSON.stringify(topControls, null, 2));
+
       return {
         counts: {
           risks: risks.length,
@@ -235,6 +262,8 @@ export class DashboardService {
         controlEffectiveness: formattedControlEffectiveness,
         // Add risk reduction data
         riskReduction: riskReductionData,
+        // Add top performing controls
+        topControls,
         // Add trends
         trends: {
           assets: assetTrend,
