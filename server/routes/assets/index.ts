@@ -347,8 +347,42 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Update an asset
+// Update an asset (PUT)
 router.put('/:id', validateId, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const updates = req.body;
+
+    // Check if asset exists
+    const existingAsset = await assetService.getAsset(id);
+    if (!existingAsset) {
+      return sendError(res, { message: 'Asset not found' }, 404);
+    }
+
+    // Check if assetId is changed and if it conflicts with another asset
+    if (updates.assetId && updates.assetId !== existingAsset.assetId) {
+      const conflictingAsset = await assetService.getAssetByAssetId(updates.assetId);
+      if (conflictingAsset) {
+        return sendError(res, { message: `Asset ID ${updates.assetId} already exists` }, 400);
+      }
+    }
+
+    // Merge updates with existing asset data
+    const assetData = {
+      ...existingAsset,
+      ...updates,
+      id // Ensure ID stays the same
+    };
+
+    const updatedAsset = await assetService.updateAsset(id, assetData);
+    return sendSuccess(res, updatedAsset);
+  } catch (error) {
+    return sendError(res, error);
+  }
+});
+
+// Update an asset (PATCH) - same logic as PUT since we merge updates
+router.patch('/:id', validateId, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const updates = req.body;

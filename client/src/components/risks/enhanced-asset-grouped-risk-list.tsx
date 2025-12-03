@@ -38,20 +38,24 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  Sheet,
+  SheetContent,
+} from "@/components/ui/sheet";
+import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { 
-  Building2, 
-  ChevronDown, 
-  ChevronRight, 
-  Edit, 
-  ExternalLink, 
+import {
+  Building2,
+  ChevronDown,
+  ChevronRight,
+  Edit,
+  ExternalLink,
   Trash2,
-  AlertTriangle 
+  AlertTriangle
 } from "lucide-react";
 
 interface AssetGroupedRiskListProps {
@@ -75,11 +79,11 @@ interface AssetRiskGroup {
   };
 }
 
-export function EnhancedAssetGroupedRiskList({ 
-  risks, 
-  onRiskSelect, 
-  onRiskEdit, 
-  onRiskDelete 
+export function EnhancedAssetGroupedRiskList({
+  risks,
+  onRiskSelect,
+  onRiskEdit,
+  onRiskDelete
 }: AssetGroupedRiskListProps) {
   const [filters, setFilters] = useState<RiskFilters>({
     asset: '',
@@ -114,9 +118,9 @@ export function EnhancedAssetGroupedRiskList({
     return risks.filter(risk => {
       // Asset filter
       if (filters.asset) {
-        const associatedAssets = Array.isArray(risk.associatedAssets) 
-          ? risk.associatedAssets 
-          : typeof risk.associatedAssets === 'string' 
+        const associatedAssets = Array.isArray(risk.associatedAssets)
+          ? risk.associatedAssets
+          : typeof risk.associatedAssets === 'string'
             ? (risk.associatedAssets as string).split(',').map((a: string) => a.trim())
             : [];
         if (!associatedAssets.includes(filters.asset)) {
@@ -141,11 +145,11 @@ export function EnhancedAssetGroupedRiskList({
   // Group filtered risks by asset
   const assetGroups = useMemo(() => {
     const groups = new Map<string, AssetRiskGroup>();
-    
+
     filteredRisks.forEach(risk => {
-      const associatedAssets = Array.isArray(risk.associatedAssets) 
-        ? risk.associatedAssets 
-        : typeof risk.associatedAssets === 'string' 
+      const associatedAssets = Array.isArray(risk.associatedAssets)
+        ? risk.associatedAssets
+        : typeof risk.associatedAssets === 'string'
           ? (risk.associatedAssets as string).split(',').map((a: string) => a.trim())
           : [];
 
@@ -166,21 +170,21 @@ export function EnhancedAssetGroupedRiskList({
             riskCounts: { critical: 0, high: 0, medium: 0, low: 0 }
           });
         }
-        
+
         const group = groups.get(groupKey)!;
         group.risks.push(risk);
         group.totalExposure += Number(risk.residualRisk) || 0;
-        
+
         // Update severity counts and highest severity
         const severity = risk.severity as keyof typeof group.riskCounts;
         if (severity in group.riskCounts) {
           group.riskCounts[severity]++;
-          
+
           // Update highest severity (priority: critical > high > medium > low)
           const severityPriority = { critical: 4, high: 3, medium: 2, low: 1 };
           const currentPriority = severityPriority[group.highestSeverity as keyof typeof severityPriority] || 0;
           const riskPriority = severityPriority[severity];
-          
+
           if (riskPriority > currentPriority) {
             group.highestSeverity = severity;
           }
@@ -233,7 +237,7 @@ export function EnhancedAssetGroupedRiskList({
   const getSeverityColor = (severity: string) => {
     const colors = {
       critical: "bg-red-500 text-white",
-      high: "bg-orange-500 text-white", 
+      high: "bg-orange-500 text-white",
       medium: "bg-yellow-500 text-black",
       low: "bg-green-500 text-white"
     };
@@ -286,7 +290,7 @@ export function EnhancedAssetGroupedRiskList({
         ) : (
           assetGroups.map(group => (
             <Card key={group.assetId} className="overflow-hidden bg-gray-800 border-gray-600">
-              <Collapsible 
+              <Collapsible
                 open={expandedAssets.has(group.assetId)}
                 onOpenChange={() => toggleAssetExpansion(group.assetId)}
               >
@@ -340,7 +344,7 @@ export function EnhancedAssetGroupedRiskList({
                     </div>
                   </CardHeader>
                 </CollapsibleTrigger>
-                
+
                 <CollapsibleContent>
                   <CardContent className="pt-0 bg-gray-800">
                     <Table>
@@ -355,7 +359,11 @@ export function EnhancedAssetGroupedRiskList({
                       </TableHeader>
                       <TableBody>
                         {group.risks.map(risk => (
-                          <TableRow key={risk.id} className="cursor-pointer hover:bg-gray-700 border-gray-600">
+                          <TableRow
+                            key={risk.id}
+                            className="cursor-pointer hover:bg-gray-700 border-gray-600"
+                            onClick={() => handleRiskClick(risk)}
+                          >
                             <TableCell>
                               <div>
                                 <div className="font-medium text-white">{risk.name}</div>
@@ -424,21 +432,20 @@ export function EnhancedAssetGroupedRiskList({
         )}
       </div>
 
-      {/* Risk Detail Dialog */}
+      {/* Risk Detail Sheet */}
       {selectedRisk && (
-        <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto bg-gray-800 border-gray-600">
-            <DialogHeader>
-              <DialogTitle className="text-white">{selectedRisk.name}</DialogTitle>
-            </DialogHeader>
-            <RiskDetailView risk={selectedRisk} onBack={() => setIsDetailDialogOpen(false)} />
-          </DialogContent>
-        </Dialog>
+        <Sheet open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+          <SheetContent side="right" className="w-[90vw] sm:max-w-[900px] p-0 bg-gray-900 border-l border-gray-800 overflow-y-auto">
+            <div className="h-full">
+              <RiskDetailView risk={selectedRisk} onBack={() => setIsDetailDialogOpen(false)} />
+            </div>
+          </SheetContent>
+        </Sheet>
       )}
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog 
-        open={!!riskToDelete} 
+      <AlertDialog
+        open={!!riskToDelete}
         onOpenChange={() => setRiskToDelete(null)}
       >
         <AlertDialogContent className="bg-gray-800 border-gray-600">

@@ -6,7 +6,7 @@ import { relations, eq, sql } from "drizzle-orm";
 // Cost Module Types
 export const costModuleTypeEnum = pgEnum('cost_module_type', [
   'fixed',
-  'per_event', 
+  'per_event',
   'per_hour',
   'percentage'
 ]);
@@ -102,7 +102,7 @@ export const currencyEnum = pgEnum('currency', ['USD', 'EUR']);
 
 export const userRoleEnum = pgEnum('user_role', [
   'admin',
-  'analyst', 
+  'analyst',
   'viewer'
 ]);
 
@@ -207,10 +207,34 @@ export const risks = pgTable('risks', {
   inherentRisk: numeric('inherent_risk', { precision: 15, scale: 2 }),
   residualRisk: numeric('residual_risk', { precision: 15, scale: 2 }),
   associatedAssets: text('associated_assets').array().default(sql`ARRAY[]::text[]`),
+  parameters: json('parameters').$type<RiskParameters>().default(sql`'{}'::json`), // Store full FAIR parameters (Min, Max, Avg, Confidence)
   libraryItemId: integer('library_item_id'), // Reference to risk library template
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
+
+// FAIR Parameter Types
+export interface FairParameter {
+  min: number;
+  avg: number;
+  max: number;
+  confidence: string;
+}
+
+export interface RiskParameters {
+  contactFrequency?: FairParameter;
+  probabilityOfAction?: FairParameter;
+  threatCapability?: FairParameter;
+  resistanceStrength?: FairParameter;
+  primaryLossMagnitude?: FairParameter;
+  secondaryLossEventFrequency?: FairParameter;
+  secondaryLossMagnitude?: FairParameter;
+  // Calculated parameters can also be stored here if needed
+  threatEventFrequency?: FairParameter;
+  vulnerability?: FairParameter;
+  lossEventFrequency?: FairParameter;
+  lossMagnitude?: FairParameter;
+}
 
 // Controls Module
 export const controls = pgTable('controls', {
@@ -540,55 +564,55 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export interface RiskCalculationParams {
   // Risk ID for API calls
   riskId?: string;
-  
+
   // Contact Frequency (CF)
   contactFrequencyMin: number;
   contactFrequencyAvg: number;
   contactFrequencyMax: number;
   contactFrequencyConfidence: string;
-  
+
   // Probability of Action (POA)
   probabilityOfActionMin: number;
   probabilityOfActionAvg: number;
   probabilityOfActionMax: number;
   probabilityOfActionConfidence: string;
-  
+
   // Threat Event Frequency (TEF)
   threatEventFrequencyMin?: number;
   threatEventFrequencyAvg?: number;
   threatEventFrequencyMax?: number;
   threatEventFrequencyConfidence?: string;
-  
+
   // Threat Capability (TCap)
   threatCapabilityMin: number;
   threatCapabilityAvg: number;
   threatCapabilityMax: number;
   threatCapabilityConfidence: string;
-  
+
   // Resistance Strength (RS)
   resistanceStrengthMin: number;
   resistanceStrengthAvg: number;
   resistanceStrengthMax: number;
   resistanceStrengthConfidence: string;
-  
+
   // Susceptibility (Vulnerability)
   susceptibilityMin?: number;
   susceptibilityAvg?: number;
   susceptibilityMax?: number;
   susceptibilityConfidence?: string;
-  
+
   // Primary Loss Magnitude (PL)
   primaryLossMagnitudeMin: number;
   primaryLossMagnitudeAvg: number;
   primaryLossMagnitudeMax: number;
   primaryLossMagnitudeConfidence: string;
-  
+
   // Secondary Loss Event Frequency (SLEF)
   secondaryLossEventFrequencyMin?: number;
   secondaryLossEventFrequencyAvg?: number;
   secondaryLossEventFrequencyMax?: number;
   secondaryLossEventFrequencyConfidence?: string;
-  
+
   // Secondary Loss Magnitude (SLM)
   secondaryLossMagnitudeMin?: number;
   secondaryLossMagnitudeAvg?: number;
@@ -609,7 +633,7 @@ export interface RiskCalculationParams {
 
   // Probable loss magnitude
   probableLossMagnitude?: number;
-  
+
   // Pre-calculated risk values
   inherentRisk?: number;
   residualRisk?: number;
@@ -631,7 +655,7 @@ export const authConfig = pgTable('auth_config', {
 
 export const vulnerabilityStatusEnum = pgEnum('vulnerability_status', [
   'open',
-  'in_progress', 
+  'in_progress',
   'resolved',
   'false_positive',
   'accepted_risk'
@@ -640,7 +664,7 @@ export const vulnerabilityStatusEnum = pgEnum('vulnerability_status', [
 export const vulnerabilitySeverityEnum = pgEnum('vulnerability_severity', [
   'info',
   'low',
-  'medium', 
+  'medium',
   'high',
   'critical'
 ]);

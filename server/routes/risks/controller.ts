@@ -395,12 +395,13 @@ export class RiskController {
           ).filter(Boolean);
 
           if (assetIds.length > 0) {
-            console.log(`Looking up assets by IDs: ${assetIds.join(', ')}`);
             // Call asset service to get full asset details
             const assetObjects = await riskService.getAssetsByIds(assetIds);
             if (assetObjects && assetObjects.length > 0) {
               safeParams.assetObjects = assetObjects;
             }
+          } else {
+            // No valid asset IDs found in associatedAssets
           }
         } catch (err) {
           console.error('Error looking up assets:', err);

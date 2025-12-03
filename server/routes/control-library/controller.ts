@@ -25,11 +25,11 @@ export class ControlLibraryController {
     try {
       const id = parseInt(req.params.id);
       const template = await controlService.getControlLibraryItem(id);
-      
+
       if (!template) {
         return sendError(res, { message: 'Control template not found' }, 404);
       }
-      
+
       return sendSuccess(res, template);
     } catch (error) {
       return sendError(res, error);
@@ -43,7 +43,7 @@ export class ControlLibraryController {
     try {
       const templateData = req.body;
       const newTemplate = await controlService.createControlLibraryItem(templateData);
-      
+
       return sendSuccess(res, newTemplate, 201);
     } catch (error) {
       return sendError(res, error);
@@ -57,13 +57,13 @@ export class ControlLibraryController {
     try {
       const id = parseInt(req.params.id);
       const templateData = req.body;
-      
+
       const updatedTemplate = await controlService.updateControlLibraryItem(id, templateData);
-      
+
       if (!updatedTemplate) {
         return sendError(res, { message: 'Control template not found' }, 404);
       }
-      
+
       return sendSuccess(res, updatedTemplate);
     } catch (error) {
       return sendError(res, error);
@@ -76,13 +76,13 @@ export class ControlLibraryController {
   async deleteTemplate(req: Request, res: Response) {
     try {
       const id = parseInt(req.params.id);
-      
+
       const success = await controlService.deleteControlLibraryItem(id);
-      
+
       if (!success) {
         return sendError(res, { message: 'Error deleting control template' }, 500);
       }
-      
+
       return sendSuccess(res, { message: 'Control template deleted successfully' });
     } catch (error) {
       return sendError(res, error);
@@ -96,15 +96,15 @@ export class ControlLibraryController {
     try {
       const templateId = parseInt(req.params.id);
       const { riskId } = req.body;
-      
+
       // First, get the template
       const template = await controlService.getControlLibraryItem(templateId);
       if (!template) {
         return sendError(res, { message: 'Control template not found' }, 404);
       }
-      
+
       // console.log('Template data:', JSON.stringify(template, null, 2));
-      
+
       // Create a new control instance from the template
       const controlData = {
         controlId: `${template.controlId}-${Date.now().toString().substring(9)}`, // Create unique ID
@@ -112,26 +112,31 @@ export class ControlLibraryController {
         description: template.description,
         controlType: template.controlType,
         controlCategory: template.controlCategory,
-        implementationStatus: 'not_implemented', // Default to not implemented
+        implementationStatus: 'not_implemented' as 'not_implemented', // Default to not implemented
         controlEffectiveness: 0.82, // Fixed value based on template data
-        implementationCost: 9000.00,
-        costPerAgent: 45.00,
-        isPerAgent: template.isPerAgentPricing || false,
+        implementationCost: "9000.00",
+        costPerAgent: "45.00",
+        isPerAgentPricing: template.isPerAgentPricing || false,
         notes: template.notes,
         libraryItemId: templateId, // Reference to the source template
-        itemType: 'instance',
+        itemType: 'instance' as 'instance',
         riskId: riskId || null,
         // Skip associatedRisks field temporarily until PostgreSQL array handling is fixed
       };
-      
+
       // Create the control instance
       const newControl = await controlService.createControl(controlData);
-      
+
       // Associate control with risk if provided
       if (riskId) {
-        await controlService.addControlToRisk(riskId, newControl.id);
+        try {
+          await controlService.addControlToRisk(riskId, newControl.id);
+        } catch (assocError) {
+          console.error(`Failed to associate control ${newControl.id} with risk ${riskId}:`, assocError);
+          // Don't fail the request, but log the error
+        }
       }
-      
+
       return sendSuccess(res, newControl, 201);
     } catch (error) {
       return sendError(res, error);

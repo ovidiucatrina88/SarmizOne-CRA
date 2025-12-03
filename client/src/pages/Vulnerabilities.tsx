@@ -165,27 +165,23 @@ export default function VulnerabilitiesPage() {
             label="Total Findings"
             value={summary.stats.total.toLocaleString()}
             delta={summary.trends.total.delta}
-            trendSeries={summary.trends.total.series}
           />
           <KpiCard
             label="Critical + High"
             value={(summary.stats.critical + summary.stats.high).toLocaleString()}
             delta={summary.trends.criticalHigh.delta}
-            trendSeries={summary.trends.criticalHigh.series}
             trendColor="#fca5a5"
           />
           <KpiCard
             label="Open"
             value={summary.stats.open.toLocaleString()}
             delta={summary.trends.open.delta}
-            trendSeries={summary.trends.open.series}
             trendColor="#fdba74"
           />
           <KpiCard
             label="Resolved"
             value={summary.stats.resolved.toLocaleString()}
             delta={summary.trends.resolved.delta}
-            trendSeries={summary.trends.resolved.series}
             trendColor="#86efac"
           />
         </section>

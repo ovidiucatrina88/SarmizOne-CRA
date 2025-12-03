@@ -106,75 +106,75 @@ export function ControlSuggestionsPanel({ riskId }: ControlSuggestionsPanelProps
   };
 
   const renderControlCard = (control: ControlSuggestion) => (
-    <Card key={control.controlId} className="mb-4 bg-gray-800 border-gray-600">
-      <CardHeader className="pb-3 bg-gray-700">
+    <Card key={control.controlId} className="mb-3 bg-gray-800 border-gray-600">
+      <CardHeader className="pb-2 bg-gray-700">
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <CardTitle className="text-lg text-white">{control.name}</CardTitle>
-            <CardDescription className="text-sm text-gray-400">{control.description}</CardDescription>
+            <CardTitle className="text-base text-white">{control.name}</CardTitle>
+            <CardDescription className="text-xs text-gray-400">{control.description}</CardDescription>
           </div>
           <div className="flex items-center space-x-2">
-            <Badge className={getPriorityColor(control.priority)}>
-              {control.priority} priority
+            <Badge className={`${getPriorityColor(control.priority)} text-xs px-2 py-0.5`}>
+              {control.priority}
             </Badge>
-            <Badge variant="outline" className="border-gray-500 text-gray-300">
+            <Badge variant="outline" className="border-gray-500 text-gray-300 text-xs px-2 py-0.5">
               {Math.round(control.matchScore)}% match
             </Badge>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-300">
+      <CardContent className="space-y-3 p-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs text-gray-300">
           <div className="flex items-center space-x-2">
-            <Shield className="h-4 w-4 text-blue-400" />
-            <span>{control.controlEffectiveness}/10 effectiveness</span>
+            <Shield className="h-3 w-3 text-blue-400" />
+            <span>{control.controlEffectiveness}/10 eff.</span>
           </div>
           <div className="flex items-center space-x-2">
-            <TrendingDown className="h-4 w-4 text-green-400" />
-            <span>{formatCurrency(control.estimatedRiskReduction)} reduction</span>
+            <TrendingDown className="h-3 w-3 text-green-400" />
+            <span>{formatCurrency(control.estimatedRiskReduction)} red.</span>
           </div>
           <div className="flex items-center space-x-2">
-            <DollarSign className="h-4 w-4 text-purple-400" />
+            <DollarSign className="h-3 w-3 text-purple-400" />
             <span>{control.roi > 0 ? '+' : ''}{control.roi.toFixed(1)}% ROI</span>
           </div>
           <div className="flex items-center space-x-2">
-            <Calendar className="h-4 w-4 text-orange-400" />
+            <Calendar className="h-3 w-3 text-orange-400" />
             <span>{control.paybackMonths.toFixed(1)} mo payback</span>
           </div>
         </div>
-        
-        <div className="text-sm text-gray-300">
+
+        <div className="text-xs text-gray-300">
           <strong className="text-white">Reasoning:</strong> {control.reasoning}
         </div>
 
-        <div className="text-sm text-gray-300">
-          <strong className="text-white">Implementation Cost:</strong> {formatCurrency(Number(control.implementationCost))}
+        <div className="text-xs text-gray-300">
+          <strong className="text-white">Cost:</strong> {formatCurrency(Number(control.implementationCost))}
           {control.isPerAgentPricing && (
             <span className="text-gray-400"> + {formatCurrency(Number(control.costPerAgent))}/agent</span>
           )}
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pt-1">
           <div className="flex items-center space-x-2">
-            <Badge variant="secondary" className="bg-gray-600 text-gray-200">{control.controlType}</Badge>
-            <Badge variant="outline" className="border-gray-500 text-gray-300">{control.controlCategory}</Badge>
+            <Badge variant="secondary" className="bg-gray-600 text-gray-200 text-[10px] px-1.5 py-0.5">{control.controlType}</Badge>
+            <Badge variant="outline" className="border-gray-500 text-gray-300 text-[10px] px-1.5 py-0.5">{control.controlCategory}</Badge>
           </div>
-          
+
           {control.isAssociated ? (
-            <Badge variant="default" className="bg-green-600 text-white">
-              Already Associated
+            <Badge variant="default" className="bg-green-600 text-white text-xs">
+              Associated
             </Badge>
           ) : (
             <Button
               size="sm"
               onClick={() => handleAssociateControl(control.controlId)}
               disabled={associateControlMutation.isPending}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 h-7 text-xs px-3"
             >
               {associateControlMutation.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-3 w-3 animate-spin" />
               ) : (
-                'Associate Control'
+                'Associate'
               )}
             </Button>
           )}

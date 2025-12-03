@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Download, FileType, Loader } from "lucide-react";
@@ -9,6 +8,7 @@ import { ReportGenerator } from "@/components/reports/report-generator";
 import { exportToPdf } from "@/utils/export-pdf";
 import { exportToExcel } from "@/utils/export-excel";
 import Layout from "@/components/layout/layout";
+import { GlowCard } from "@/components/ui/glow-card";
 
 export default function Reports() {
   const [reportType, setReportType] = useState("risks");
@@ -124,18 +124,21 @@ export default function Reports() {
       }
     >
 
-      <div className="bg-gray-800 rounded-lg border border-gray-600">
-        <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
-          <h3 className="text-lg font-semibold text-white">Report Preview</h3>
+      <GlowCard className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">Reports</p>
+            <h3 className="text-lg font-semibold text-white">Report Preview</h3>
+          </div>
         </div>
-        <div className="p-6">
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
           <Tabs defaultValue="risks" onValueChange={setReportType}>
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="summary">Summary</TabsTrigger>
-              <TabsTrigger value="risks">Risk Register</TabsTrigger>
-              <TabsTrigger value="assets">Asset Inventory</TabsTrigger>
-              <TabsTrigger value="controls">Control Library</TabsTrigger>
-              <TabsTrigger value="responses">Risk Responses</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5 rounded-xl border border-white/10 bg-white/5 text-white">
+              <TabsTrigger value="summary" className="data-[state=active]:bg-white/10">Summary</TabsTrigger>
+              <TabsTrigger value="risks" className="data-[state=active]:bg-white/10">Risk Register</TabsTrigger>
+              <TabsTrigger value="assets" className="data-[state=active]:bg-white/10">Asset Inventory</TabsTrigger>
+              <TabsTrigger value="controls" className="data-[state=active]:bg-white/10">Control Library</TabsTrigger>
+              <TabsTrigger value="responses" className="data-[state=active]:bg-white/10">Risk Responses</TabsTrigger>
             </TabsList>
             <TabsContent value="summary">
               <ReportGenerator 
@@ -170,7 +173,7 @@ export default function Reports() {
             </TabsContent>
           </Tabs>
         </div>
-      </div>
+      </GlowCard>
     </Layout>
   );
 }

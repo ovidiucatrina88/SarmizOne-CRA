@@ -226,27 +226,23 @@ export default function Controls() {
             label="Total Controls"
             value={summary.stats.total.toLocaleString()}
             delta={summary.trends.total.delta}
-            trendSeries={summary.trends.total.series}
           />
           <KpiCard
             label="Fully Implemented"
             value={summary.stats.fully.toLocaleString()}
             delta={summary.trends.fully.delta}
-            trendSeries={summary.trends.fully.series}
             trendColor="#86efac"
           />
           <KpiCard
             label="In Progress"
             value={summary.stats.progress.toLocaleString()}
             delta={summary.trends.progress.delta}
-            trendSeries={summary.trends.progress.series}
             trendColor="#fde68a"
           />
           <KpiCard
             label="Corrective Coverage"
             value={summary.stats.corrective.toLocaleString()}
             delta={summary.trends.corrective.delta}
-            trendSeries={summary.trends.corrective.series}
             trendColor="#c4b5fd"
           />
         </section>

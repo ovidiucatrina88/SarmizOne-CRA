@@ -30,7 +30,8 @@ export class ControlController {
       const controls = await controlService.getAllControls({});
 
       // Filter to only show instances (not templates)
-      const controlInstances = controls.filter(c => c.itemType === 'instance' || !c.itemType);
+      // Controls table only contains instances, so no filtering needed based on schema
+      const controlInstances = controls;
 
       const total = controlInstances.length;
       const fully = controlInstances.filter((c) => c.implementationStatus === "fully_implemented").length;
@@ -81,7 +82,16 @@ export class ControlController {
       const controlData: CreateControlDto = req.body;
 
       // The service layer now handles all risk recalculations internally
-      const newControl = await controlService.createControl(controlData);
+      // Convert numeric fields to strings for database compatibility
+      const controlDataForDb: any = { ...controlData };
+      if (controlData.implementationCost !== undefined) {
+        controlDataForDb.implementationCost = String(controlData.implementationCost);
+      }
+      if (controlData.costPerAgent !== undefined) {
+        controlDataForDb.costPerAgent = String(controlData.costPerAgent);
+      }
+
+      const newControl = await controlService.createControl(controlDataForDb);
 
       return sendSuccess(res, newControl, 201);
     } catch (error) {
@@ -178,12 +188,16 @@ export class ControlController {
             updateData.implementationCost = 0; // Clear total cost
             console.log("In progress - deployed agents:", controlData.deployedAgentCount, "cost per agent:", controlData.costPerAgent);
           } else {
-            // Not implemented or other status - clear all cost fields
-            updateData.implementationCost = 0;
-            updateData.costPerAgent = 0;
+            // For other statuses (e.g. Planned, Not Implemented), allow setting implementation cost
+            // This is useful for "what-if" analysis and budgeting
+            if (controlData.implementationCost !== undefined) {
+              updateData.implementationCost = String(controlData.implementationCost);
+            }
+            // We still clear agent-specific fields if not relevant, but keep the total cost if provided
+            updateData.costPerAgent = "0";
             updateData.deployedAgentCount = 0;
             updateData.isPerAgentPricing = false;
-            console.log("Other status - clearing all cost fields");
+            console.log("Other status - allowing implementation cost:", updateData.implementationCost);
           }
 
           console.log("Using filtered update data:", updateData);
@@ -202,7 +216,15 @@ export class ControlController {
         }
       } else {
         // Regular update path
-        const updatedControl = await controlService.updateControl(id, controlData);
+        const updateDataForDb: any = { ...controlData };
+        if (controlData.implementationCost !== undefined) {
+          updateDataForDb.implementationCost = String(controlData.implementationCost);
+        }
+        if (controlData.costPerAgent !== undefined) {
+          updateDataForDb.costPerAgent = String(controlData.costPerAgent);
+        }
+
+        const updatedControl = await controlService.updateControl(id, updateDataForDb);
 
         if (!updatedControl) {
           return sendError(res, { message: 'Control not found' }, 404);

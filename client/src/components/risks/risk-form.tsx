@@ -25,7 +25,6 @@ import { AssetSelection } from "./form-sections/AssetSelection";
 
 import { RiskFormPreviewEditable } from "./risk-form-preview-editable";
 import { RiskFormPreviewEditableConcept } from "./risk-form-preview-editable-concept";
-import { calculateRiskFromForm } from "./risk-utils";
 import {
   formatCurrency,
   calculateSusceptibility,
@@ -36,74 +35,100 @@ import {
 
 // Default FAIR-U parameter values for new risks
 const DEFAULT_FAIR_VALUES = {
-  // Contact Frequency (CF)
-  contactFrequencyMin: 0,
-  contactFrequencyAvg: 0,
-  contactFrequencyMax: 0,
-  contactFrequencyConfidence: "medium" as ConfidenceLevel,
+  parameters: {
+    // Contact Frequency (CF)
+    contactFrequency: {
+      min: 0,
+      avg: 0,
+      max: 0,
+      confidence: "medium" as ConfidenceLevel,
+    },
 
-  // Probability of Action (POA)
-  probabilityOfActionMin: 0,
-  probabilityOfActionAvg: 0,
-  probabilityOfActionMax: 0,
-  probabilityOfActionConfidence: "medium" as ConfidenceLevel,
+    // Probability of Action (POA)
+    probabilityOfAction: {
+      min: 0,
+      avg: 0,
+      max: 0,
+      confidence: "medium" as ConfidenceLevel,
+    },
 
-  // Threat Capability (TCap)
-  threatCapabilityMin: 0,
-  threatCapabilityAvg: 0,
-  threatCapabilityMax: 0,
-  threatCapabilityConfidence: "medium" as ConfidenceLevel,
+    // Threat Capability (TCap)
+    threatCapability: {
+      min: 0,
+      avg: 0,
+      max: 0,
+      confidence: "medium" as ConfidenceLevel,
+    },
 
-  // Resistance Strength (RS)
-  resistanceStrengthMin: 0,
-  resistanceStrengthAvg: 0,
-  resistanceStrengthMax: 0,
-  resistanceStrengthConfidence: "medium" as ConfidenceLevel,
+    // Resistance Strength (RS)
+    resistanceStrength: {
+      min: 0,
+      avg: 0,
+      max: 0,
+      confidence: "medium" as ConfidenceLevel,
+    },
 
-  // Primary Loss Magnitude (PL)
-  primaryLossMagnitudeMin: 0,
-  primaryLossMagnitudeAvg: 0,
-  primaryLossMagnitudeMax: 0,
-  primaryLossMagnitudeConfidence: "medium" as ConfidenceLevel,
+    // Primary Loss Magnitude (PL)
+    primaryLossMagnitude: {
+      min: 0,
+      avg: 0,
+      max: 0,
+      confidence: "medium" as ConfidenceLevel,
+    },
 
-  // Secondary Loss Event Frequency (SLEF)
-  secondaryLossEventFrequencyMin: 0,
-  secondaryLossEventFrequencyAvg: 0,
-  secondaryLossEventFrequencyMax: 0,
-  secondaryLossEventFrequencyConfidence: "medium" as ConfidenceLevel,
+    // Secondary Loss Event Frequency (SLEF)
+    secondaryLossEventFrequency: {
+      min: 0,
+      avg: 0,
+      max: 0,
+      confidence: "medium" as ConfidenceLevel,
+    },
 
-  // Secondary Loss Magnitude (SLM)
-  secondaryLossMagnitudeMin: 0,
-  secondaryLossMagnitudeAvg: 0,
-  secondaryLossMagnitudeMax: 0,
-  secondaryLossMagnitudeConfidence: "medium" as ConfidenceLevel,
+    // Secondary Loss Magnitude (SLM)
+    secondaryLossMagnitude: {
+      min: 0,
+      avg: 0,
+      max: 0,
+      confidence: "medium" as ConfidenceLevel,
+    },
+  }
 };
 
 // Zero values for calculated FAIR-U parameters when no assets are associated
 const ZERO_CALCULATED_VALUES = {
-  // Threat Event Frequency (TEF) - Calculated
-  threatEventFrequencyMin: 0,
-  threatEventFrequencyAvg: 0,
-  threatEventFrequencyMax: 0,
-  threatEventFrequencyConfidence: "medium" as ConfidenceLevel,
+  parameters: {
+    // Threat Event Frequency (TEF) - Calculated
+    threatEventFrequency: {
+      min: 0,
+      avg: 0,
+      max: 0,
+      confidence: "medium" as ConfidenceLevel,
+    },
 
-  // Susceptibility - Calculated
-  susceptibilityMin: 0,
-  susceptibilityAvg: 0,
-  susceptibilityMax: 0,
-  susceptibilityConfidence: "medium" as ConfidenceLevel,
+    // Susceptibility - Calculated
+    susceptibility: {
+      min: 0,
+      avg: 0,
+      max: 0,
+      confidence: "medium" as ConfidenceLevel,
+    },
 
-  // Loss Event Frequency (LEF) - Calculated
-  lossEventFrequencyMin: 0,
-  lossEventFrequencyAvg: 0,
-  lossEventFrequencyMax: 0,
-  lossEventFrequencyConfidence: "medium" as ConfidenceLevel,
+    // Loss Event Frequency (LEF) - Calculated
+    lossEventFrequency: {
+      min: 0,
+      avg: 0,
+      max: 0,
+      confidence: "medium" as ConfidenceLevel,
+    },
 
-  // Loss Magnitude (LM) - Calculated
-  lossMagnitudeMin: 0,
-  lossMagnitudeAvg: 0,
-  lossMagnitudeMax: 0,
-  lossMagnitudeConfidence: "medium" as ConfidenceLevel,
+    // Loss Magnitude (LM) - Calculated
+    lossMagnitude: {
+      min: 0,
+      avg: 0,
+      max: 0,
+      confidence: "medium" as ConfidenceLevel,
+    },
+  },
 
   // Risk values
   inherentRisk: 0,
@@ -129,10 +154,18 @@ const createRiskUpdateData = (values: any, associatedAssets: string[]) => {
   const normalizeConfidence = (value: any): string => {
     if (!value) return "medium";
     const lowercaseValue = String(value).toLowerCase();
-    return ["low", "medium", "high"].includes(lowercaseValue) 
-      ? lowercaseValue 
+    return ["low", "medium", "high"].includes(lowercaseValue)
+      ? lowercaseValue
       : "medium";
   };
+
+  // Helper to format a parameter group
+  const formatParam = (group: any) => ({
+    min: safeToString(group?.min),
+    avg: safeToString(group?.avg),
+    max: safeToString(group?.max),
+    confidence: normalizeConfidence(group?.confidence)
+  });
 
   // Starting with basic risk information
   const updateData = {
@@ -142,71 +175,22 @@ const createRiskUpdateData = (values: any, associatedAssets: string[]) => {
     severity: values.severity,
     associatedAssets: associatedAssets,
 
-    // Contact Frequency
-    contactFrequencyMin: safeToString(values.contactFrequencyMin),
-    contactFrequencyAvg: safeToString(values.contactFrequencyAvg),
-    contactFrequencyMax: safeToString(values.contactFrequencyMax),
-    contactFrequencyConfidence: normalizeConfidence(values.contactFrequencyConfidence),
+    // Structured Parameters
+    parameters: {
+      contactFrequency: formatParam(values.parameters?.contactFrequency),
+      probabilityOfAction: formatParam(values.parameters?.probabilityOfAction),
+      threatCapability: formatParam(values.parameters?.threatCapability),
+      resistanceStrength: formatParam(values.parameters?.resistanceStrength),
+      primaryLossMagnitude: formatParam(values.parameters?.primaryLossMagnitude),
+      secondaryLossEventFrequency: formatParam(values.parameters?.secondaryLossEventFrequency),
+      secondaryLossMagnitude: formatParam(values.parameters?.secondaryLossMagnitude),
 
-    // Probability of Action
-    probabilityOfActionMin: safeToString(values.probabilityOfActionMin),
-    probabilityOfActionAvg: safeToString(values.probabilityOfActionAvg),
-    probabilityOfActionMax: safeToString(values.probabilityOfActionMax),
-    probabilityOfActionConfidence: normalizeConfidence(values.probabilityOfActionConfidence),
-
-    // Threat Capability
-    threatCapabilityMin: safeToString(values.threatCapabilityMin),
-    threatCapabilityAvg: safeToString(values.threatCapabilityAvg),
-    threatCapabilityMax: safeToString(values.threatCapabilityMax),
-    threatCapabilityConfidence: normalizeConfidence(values.threatCapabilityConfidence),
-
-    // Resistance Strength
-    resistanceStrengthMin: safeToString(values.resistanceStrengthMin),
-    resistanceStrengthAvg: safeToString(values.resistanceStrengthAvg),
-    resistanceStrengthMax: safeToString(values.resistanceStrengthMax),
-    resistanceStrengthConfidence: normalizeConfidence(values.resistanceStrengthConfidence),
-
-    // Primary Loss Magnitude
-    primaryLossMagnitudeMin: safeToString(values.primaryLossMagnitudeMin),
-    primaryLossMagnitudeAvg: safeToString(values.primaryLossMagnitudeAvg),
-    primaryLossMagnitudeMax: safeToString(values.primaryLossMagnitudeMax),
-    primaryLossMagnitudeConfidence: normalizeConfidence(values.primaryLossMagnitudeConfidence),
-
-    // Secondary Loss Event Frequency
-    secondaryLossEventFrequencyMin: safeToString(values.secondaryLossEventFrequencyMin),
-    secondaryLossEventFrequencyAvg: safeToString(values.secondaryLossEventFrequencyAvg),
-    secondaryLossEventFrequencyMax: safeToString(values.secondaryLossEventFrequencyMax),
-    secondaryLossEventFrequencyConfidence: normalizeConfidence(values.secondaryLossEventFrequencyConfidence),
-
-    // Secondary Loss Magnitude
-    secondaryLossMagnitudeMin: safeToString(values.secondaryLossMagnitudeMin),
-    secondaryLossMagnitudeAvg: safeToString(values.secondaryLossMagnitudeAvg),
-    secondaryLossMagnitudeMax: safeToString(values.secondaryLossMagnitudeMax),
-    secondaryLossMagnitudeConfidence: normalizeConfidence(values.secondaryLossMagnitudeConfidence),
-
-    // Threat Event Frequency (calculated fields)
-    threatEventFrequencyMin: safeToString(values.threatEventFrequencyMin),
-    threatEventFrequencyAvg: safeToString(values.threatEventFrequencyAvg),
-    threatEventFrequencyMax: safeToString(values.threatEventFrequencyMax),
-    threatEventFrequencyConfidence: normalizeConfidence(values.threatEventFrequencyConfidence),
-
-    // Susceptibility (calculated fields)
-    susceptibilityMin: safeToString(values.susceptibilityMin),
-    susceptibilityAvg: safeToString(values.susceptibilityAvg),
-    susceptibilityMax: safeToString(values.susceptibilityMax),
-    susceptibilityConfidence: normalizeConfidence(values.susceptibilityConfidence),
-
-    // Loss Event Frequency (calculated fields)
-    lossEventFrequencyMin: safeToString(values.lossEventFrequencyMin),
-    lossEventFrequencyAvg: safeToString(values.lossEventFrequencyAvg),
-    lossEventFrequencyMax: safeToString(values.lossEventFrequencyMax),
-    lossEventFrequencyConfidence: normalizeConfidence(values.lossEventFrequencyConfidence),
-
-    // Loss Magnitude (calculated fields)
-    lossMagnitudeMin: safeToString(values.lossMagnitudeMin),
-    lossMagnitudeAvg: safeToString(values.lossMagnitudeAvg),
-    lossMagnitudeMax: safeToString(values.lossMagnitudeMax),
-    lossMagnitudeConfidence: normalizeConfidence(values.lossMagnitudeConfidence),
+      // Calculated parameters (optional to store, but good for caching)
+      threatEventFrequency: formatParam(values.parameters?.threatEventFrequency),
+      susceptibility: formatParam(values.parameters?.susceptibility),
+      lossEventFrequency: formatParam(values.parameters?.lossEventFrequency),
+      lossMagnitude: formatParam(values.parameters?.lossMagnitude),
+    },
 
     // Add calculated risk values - stored as strings in the database
     inherentRisk: safeToString(values.inherentRisk),
@@ -224,67 +208,67 @@ const createRiskUpdateData = (values: any, associatedAssets: string[]) => {
  * @returns An object that works with shared calculation utilities
  */
 const createRiskObjectFromFormValues = (formValues: any) => {
+  const p = formValues.parameters || {};
+
   // Convert all relevant values to numbers to ensure calculation accuracy
   return {
-    contactFrequencyMin: Number(formValues.contactFrequencyMin || 0),
-    contactFrequencyAvg: Number(formValues.contactFrequencyAvg || 0),
-    contactFrequencyMax: Number(formValues.contactFrequencyMax || 0),
-
-    probabilityOfActionMin: Number(formValues.probabilityOfActionMin || 0),
-    probabilityOfActionAvg: Number(formValues.probabilityOfActionAvg || 0),
-    probabilityOfActionMax: Number(formValues.probabilityOfActionMax || 0),
-
-    threatCapabilityMin: Number(formValues.threatCapabilityMin || 0),
-    threatCapabilityAvg: Number(formValues.threatCapabilityAvg || 0),
-    threatCapabilityMax: Number(formValues.threatCapabilityMax || 0),
-
-    resistanceStrengthMin: Number(formValues.resistanceStrengthMin || 0),
-    resistanceStrengthAvg: Number(formValues.resistanceStrengthAvg || 0),
-    resistanceStrengthMax: Number(formValues.resistanceStrengthMax || 0),
-
-    primaryLossMagnitudeMin: Number(formValues.primaryLossMagnitudeMin || 0),
-    primaryLossMagnitudeAvg: Number(formValues.primaryLossMagnitudeAvg || 0),
-    primaryLossMagnitudeMax: Number(formValues.primaryLossMagnitudeMax || 0),
-
-    secondaryLossEventFrequencyMin: Number(
-      formValues.secondaryLossEventFrequencyMin || 0.1,
-    ),
-    secondaryLossEventFrequencyAvg: Number(
-      formValues.secondaryLossEventFrequencyAvg || 0.3,
-    ),
-    secondaryLossEventFrequencyMax: Number(
-      formValues.secondaryLossEventFrequencyMax || 0.5,
-    ),
-
-    secondaryLossMagnitudeMin: Number(
-      formValues.secondaryLossMagnitudeMin || 5000,
-    ),
-    secondaryLossMagnitudeAvg: Number(
-      formValues.secondaryLossMagnitudeAvg || 25000,
-    ),
-    secondaryLossMagnitudeMax: Number(
-      formValues.secondaryLossMagnitudeMax || 50000,
-    ),
+    contactFrequency: {
+      min: Number(p.contactFrequency?.min || 0),
+      avg: Number(p.contactFrequency?.avg || 0),
+      max: Number(p.contactFrequency?.max || 0)
+    },
+    probabilityOfAction: {
+      min: Number(p.probabilityOfAction?.min || 0),
+      avg: Number(p.probabilityOfAction?.avg || 0),
+      max: Number(p.probabilityOfAction?.max || 0)
+    },
+    threatCapability: {
+      min: Number(p.threatCapability?.min || 0),
+      avg: Number(p.threatCapability?.avg || 0),
+      max: Number(p.threatCapability?.max || 0)
+    },
+    resistanceStrength: {
+      min: Number(p.resistanceStrength?.min || 0),
+      avg: Number(p.resistanceStrength?.avg || 0),
+      max: Number(p.resistanceStrength?.max || 0)
+    },
+    primaryLossMagnitude: {
+      min: Number(p.primaryLossMagnitude?.min || 0),
+      avg: Number(p.primaryLossMagnitude?.avg || 0),
+      max: Number(p.primaryLossMagnitude?.max || 0)
+    },
+    secondaryLossEventFrequency: {
+      min: Number(p.secondaryLossEventFrequency?.min || 0.1),
+      avg: Number(p.secondaryLossEventFrequency?.avg || 0.3),
+      max: Number(p.secondaryLossEventFrequency?.max || 0.5)
+    },
+    secondaryLossMagnitude: {
+      min: Number(p.secondaryLossMagnitude?.min || 5000),
+      avg: Number(p.secondaryLossMagnitude?.avg || 25000),
+      max: Number(p.secondaryLossMagnitude?.max || 50000)
+    },
 
     // Include calculated values for completeness
-    threatEventFrequency: Number(formValues.threatEventFrequency || 0),
-    threatEventFrequencyMin: Number(formValues.threatEventFrequencyMin || 0),
-    threatEventFrequencyAvg: Number(formValues.threatEventFrequencyAvg || 0),
-    threatEventFrequencyMax: Number(formValues.threatEventFrequencyMax || 0),
-
-    susceptibility: Number(formValues.susceptibility || 0),
-    susceptibilityMin: Number(formValues.susceptibilityMin || 0),
-    susceptibilityAvg: Number(formValues.susceptibilityAvg || 0),
-    susceptibilityMax: Number(formValues.susceptibilityMax || 0),
-
-    lossEventFrequency: Number(formValues.lossEventFrequency || 0),
-    lossEventFrequencyMin: Number(formValues.lossEventFrequencyMin || 0),
-    lossEventFrequencyAvg: Number(formValues.lossEventFrequencyAvg || 0),
-    lossEventFrequencyMax: Number(formValues.lossEventFrequencyMax || 0),
-
-    lossMagnitudeMin: Number(formValues.lossMagnitudeMin || 0),
-    lossMagnitudeAvg: Number(formValues.lossMagnitudeAvg || 0),
-    lossMagnitudeMax: Number(formValues.lossMagnitudeMax || 0),
+    threatEventFrequency: {
+      min: Number(p.threatEventFrequency?.min || 0),
+      avg: Number(p.threatEventFrequency?.avg || 0),
+      max: Number(p.threatEventFrequency?.max || 0)
+    },
+    susceptibility: {
+      min: Number(p.susceptibility?.min || 0),
+      avg: Number(p.susceptibility?.avg || 0),
+      max: Number(p.susceptibility?.max || 0)
+    },
+    lossEventFrequency: {
+      min: Number(p.lossEventFrequency?.min || 0),
+      avg: Number(p.lossEventFrequency?.avg || 0),
+      max: Number(p.lossEventFrequency?.max || 0)
+    },
+    lossMagnitude: {
+      min: Number(p.lossMagnitude?.min || 0),
+      avg: Number(p.lossMagnitude?.avg || 0),
+      max: Number(p.lossMagnitude?.max || 0)
+    }
   };
 };
 
@@ -296,6 +280,14 @@ type ConfidenceLevel = z.infer<typeof confidenceEnum>;
 const getConfidenceWithFallback = (value: any): ConfidenceLevel => {
   return (value || "medium") as ConfidenceLevel;
 };
+
+// Define the FAIR parameter schema
+const fairParameterSchema = z.object({
+  min: z.number().min(0, "Must be a positive number"),
+  avg: z.number().min(0, "Must be a positive number"),
+  max: z.number().min(0, "Must be a positive number"),
+  confidence: confidenceEnum
+});
 
 // Extended schema with validation
 const riskFormSchema = insertRiskSchema.extend({
@@ -316,119 +308,41 @@ const riskFormSchema = insertRiskSchema.extend({
   }),
   itemType: z.enum(["template", "instance"]).optional(),
 
-  // FAIR-U Parameters - Contact Frequency
-  contactFrequencyMin: z.number().min(0, "Must be a positive number"),
-  contactFrequencyAvg: z.number().min(0, "Must be a positive number"),
-  contactFrequencyMax: z.number().min(0, "Must be a positive number"),
-  contactFrequencyConfidence: confidenceEnum,
+  // Structured Parameters
+  parameters: z.object({
+    contactFrequency: fairParameterSchema,
+    probabilityOfAction: fairParameterSchema.extend({
+      min: z.number().min(0).max(1),
+      avg: z.number().min(0).max(1),
+      max: z.number().min(0).max(1)
+    }),
+    threatCapability: fairParameterSchema.extend({
+      min: z.number().min(0).max(10),
+      avg: z.number().min(0).max(10),
+      max: z.number().min(0).max(10)
+    }),
+    resistanceStrength: fairParameterSchema.extend({
+      min: z.number().min(0).max(10),
+      avg: z.number().min(0).max(10),
+      max: z.number().min(0).max(10)
+    }),
+    primaryLossMagnitude: fairParameterSchema,
+    secondaryLossEventFrequency: fairParameterSchema.extend({
+      min: z.number().min(0).max(1),
+      avg: z.number().min(0).max(1),
+      max: z.number().min(0).max(1)
+    }),
+    secondaryLossMagnitude: fairParameterSchema,
 
-  // FAIR-U Parameters - Probability of Action
-  probabilityOfActionMin: z
-    .number()
-    .min(0, "Must be a positive number")
-    .max(1, "Must be between 0 and 1"),
-  probabilityOfActionAvg: z
-    .number()
-    .min(0, "Must be a positive number")
-    .max(1, "Must be between 0 and 1"),
-  probabilityOfActionMax: z
-    .number()
-    .min(0, "Must be a positive number")
-    .max(1, "Must be between 0 and 1"),
-  probabilityOfActionConfidence: confidenceEnum,
-
-  // FAIR-U Parameters - Threat Event Frequency (Triangular distribution)
-  threatEventFrequencyMin: z.number().min(0, "Must be a positive number"),
-  threatEventFrequencyAvg: z.number().min(0, "Must be a positive number"),
-  threatEventFrequencyMax: z.number().min(0, "Must be a positive number"),
-  threatEventFrequencyConfidence: confidenceEnum,
-
-  // FAIR-U Parameters - Threat Capability
-  threatCapabilityMin: z
-    .number()
-    .min(0, "Must be a positive number")
-    .max(10, "Must be between 0 and 10"),
-  threatCapabilityAvg: z
-    .number()
-    .min(0, "Must be a positive number")
-    .max(10, "Must be between 0 and 10"),
-  threatCapabilityMax: z
-    .number()
-    .min(0, "Must be a positive number")
-    .max(10, "Must be between 0 and 10"),
-  threatCapabilityConfidence: confidenceEnum,
-
-  // FAIR-U Parameters - Resistance Strength
-  resistanceStrengthMin: z
-    .number()
-    .min(0, "Must be a positive number")
-    .max(10, "Must be between 0 and 10"),
-  resistanceStrengthAvg: z
-    .number()
-    .min(0, "Must be a positive number")
-    .max(10, "Must be between 0 and 10"),
-  resistanceStrengthMax: z
-    .number()
-    .min(0, "Must be a positive number")
-    .max(10, "Must be between 0 and 10"),
-  resistanceStrengthConfidence: confidenceEnum,
-
-  // Note: Using only the triangle distribution values, not single fields
-
-  // FAIR-U Parameters - Primary Loss Magnitude
-  primaryLossMagnitudeMin: z.number().min(0, "Must be a positive number"),
-  primaryLossMagnitudeAvg: z.number().min(0, "Must be a positive number"),
-  primaryLossMagnitudeMax: z.number().min(0, "Must be a positive number"),
-  primaryLossMagnitudeConfidence: confidenceEnum,
-
-  // FAIR-U Parameters - Secondary Loss Event Frequency
-  secondaryLossEventFrequencyMin: z
-    .number()
-    .min(0, "Must be a positive number")
-    .max(1, "Must be between 0 and 1"),
-  secondaryLossEventFrequencyAvg: z
-    .number()
-    .min(0, "Must be a positive number")
-    .max(1, "Must be between 0 and 1"),
-  secondaryLossEventFrequencyMax: z
-    .number()
-    .min(0, "Must be a positive number")
-    .max(1, "Must be between 0 and 1"),
-  secondaryLossEventFrequencyConfidence: confidenceEnum,
-
-  // FAIR-U Parameters - Secondary Loss Magnitude
-  secondaryLossMagnitudeMin: z.number().min(0, "Must be a positive number"),
-  secondaryLossMagnitudeAvg: z.number().min(0, "Must be a positive number"),
-  secondaryLossMagnitudeMax: z.number().min(0, "Must be a positive number"),
-  secondaryLossMagnitudeConfidence: confidenceEnum,
+    // Calculated parameters (optional validation)
+    threatEventFrequency: fairParameterSchema.optional(),
+    susceptibility: fairParameterSchema.optional(),
+    lossEventFrequency: fairParameterSchema.optional(),
+    lossMagnitude: fairParameterSchema.optional(),
+  }),
 
   // FAIR-U Parameters - Probable Loss Magnitude
   probableLossMagnitude: z.number().min(0, "Must be a positive number"),
-  lossMagnitudeMin: z.number().optional(),
-  lossMagnitudeAvg: z.number().optional(),
-  lossMagnitudeMax: z.number().optional(),
-  lossMagnitudeConfidence: confidenceEnum.optional(),
-
-  // FAIR-U Parameters - Susceptibility (Calculated)
-  susceptibilityMin: z
-    .number()
-    .min(0, "Must be a positive number")
-    .max(1, "Must be between 0 and 1"),
-  susceptibilityAvg: z
-    .number()
-    .min(0, "Must be a positive number")
-    .max(1, "Must be between 0 and 1"),
-  susceptibilityMax: z
-    .number()
-    .min(0, "Must be a positive number")
-    .max(1, "Must be between 0 and 1"),
-  susceptibilityConfidence: confidenceEnum,
-
-  // FAIR-U Parameters - Loss Event Frequency (Calculated)
-  lossEventFrequencyMin: z.number().min(0, "Must be a positive number"),
-  lossEventFrequencyAvg: z.number().min(0, "Must be a positive number"),
-  lossEventFrequencyMax: z.number().min(0, "Must be a positive number"),
-  lossEventFrequencyConfidence: confidenceEnum,
 
   // FAIR-U Parameters - Risk Metrics
   inherentRisk: z.number().min(0, "Must be a positive number"),
@@ -456,25 +370,12 @@ const getAssetDependentRiskValues = (
   if (hasAssociatedAssets) {
     // Return the calculated values from the form
     return {
-      threatEventFrequencyMin: values.threatEventFrequencyMin,
-      threatEventFrequencyAvg: values.threatEventFrequencyAvg,
-      threatEventFrequencyMax: values.threatEventFrequencyMax,
-      threatEventFrequencyConfidence: values.threatEventFrequencyConfidence,
-
-      susceptibilityMin: values.susceptibilityMin,
-      susceptibilityAvg: values.susceptibilityAvg,
-      susceptibilityMax: values.susceptibilityMax,
-      susceptibilityConfidence: values.susceptibilityConfidence,
-
-      lossEventFrequencyMin: values.lossEventFrequencyMin,
-      lossEventFrequencyAvg: values.lossEventFrequencyAvg,
-      lossEventFrequencyMax: values.lossEventFrequencyMax,
-      lossEventFrequencyConfidence: values.lossEventFrequencyConfidence,
-
-      lossMagnitudeMin: values.lossMagnitudeMin,
-      lossMagnitudeAvg: values.lossMagnitudeAvg,
-      lossMagnitudeMax: values.lossMagnitudeMax,
-      lossMagnitudeConfidence: values.lossMagnitudeConfidence,
+      parameters: {
+        threatEventFrequency: values.parameters.threatEventFrequency,
+        susceptibility: values.parameters.susceptibility,
+        lossEventFrequency: values.parameters.lossEventFrequency,
+        lossMagnitude: values.parameters.lossMagnitude,
+      }
     };
   } else {
     // Set all calculation-based fields to zero when no assets are associated
@@ -511,6 +412,13 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
 
     // Include calculated fields with zero values since there are no assets by default
     ...ZERO_CALCULATED_VALUES,
+
+    // Merge parameters from both defaults
+    parameters: {
+      ...DEFAULT_FAIR_VALUES.parameters,
+      ...ZERO_CALCULATED_VALUES.parameters
+    },
+
     rankPercentile: 50,
     notes: "",
     probableLossMagnitude: 0,
@@ -519,83 +427,100 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
   // Convert existing risk data to the proper format for the form
   const existingRiskValues = risk
     ? {
-        // Basic string fields
-        riskId: risk.riskId,
-        name: risk.name,
-        description:
-          typeof risk.description === "number"
-            ? String(risk.description)
-            : risk.description,
-        associatedAssets: risk.associatedAssets,
-        threatCommunity: risk.threatCommunity,
-        vulnerability: risk.vulnerability,
-        riskCategory: risk.riskCategory as any,
-        severity: risk.severity as any,
-        probableLossMagnitude: Number((risk as RiskWithParams).probableLossMagnitude) || 0,
+      // Basic string fields
+      riskId: risk.riskId,
+      name: risk.name,
+      description:
+        typeof risk.description === "number"
+          ? String(risk.description)
+          : risk.description,
+      associatedAssets: risk.associatedAssets,
+      threatCommunity: risk.threatCommunity,
+      vulnerability: risk.vulnerability,
+      riskCategory: risk.riskCategory as any,
+      severity: risk.severity as any,
+      probableLossMagnitude: Number((risk as RiskWithParams).probableLossMagnitude) || 0,
 
-        // Convert all numeric fields safely with Number()
-        ...Object.keys(risk as RiskWithParams).reduce((acc, key) => {
-          // Skip string fields and arrays
-          if (
-            key !== "riskId" &&
-            key !== "name" &&
-            key !== "description" &&
-            key !== "associatedAssets" &&
-            key !== "threatCommunity" &&
-            key !== "vulnerability" &&
-            key !== "riskCategory" &&
-            key !== "severity" &&
-            key !== "itemType" &&
-            key !== "createdAt" &&
-            key !== "updatedAt" &&
-            key !== "notes" &&
-            !Array.isArray((risk as any)[key])
-          ) {
-            // Convert to number
-            acc[key as keyof RiskFormData] = Number((risk as any)[key]);
-          }
-          return acc;
-        }, {} as any),
+      // Structured Parameters
+      parameters: {
+        contactFrequency: {
+          min: Number(risk.parameters?.contactFrequency?.min || risk.contactFrequencyMin || 0),
+          avg: Number(risk.parameters?.contactFrequency?.avg || risk.contactFrequencyAvg || 0),
+          max: Number(risk.parameters?.contactFrequency?.max || risk.contactFrequencyMax || 0),
+          confidence: getConfidenceWithFallback(risk.parameters?.contactFrequency?.confidence || risk.contactFrequencyConfidence)
+        },
+        probabilityOfAction: {
+          min: Number(risk.parameters?.probabilityOfAction?.min || risk.probabilityOfActionMin || 0),
+          avg: Number(risk.parameters?.probabilityOfAction?.avg || risk.probabilityOfActionAvg || 0),
+          max: Number(risk.parameters?.probabilityOfAction?.max || risk.probabilityOfActionMax || 0),
+          confidence: getConfidenceWithFallback(risk.parameters?.probabilityOfAction?.confidence || risk.probabilityOfActionConfidence)
+        },
+        threatCapability: {
+          min: Number(risk.parameters?.threatCapability?.min || risk.threatCapabilityMin || 0),
+          avg: Number(risk.parameters?.threatCapability?.avg || risk.threatCapabilityAvg || 0),
+          max: Number(risk.parameters?.threatCapability?.max || risk.threatCapabilityMax || 0),
+          confidence: getConfidenceWithFallback(risk.parameters?.threatCapability?.confidence || risk.threatCapabilityConfidence)
+        },
+        resistanceStrength: {
+          min: Number(risk.parameters?.resistanceStrength?.min || risk.resistanceStrengthMin || 0),
+          avg: Number(risk.parameters?.resistanceStrength?.avg || risk.resistanceStrengthAvg || 0),
+          max: Number(risk.parameters?.resistanceStrength?.max || risk.resistanceStrengthMax || 0),
+          confidence: getConfidenceWithFallback(risk.parameters?.resistanceStrength?.confidence || risk.resistanceStrengthConfidence)
+        },
+        primaryLossMagnitude: {
+          min: Number(risk.parameters?.primaryLossMagnitude?.min || risk.primaryLossMagnitudeMin || 0),
+          avg: Number(risk.parameters?.primaryLossMagnitude?.avg || risk.primaryLossMagnitudeAvg || 0),
+          max: Number(risk.parameters?.primaryLossMagnitude?.max || risk.primaryLossMagnitudeMax || 0),
+          confidence: getConfidenceWithFallback(risk.parameters?.primaryLossMagnitude?.confidence || risk.primaryLossMagnitudeConfidence)
+        },
+        secondaryLossEventFrequency: {
+          min: Number(risk.parameters?.secondaryLossEventFrequency?.min || risk.secondaryLossEventFrequencyMin || 0),
+          avg: Number(risk.parameters?.secondaryLossEventFrequency?.avg || risk.secondaryLossEventFrequencyAvg || 0),
+          max: Number(risk.parameters?.secondaryLossEventFrequency?.max || risk.secondaryLossEventFrequencyMax || 0),
+          confidence: getConfidenceWithFallback(risk.parameters?.secondaryLossEventFrequency?.confidence || risk.secondaryLossEventFrequencyConfidence)
+        },
+        secondaryLossMagnitude: {
+          min: Number(risk.parameters?.secondaryLossMagnitude?.min || risk.secondaryLossMagnitudeMin || 0),
+          avg: Number(risk.parameters?.secondaryLossMagnitude?.avg || risk.secondaryLossMagnitudeAvg || 0),
+          max: Number(risk.parameters?.secondaryLossMagnitude?.max || risk.secondaryLossMagnitudeMax || 0),
+          confidence: getConfidenceWithFallback(risk.parameters?.secondaryLossMagnitude?.confidence || risk.secondaryLossMagnitudeConfidence)
+        },
 
-        // Set all confidence levels with fallback to "medium"
-        contactFrequencyConfidence: getConfidenceWithFallback(
-          risk.contactFrequencyConfidence,
-        ),
-        probabilityOfActionConfidence: getConfidenceWithFallback(
-          risk.probabilityOfActionConfidence,
-        ),
-        threatEventFrequencyConfidence: getConfidenceWithFallback(
-          risk.threatEventFrequencyConfidence,
-        ),
-        threatCapabilityConfidence: getConfidenceWithFallback(
-          risk.threatCapabilityConfidence,
-        ),
-        resistanceStrengthConfidence: getConfidenceWithFallback(
-          risk.resistanceStrengthConfidence,
-        ),
-        susceptibilityConfidence: getConfidenceWithFallback(
-          risk.susceptibilityConfidence,
-        ),
-        lossEventFrequencyConfidence: getConfidenceWithFallback(
-          risk.lossEventFrequencyConfidence,
-        ),
-        primaryLossMagnitudeConfidence: getConfidenceWithFallback(
-          risk.primaryLossMagnitudeConfidence,
-        ),
-        secondaryLossEventFrequencyConfidence: getConfidenceWithFallback(
-          risk.secondaryLossEventFrequencyConfidence,
-        ),
-        secondaryLossMagnitudeConfidence: getConfidenceWithFallback(
-          risk.secondaryLossMagnitudeConfidence,
-        ),
-        lossMagnitudeConfidence: getConfidenceWithFallback(
-          risk.lossMagnitudeConfidence,
-        ),
+        // Calculated
+        threatEventFrequency: {
+          min: Number(risk.parameters?.threatEventFrequency?.min || risk.threatEventFrequencyMin || 0),
+          avg: Number(risk.parameters?.threatEventFrequency?.avg || risk.threatEventFrequencyAvg || 0),
+          max: Number(risk.parameters?.threatEventFrequency?.max || risk.threatEventFrequencyMax || 0),
+          confidence: getConfidenceWithFallback(risk.parameters?.threatEventFrequency?.confidence || risk.threatEventFrequencyConfidence)
+        },
+        susceptibility: {
+          min: Number(risk.parameters?.susceptibility?.min || risk.susceptibilityMin || 0),
+          avg: Number(risk.parameters?.susceptibility?.avg || risk.susceptibilityAvg || 0),
+          max: Number(risk.parameters?.susceptibility?.max || risk.susceptibilityMax || 0),
+          confidence: getConfidenceWithFallback(risk.parameters?.susceptibility?.confidence || risk.susceptibilityConfidence)
+        },
+        lossEventFrequency: {
+          min: Number(risk.parameters?.lossEventFrequency?.min || risk.lossEventFrequencyMin || 0),
+          avg: Number(risk.parameters?.lossEventFrequency?.avg || risk.lossEventFrequencyAvg || 0),
+          max: Number(risk.parameters?.lossEventFrequency?.max || risk.lossEventFrequencyMax || 0),
+          confidence: getConfidenceWithFallback(risk.parameters?.lossEventFrequency?.confidence || risk.lossEventFrequencyConfidence)
+        },
+        lossMagnitude: {
+          min: Number(risk.parameters?.lossMagnitude?.min || risk.lossMagnitudeMin || 0),
+          avg: Number(risk.parameters?.lossMagnitude?.avg || risk.lossMagnitudeAvg || 0),
+          max: Number(risk.parameters?.lossMagnitude?.max || risk.lossMagnitudeMax || 0),
+          confidence: getConfidenceWithFallback(risk.parameters?.lossMagnitude?.confidence || risk.lossMagnitudeConfidence)
+        },
+      },
 
-        // Include notes if available
-        notes: risk.notes || "",
-        itemType: risk.itemType || (isTemplate ? "template" : "instance"),
-      }
+      // Include notes if available
+      notes: risk.notes || "",
+      itemType: risk.itemType || (isTemplate ? "template" : "instance"),
+
+      // Legacy flat fields for backward compatibility if needed by other components
+      inherentRisk: Number(risk.inherentRisk || 0),
+      residualRisk: Number(risk.residualRisk || 0),
+    }
     : null;
 
   // Initialize form with default values or existing risk values
@@ -608,7 +533,7 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
     resolver: zodResolver(riskFormSchema),
     defaultValues: initialValues,
   });
-  
+
   // When editing an existing risk, fetch the latest calculated values from the server
   useEffect(() => {
     if (risk && risk.riskId) {
@@ -619,7 +544,7 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
           if (data.success && data.data) {
             const calculatedValues = data.data;
             console.log(`Loaded calculated values from server for ${risk.riskId}:`, calculatedValues);
-            
+
             // Update form with server-calculated values
             if (calculatedValues.inherentRisk) {
               form.setValue('inherentRisk', Number(calculatedValues.inherentRisk));
@@ -638,21 +563,10 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
   // Calculate risk values and update the state
   const calculateRisk = async () => {
     try {
-      console.log("Calculating risk with updated parameters...");
+      console.log("Calculating risk with updated parameters (Server-Side Only)...");
 
       // Get current form values
       const values = form.getValues();
-      
-      // Check for existing risk values in edit mode
-      const existingInherentRisk = Number(risk?.inherentRisk ?? 0);
-      const existingResidualRisk = Number(risk?.residualRisk ?? 0);
-      
-      // If we're editing an existing risk with valid values, prioritize preserving those values
-      const isExistingRiskWithValues = risk && existingInherentRisk > 0;
-
-      // Check if there are any assets associated
-      const hasAssociatedAssets =
-        values.associatedAssets && values.associatedAssets.length > 0;
 
       // Safely set form values with proper typing
       const safeSetValue = (
@@ -665,211 +579,127 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
         }
       };
 
-      // If no assets and we're not editing an existing risk with values, use zeros
-      if (!hasAssociatedAssets && !isExistingRiskWithValues) {
-        console.log("No assets associated and no existing risk values, using zero values");
-        setCalculatedInherentRisk(0);
-        safeSetValue("inherentRisk", 0);
-        safeSetValue("residualRisk", 0);
+      // Always use the POST endpoint with current form data for "what-if" analysis
+      // This ensures we calculate based on what the user sees, not what's in the DB
+      const calculationEndpoint = `/api/risks/calculate/monte-carlo`;
+      const calculationMethod = "POST";
 
-        // Zero out all calculated fields
-        Object.entries(ZERO_CALCULATED_VALUES).forEach(([key, value]) => {
-          safeSetValue(key as keyof RiskFormData, value);
+      // Create a minimal data object with the FAIR parameters needed for calculation
+      const requestData = {
+        associatedAssets: values.associatedAssets || [],
+        contactFrequencyMin: Number(values.contactFrequencyMin || 0),
+        contactFrequencyAvg: Number(values.contactFrequencyAvg || 0),
+        contactFrequencyMax: Number(values.contactFrequencyMax || 0),
+        contactFrequencyConfidence:
+          values.contactFrequencyConfidence || "medium",
+        probabilityOfActionMin: Number(values.probabilityOfActionMin || 0),
+        probabilityOfActionAvg: Number(values.probabilityOfActionAvg || 0),
+        probabilityOfActionMax: Number(values.probabilityOfActionMax || 0),
+        probabilityOfActionConfidence:
+          values.probabilityOfActionConfidence || "medium",
+        threatCapabilityMin: Number(values.threatCapabilityMin || 0),
+        threatCapabilityAvg: Number(values.threatCapabilityAvg || 0),
+        threatCapabilityMax: Number(values.threatCapabilityMax || 0),
+        threatCapabilityConfidence:
+          values.threatCapabilityConfidence || "medium",
+        resistanceStrengthMin: Number(values.resistanceStrengthMin || 0),
+        resistanceStrengthAvg: Number(values.resistanceStrengthAvg || 0),
+        resistanceStrengthMax: Number(values.resistanceStrengthMax || 0),
+        resistanceStrengthConfidence:
+          values.resistanceStrengthConfidence || "medium",
+        primaryLossMagnitudeMin: Number(
+          values.primaryLossMagnitudeMin || 0,
+        ),
+        primaryLossMagnitudeAvg: Number(
+          values.primaryLossMagnitudeAvg || 0,
+        ),
+        primaryLossMagnitudeMax: Number(
+          values.primaryLossMagnitudeMax || 0,
+        ),
+        primaryLossMagnitudeConfidence:
+          values.primaryLossMagnitudeConfidence || "medium",
+        secondaryLossEventFrequencyMin: Number(
+          values.secondaryLossEventFrequencyMin || 0,
+        ),
+        secondaryLossEventFrequencyAvg: Number(
+          values.secondaryLossEventFrequencyAvg || 0,
+        ),
+        secondaryLossEventFrequencyMax: Number(
+          values.secondaryLossEventFrequencyMax || 0,
+        ),
+        secondaryLossEventFrequencyConfidence:
+          values.secondaryLossEventFrequencyConfidence || "medium",
+        secondaryLossMagnitudeMin: Number(
+          values.secondaryLossMagnitudeMin || 0,
+        ),
+        secondaryLossMagnitudeAvg: Number(
+          values.secondaryLossMagnitudeAvg || 0,
+        ),
+        secondaryLossMagnitudeMax: Number(
+          values.secondaryLossMagnitudeMax || 0,
+        ),
+        secondaryLossMagnitudeConfidence:
+          values.secondaryLossMagnitudeConfidence || "medium",
+      };
+
+      console.log(`Making API request: ${calculationMethod} ${calculationEndpoint}`);
+      const response: any = await apiRequest(
+        calculationMethod,
+        calculationEndpoint,
+        requestData,
+      );
+
+      console.log("Server calculation response:", response);
+
+      if (response && typeof response === "object") {
+        // Update with values from server
+        const inherentRiskValue = Number(response.inherentRisk) || 0;
+        const residualRiskValue = Number(response.residualRisk) || 0;
+
+        console.log("Server calculated risk values:", {
+          inherentRisk: inherentRiskValue,
+          residualRisk: residualRiskValue,
         });
-        return;
-      }
-      
-      // If we're editing an existing risk with values but no assets are associated,
-      // preserve the existing values and return early
-      if (!hasAssociatedAssets && isExistingRiskWithValues) {
-        console.log("Preserving existing risk values:", { 
-          inherentRisk: existingInherentRisk, 
-          residualRisk: existingResidualRisk 
-        });
-        setCalculatedInherentRisk(existingInherentRisk);
-        safeSetValue("inherentRisk", existingInherentRisk);
-        safeSetValue("residualRisk", existingResidualRisk);
-        return;
-      }
 
-      // Try server-side calculation first
-      let serverCalcSuccess = false;
-      try {
-        let calculationEndpoint = "";
-        let calculationMethod = "GET";
-        let requestData = null;
+        // Update state and form values
+        setCalculatedInherentRisk(inherentRiskValue);
+        safeSetValue("inherentRisk", inherentRiskValue);
+        safeSetValue("residualRisk", residualRiskValue);
 
-        if (risk?.id || risk?.riskId) {
-          // If editing an existing risk, use the GET endpoint with risk ID
-          const riskIdForQuery = risk?.riskId || risk?.id?.toString();
-          calculationEndpoint = `/api/risks/${riskIdForQuery}/calculate`;
-          console.log(
-            `Using server calculation for existing risk: ${riskIdForQuery}`,
-          );
-        } else {
-          // For new risks with assets, use the POST endpoint with form data
-          calculationEndpoint = `/api/risks/calculate`;
-          calculationMethod = "POST";
+        // Update all other calculated fields if present in response
+        if (response.lossEventFrequencyMin !== undefined) safeSetValue("lossEventFrequencyMin", response.lossEventFrequencyMin);
+        if (response.lossEventFrequencyAvg !== undefined) safeSetValue("lossEventFrequencyAvg", response.lossEventFrequencyAvg);
+        if (response.lossEventFrequencyMax !== undefined) safeSetValue("lossEventFrequencyMax", response.lossEventFrequencyMax);
 
-          // Create a minimal data object with the FAIR parameters needed for calculation
-          requestData = {
-            associatedAssets: values.associatedAssets || [],
-            contactFrequencyMin: Number(values.contactFrequencyMin || 0),
-            contactFrequencyAvg: Number(values.contactFrequencyAvg || 0),
-            contactFrequencyMax: Number(values.contactFrequencyMax || 0),
-            contactFrequencyConfidence:
-              values.contactFrequencyConfidence || "medium",
-            probabilityOfActionMin: Number(values.probabilityOfActionMin || 0),
-            probabilityOfActionAvg: Number(values.probabilityOfActionAvg || 0),
-            probabilityOfActionMax: Number(values.probabilityOfActionMax || 0),
-            probabilityOfActionConfidence:
-              values.probabilityOfActionConfidence || "medium",
-            threatCapabilityMin: Number(values.threatCapabilityMin || 0),
-            threatCapabilityAvg: Number(values.threatCapabilityAvg || 0),
-            threatCapabilityMax: Number(values.threatCapabilityMax || 0),
-            threatCapabilityConfidence:
-              values.threatCapabilityConfidence || "medium",
-            resistanceStrengthMin: Number(values.resistanceStrengthMin || 0),
-            resistanceStrengthAvg: Number(values.resistanceStrengthAvg || 0),
-            resistanceStrengthMax: Number(values.resistanceStrengthMax || 0),
-            resistanceStrengthConfidence:
-              values.resistanceStrengthConfidence || "medium",
-            primaryLossMagnitudeMin: Number(
-              values.primaryLossMagnitudeMin || 0,
-            ),
-            primaryLossMagnitudeAvg: Number(
-              values.primaryLossMagnitudeAvg || 0,
-            ),
-            primaryLossMagnitudeMax: Number(
-              values.primaryLossMagnitudeMax || 0,
-            ),
-            primaryLossMagnitudeConfidence:
-              values.primaryLossMagnitudeConfidence || "medium",
-            secondaryLossEventFrequencyMin: Number(
-              values.secondaryLossEventFrequencyMin || 0,
-            ),
-            secondaryLossEventFrequencyAvg: Number(
-              values.secondaryLossEventFrequencyAvg || 0,
-            ),
-            secondaryLossEventFrequencyMax: Number(
-              values.secondaryLossEventFrequencyMax || 0,
-            ),
-            secondaryLossEventFrequencyConfidence:
-              values.secondaryLossEventFrequencyConfidence || "medium",
-            secondaryLossMagnitudeMin: Number(
-              values.secondaryLossMagnitudeMin || 0,
-            ),
-            secondaryLossMagnitudeAvg: Number(
-              values.secondaryLossMagnitudeAvg || 0,
-            ),
-            secondaryLossMagnitudeMax: Number(
-              values.secondaryLossMagnitudeMax || 0,
-            ),
-            secondaryLossMagnitudeConfidence:
-              values.secondaryLossMagnitudeConfidence || "medium",
-          };
+        if (response.lossMagnitudeMin !== undefined) safeSetValue("lossMagnitudeMin", response.lossMagnitudeMin);
+        if (response.lossMagnitudeAvg !== undefined) safeSetValue("lossMagnitudeAvg", response.lossMagnitudeAvg);
+        if (response.lossMagnitudeMax !== undefined) safeSetValue("lossMagnitudeMax", response.lossMagnitudeMax);
 
-          console.log(`Using server calculation with POST for new risk`);
+        if (response.threatEventFrequencyMin !== undefined) safeSetValue("threatEventFrequencyMin", response.threatEventFrequencyMin);
+        if (response.threatEventFrequencyAvg !== undefined) safeSetValue("threatEventFrequencyAvg", response.threatEventFrequencyAvg);
+        if (response.threatEventFrequencyMax !== undefined) safeSetValue("threatEventFrequencyMax", response.threatEventFrequencyMax);
+
+        if (response.susceptibilityMin !== undefined) safeSetValue("susceptibilityMin", response.susceptibilityMin);
+        if (response.susceptibilityAvg !== undefined) safeSetValue("susceptibilityAvg", response.susceptibilityAvg);
+        if (response.susceptibilityMax !== undefined) safeSetValue("susceptibilityMax", response.susceptibilityMax);
+
+        // Check for warnings/errors
+        if (response.error) {
+          console.warn("Server calculation warning:", response.error);
+          toast({
+            title: "Calculation Warning",
+            description: response.error,
+            variant: "destructive",
+          });
         }
-
-        // Make the API request
-        if (calculationEndpoint) {
-          console.log(
-            `Making API request: ${calculationMethod} ${calculationEndpoint}`,
-          );
-          const response: any = await apiRequest(
-            calculationMethod,
-            calculationEndpoint,
-            requestData,
-          );
-
-          console.log("Server calculation response:", response);
-
-          if (response && typeof response === "object" && "inherentRisk" in response) {
-            // Update with values from server
-            const inherentRiskValue = Number(response.inherentRisk) || 0;
-            const residualRiskValue = Number(response.residualRisk) || 0;
-
-            console.log("Server calculated risk values:", {
-              inherentRisk: inherentRiskValue,
-              residualRisk: residualRiskValue,
-            });
-
-            // Update state and form values
-            setCalculatedInherentRisk(inherentRiskValue);
-            safeSetValue("inherentRisk", inherentRiskValue);
-            safeSetValue("residualRisk", residualRiskValue);
-
-            // Check for warnings/errors
-            if (response.error) {
-              console.warn("Server calculation warning:", response.error);
-            }
-
-            serverCalcSuccess = true;
-            return;
-          }
-        }
-      } catch (serverError) {
-        console.error(
-          "Error using server-side calculation, falling back to local calculation:",
-          serverError,
-        );
-      }
-
-      // If server calculation failed or was skipped, calculate locally
-      if (!serverCalcSuccess) {
-        console.log("Using local risk calculation");
-        const calcResults = calculateRiskFromForm(form);
-
-        console.log(
-          "Local calculation result: inherentRisk =",
-          calcResults.inherentRisk,
-          "residualRisk =",
-          calcResults.residualRisk,
-        );
-
-        // Set all calculated fields
-        safeSetValue(
-          "lossEventFrequencyMin",
-          calcResults.lossEventFrequencyMin,
-        );
-        safeSetValue(
-          "lossEventFrequencyAvg",
-          calcResults.lossEventFrequencyAvg,
-        );
-        safeSetValue(
-          "lossEventFrequencyMax",
-          calcResults.lossEventFrequencyMax,
-        );
-
-        safeSetValue("lossMagnitudeMin", calcResults.lossMagnitudeMin);
-        safeSetValue("lossMagnitudeAvg", calcResults.lossMagnitudeAvg);
-        safeSetValue("lossMagnitudeMax", calcResults.lossMagnitudeMax);
-
-        safeSetValue(
-          "threatEventFrequencyMin",
-          calcResults.threatEventFrequencyMin,
-        );
-        safeSetValue(
-          "threatEventFrequencyAvg",
-          calcResults.threatEventFrequencyAvg,
-        );
-        safeSetValue(
-          "threatEventFrequencyMax",
-          calcResults.threatEventFrequencyMax,
-        );
-
-        safeSetValue("susceptibilityMin", calcResults.susceptibilityMin);
-        safeSetValue("susceptibilityAvg", calcResults.susceptibilityAvg);
-        safeSetValue("susceptibilityMax", calcResults.susceptibilityMax);
-
-        safeSetValue("inherentRisk", calcResults.inherentRisk);
-        safeSetValue("residualRisk", calcResults.residualRisk);
-
-        setCalculatedInherentRisk(calcResults.inherentRisk || 0);
       }
     } catch (error) {
       console.error("Error calculating risk:", error);
+      toast({
+        title: "Calculation Failed",
+        description: "Could not perform server-side calculation. Please check your connection.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -883,7 +713,7 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
 
     if (skipInitialCalc) {
       console.log("Skipping initial calculation for existing risk with value:", existingInherentRisk);
-      
+
       // Set the existing values in the form
       form.setValue("inherentRisk", existingInherentRisk);
       form.setValue("residualRisk", risk.residualRisk ? Number(risk.residualRisk) : 0);
@@ -961,7 +791,7 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
         processedValues.itemType = isTemplate ? "template" : "instance";
 
         // Check if there are associated assets - for templates, assets might be optional
-        const hasAssociatedAssets = 
+        const hasAssociatedAssets =
           Array.isArray(processedValues.associatedAssets) &&
           processedValues.associatedAssets.length > 0;
 
@@ -978,8 +808,8 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
             ),
 
             // Get the values to use based on asset association
-            ...(isTemplate || hasAssociatedAssets ? 
-              getAssetDependentRiskValues(processedValues, true) : 
+            ...(isTemplate || hasAssociatedAssets ?
+              getAssetDependentRiskValues(processedValues, true) :
               getAssetDependentRiskValues(processedValues, false)),
 
             // Convert all numeric fields to ensure they're numbers, not strings
@@ -998,14 +828,14 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
             primaryLossMagnitudeMin: Number(processedValues.primaryLossMagnitudeMin),
             primaryLossMagnitudeAvg: Number(processedValues.primaryLossMagnitudeAvg),
             primaryLossMagnitudeMax: Number(processedValues.primaryLossMagnitudeMax),
-            
+
             // Ensure confidence values match the expected enum values
             contactFrequencyConfidence: String(processedValues.contactFrequencyConfidence).toLowerCase(),
             probabilityOfActionConfidence: String(processedValues.probabilityOfActionConfidence).toLowerCase(),
             threatCapabilityConfidence: String(processedValues.threatCapabilityConfidence).toLowerCase(),
             resistanceStrengthConfidence: String(processedValues.resistanceStrengthConfidence).toLowerCase(),
             primaryLossMagnitudeConfidence: String(processedValues.primaryLossMagnitudeConfidence).toLowerCase(),
-            
+
             // The inherent and residual risk values should be 0 if no assets (unless it's a template)
             inherentRisk: (isTemplate || hasAssociatedAssets)
               ? Number(processedValues.inherentRisk)
@@ -1017,30 +847,30 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
 
             // Include any notes
             notes: processedValues.notes,
-            
+
             // Set the itemType properly
             itemType: isTemplate ? "template" : "instance",
           };
 
           console.log("Sending update with data:", updateData);
-          
+
           // Select the appropriate endpoint based on whether this is a template or instance
-          const endpoint = isTemplate 
-            ? `/api/risk-library/${risk.id}` 
+          const endpoint = isTemplate
+            ? `/api/risk-library/${risk.id}`
             : `/api/risks/${risk.id}`;
-            
+
           return apiRequest("PUT", endpoint, updateData);
         } else {
           // Create new risk or template
           console.log(`Creating new ${isTemplate ? 'template' : 'risk'}...`);
-          
+
           // Use separate endpoints for templates and instances
           const endpoint = isTemplate ? "/api/risk-templates" : "/api/risks";
-          
+
           // Make sure we explicitly set the itemType in the request 
           processedValues.itemType = isTemplate ? "template" : "instance";
           console.log(`Creating ${isTemplate ? 'template' : 'instance'} with itemType: ${processedValues.itemType} using endpoint ${endpoint}`);
-            
+
           return apiRequest("POST", endpoint, processedValues);
         }
       } catch (error: any) {
@@ -1053,7 +883,7 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
       queryClient.invalidateQueries({ queryKey: ["/api/risks"] });
       queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
-      
+
       // If this is a template, also invalidate the risk library
       if (isTemplate) {
         queryClient.invalidateQueries({ queryKey: ["/api/risk-library"] });
@@ -1125,39 +955,22 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
 
       // Convert to our expected type with proper handling
       const values: RiskFormData = { ...formValues };
-      
+
       // Ensure we have valid numeric values for inherentRisk and residualRisk
       if (values.inherentRisk === undefined || isNaN(Number(values.inherentRisk))) {
         values.inherentRisk = 0;
       }
-      
+
       if (values.residualRisk === undefined || isNaN(Number(values.residualRisk))) {
         values.residualRisk = 0;
       }
-      
+
       console.log("Submitting with inherentRisk:", values.inherentRisk, "residualRisk:", values.residualRisk);
 
-      // Force a final calculation to ensure all derived values are current
-      // This will handle asset dependency check and set risk to 0 if no assets
-      const calculationResult = calculateRiskFromForm(form);
-      console.log(
-        "Final calculated inherent risk:",
-        calculationResult.inherentRisk,
-        "residual risk:",
-        calculationResult.residualRisk,
-      );
-
-      // Set calculated values from risk-utils.ts calculation
-      // Make sure calculated values are converted to strings for database storage
-      // This ensures compatibility with the database schema
-      values.inherentRisk = calculationResult.inherentRisk || 0;
-      values.residualRisk = calculationResult.residualRisk || 0;
-
-      // Also ensure the main susceptibility value is included
-      // Use the single susceptibility value (avg) from calculation result
-      if (calculationResult.susceptibility !== undefined) {
-        values.susceptibilityAvg = calculationResult.susceptibility || 0;
-      }
+      // We no longer force a client-side calculation here.
+      // The user should have clicked "Run calculations" to see the impact,
+      // or the server will handle it on the next fetch/update cycle.
+      // We trust the form values as they are.
 
       // For logging/debugging
       console.log(
@@ -1334,18 +1147,13 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
                       // Get current form values
                       const formValues = form.getValues();
 
-                      // Calculate the risk values before we create the update data
-                      let calculationResult = null;
-                      try {
-                        // We don't want to calculate on the client-side
-                        // Instead use the values from the risk object directly or make a server call
-                        // Leave the current values untouched - server calculation will happen after save
-                      } catch (error) {
-                        console.error("Error calculating risk values:", error);
-                        // Use safe defaults if calculation fails
-                        formValues.inherentRisk = formValues.inherentRisk || 0;
-                        formValues.residualRisk = formValues.residualRisk || 0;
-                      }
+                      // We don't want to calculate on the client-side
+                      // Instead use the values from the risk object directly or make a server call
+                      // Leave the current values untouched - server calculation will happen after save
+
+                      // Use current form values for risk
+                      // If they are 0, the server recalculation will update them
+
 
                       // Create update data using the helper function with updated values
                       const updateData = createRiskUpdateData(
@@ -1371,12 +1179,12 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
                             // Get response text to understand the error
                             const errorText = await response.text();
                             console.error("Server error response:", errorText);
-                            
+
                             // Check if the response is HTML (common for server errors)
                             if (errorText.includes('<!DOCTYPE html>') || errorText.includes('<html>')) {
                               throw new Error(`Server error (${response.status}). Please try again.`);
                             }
-                            
+
                             // Otherwise, try to parse as JSON if possible
                             try {
                               const errorJson = JSON.parse(errorText);
@@ -1386,7 +1194,7 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
                               throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
                             }
                           }
-                          
+
                           // For successful responses, safely handle empty or non-JSON responses
                           try {
                             const text = await response.text();
@@ -1450,27 +1258,21 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
               </Button>
             ) : (
               // For create, use the React Query mutation
-            <Button
-              type="button"
-              disabled={mutation.isPending}
-              className="gap-1 rounded-full bg-primary px-6 text-primary-foreground hover:bg-primary/90"
-              onClick={() => {
-                console.log("Create button clicked using React Query mutation");
-                try {
-                  // Get current form values
-                  const values = form.getValues();
-                  // Calculate the risk values
+              <Button
+                type="button"
+                disabled={mutation.isPending}
+                className="gap-1 rounded-full bg-primary px-6 text-primary-foreground hover:bg-primary/90"
+                onClick={() => {
+                  console.log("Create button clicked using React Query mutation");
                   try {
-                    const calculationResult = calculateRiskFromForm(form);
-                    values.inherentRisk = calculationResult.inherentRisk;
-                    values.residualRisk = calculationResult.residualRisk;
-                  } catch (error) {
-                    console.error("Error calculating risk values:", error);
+                    // Get current form values
+                    const values = form.getValues();
+                    // Use current form values for risk
+                    // If they are 0, the server recalculation will update them
                     values.inherentRisk = values.inherentRisk || 0;
                     values.residualRisk = values.residualRisk || 0;
-                  }
-                  values.itemType = isTemplate ? "template" : "instance";
-                  mutation.mutate(values as RiskFormData);
+                    values.itemType = isTemplate ? "template" : "instance";
+                    mutation.mutate(values as RiskFormData);
                   } catch (error: any) {
                     console.error("Error in manual create:", error);
                     toast({

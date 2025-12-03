@@ -36,7 +36,7 @@ export class DatabaseStorage {
   /**
    * ASSET REPOSITORY METHODS
    */
-  
+
   async getAllAssets(): Promise<Asset[]> {
     return db.select().from(assets);
   }
@@ -57,39 +57,39 @@ export class DatabaseStorage {
       console.log("Warning: getAssetsByIds called with empty array");
       return [];
     }
-    
+
     // Log the asset IDs being requested for debugging
     console.log(`Looking up assets by IDs: ${assetIds.join(', ')}`);
-    
+
     const fetchedAssets = await db.select().from(assets).where(inArray(assets.assetId, assetIds));
     console.log(`Found ${fetchedAssets.length} assets matching the IDs`);
-    
+
     // Process assets to ensure all numeric values (especially assetValue) are properly handled
     return fetchedAssets.map(asset => {
       // Convert any string values to numbers - handle both regular and formatted (with commas) values
       let numericAssetValue = 0;
-      
+
       if (typeof asset.assetValue === 'number') {
         numericAssetValue = asset.assetValue;
       } else if (typeof asset.assetValue === 'string') {
         // Remove any non-numeric characters except decimal point
-        const cleanValue = asset.assetValue.replace(/[^0-9.-]/g, '');
+        const cleanValue = (asset.assetValue as string).replace(/[^0-9.-]/g, '');
         numericAssetValue = parseFloat(cleanValue);
       }
-      
+
       // Ensure it's not NaN
       if (isNaN(numericAssetValue)) {
         numericAssetValue = 0;
       }
-      
+
       console.log(`Processed asset ${asset.assetId} with value: ${numericAssetValue}`);
-      
+
       return {
         ...asset,
-        assetValue: numericAssetValue,
+        assetValue: String(numericAssetValue), // Convert back to string for schema compatibility
         // Also ensure we have a value field for legacy compatibility
         value: numericAssetValue
-      };
+      } as unknown as Asset;
     });
   }
 
@@ -100,7 +100,7 @@ export class DatabaseStorage {
       regulatoryImpact: asset.regulatoryImpact || null,
       dependencies: asset.dependencies || null
     };
-    
+
     const [createdAsset] = await db.insert(assets).values(processedAsset).returning();
     return createdAsset;
   }
@@ -131,7 +131,7 @@ export class DatabaseStorage {
     try {
       // Step 1: Find all risks associated with this asset
       const allRisks = await db.select().from(risks);
-      const affectedRisks = allRisks.filter(risk => 
+      const affectedRisks = allRisks.filter(risk =>
         risk.associatedAssets && risk.associatedAssets.includes(asset.assetId)
       );
 
@@ -140,30 +140,30 @@ export class DatabaseStorage {
       // Step 2: For each affected risk, remove the asset reference or delete the risk if it becomes orphaned
       for (const risk of affectedRisks) {
         const updatedAssets = risk.associatedAssets.filter(a => a !== asset.assetId);
-        
+
         if (updatedAssets.length === 0) {
           // Risk has no more assets - delete the risk and its dependencies
           console.log(`Risk ${risk.riskId} has no remaining assets - deleting risk and dependencies`);
-          
+
           // Delete risk-control relationships
           await db.delete(riskControls).where(eq(riskControls.riskId, risk.id));
-          
+
           // Delete risk responses
           await db.delete(riskResponses).where(eq(riskResponses.riskId, risk.riskId));
-          
+
           // Delete risk costs using SQL query since table uses snake_case naming
           await db.execute(sql`DELETE FROM risk_costs WHERE risk_id = ${risk.id}`);
-          
+
           // Delete the risk itself
           await db.delete(risks).where(eq(risks.id, risk.id));
-          
+
           console.log(`Deleted risk ${risk.riskId} and all its dependencies`);
         } else {
           // Update the risk to remove the asset reference
           await db.update(risks)
             .set({ associatedAssets: updatedAssets })
             .where(eq(risks.id, risk.id));
-          
+
           console.log(`Updated risk ${risk.riskId} - removed asset ${asset.assetId} from associations`);
         }
       }
@@ -220,7 +220,7 @@ export class DatabaseStorage {
   /**
    * RISK REPOSITORY METHODS
    */
-  
+
   async getAllRisks(): Promise<Risk[]> {
     return db.select().from(risks);
   }
@@ -250,13 +250,13 @@ export class DatabaseStorage {
       .set(data)
       .where(eq(risks.id, id))
       .returning();
-    
+
     return updatedRisk;
   }
 
   async deleteRisk(id: number): Promise<boolean> {
     await db.delete(risks).where(eq(risks.id, id));
-    
+
     // Trigger risk summary update after deletion
     try {
       const { riskSummaryService } = await import('./riskSummaryService');
@@ -265,14 +265,14 @@ export class DatabaseStorage {
     } catch (error) {
       console.error('Error updating risk summaries after deletion (database layer):', error);
     }
-    
+
     return true;
   }
 
   /**
    * CONTROL REPOSITORY METHODS
    */
-  
+
   async getAllControls(): Promise<Control[]> {
     return db.select().from(controls);
   }
@@ -297,20 +297,20 @@ export class DatabaseStorage {
       ...control,
       associatedRisks: control.associatedRisks ? control.associatedRisks : null
     };
-    
+
     const [createdControl] = await db.insert(controls).values(processedControl).returning();
     return createdControl;
   }
 
   async updateControl(id: number, data: Partial<Control>): Promise<Control | undefined> {
     console.log("Updating control with data:", data);
-    
+
     // Create an object with only the fields that exist in the database
     const validData: any = {};
-    
+
     // Map fields to their database column names
     if (data.controlEffectiveness !== undefined) validData.controlEffectiveness = data.controlEffectiveness;
-    
+
     // Handle FAIR methodology effectiveness fields (using camelCase names from schema)
     if ((data as any).eAvoid !== undefined) validData.eAvoid = (data as any).eAvoid;
     if ((data as any).eDeter !== undefined) validData.eDeter = (data as any).eDeter;
@@ -318,7 +318,7 @@ export class DatabaseStorage {
     if ((data as any).eResist !== undefined) validData.eResist = (data as any).eResist;
     if ((data as any).varFreq !== undefined) validData.varFreq = (data as any).varFreq;
     if ((data as any).varDuration !== undefined) validData.varDuration = (data as any).varDuration;
-    
+
     // Other fields that might be updated
     if (data.name !== undefined) validData.name = data.name;
     if (data.description !== undefined) validData.description = data.description;
@@ -332,20 +332,20 @@ export class DatabaseStorage {
     if (data.deployedAgentCount !== undefined) validData.deployedAgentCount = data.deployedAgentCount;
     if (data.notes !== undefined) validData.notes = data.notes;
     if (data.associatedRisks !== undefined) validData.associatedRisks = data.associatedRisks;
-    
+
     console.log("Filtered valid data for update:", validData);
-    
+
     if (Object.keys(validData).length === 0) {
       console.error("No valid data provided for update");
       return undefined;
     }
-    
+
     const [updatedControl] = await db
       .update(controls)
       .set(validData)
       .where(eq(controls.id, id))
       .returning();
-      
+
     return updatedControl;
   }
 
@@ -354,25 +354,25 @@ export class DatabaseStorage {
     await db.delete(controls).where(eq(controls.id, id));
     return true;
   }
-  
+
   /**
    * CONTROL LIBRARY REPOSITORY METHODS
    */
-  
+
   async getAllControlLibraryItems(): Promise<any[]> {
     return db.select().from(controlLibrary);
   }
-  
+
   async getControlLibraryItem(id: number): Promise<any | undefined> {
     const [template] = await db.select().from(controlLibrary).where(eq(controlLibrary.id, id));
     return template;
   }
-  
+
   async createControlLibraryItem(item: any): Promise<any> {
     const [createdItem] = await db.insert(controlLibrary).values(item).returning();
     return createdItem;
   }
-  
+
   async updateControlLibraryItem(id: number, data: any): Promise<any | undefined> {
     const [updatedItem] = await db
       .update(controlLibrary)
@@ -381,7 +381,7 @@ export class DatabaseStorage {
       .returning();
     return updatedItem;
   }
-  
+
   async deleteControlLibraryItem(id: number): Promise<boolean> {
     await db.delete(controlLibrary).where(eq(controlLibrary.id, id));
     return true;
@@ -390,7 +390,7 @@ export class DatabaseStorage {
   /**
    * RISK RESPONSE REPOSITORY METHODS
    */
-  
+
   async getAllRiskResponses(): Promise<RiskResponse[]> {
     return db.select().from(riskResponses);
   }
@@ -426,7 +426,7 @@ export class DatabaseStorage {
   /**
    * ACTIVITY LOG REPOSITORY METHODS
    */
-  
+
   async getAllActivityLogs(): Promise<ActivityLog[]> {
     return db.select().from(activityLogs).orderBy(desc(activityLogs.createdAt));
   }
@@ -446,7 +446,7 @@ export class DatabaseStorage {
       user: 'System User',
       entity: typeof log.details === 'object' && log.details?.message ? log.details.message : (log.entityType || 'Entity')
     };
-    
+
     const [createdLog] = await db.insert(activityLogs).values(processedLog).returning();
     return createdLog;
   }
@@ -454,7 +454,7 @@ export class DatabaseStorage {
   /**
    * LEGAL ENTITY REPOSITORY METHODS
    */
-  
+
   async getAllLegalEntities(): Promise<LegalEntity[]> {
     return db.select().from(legalEntities);
   }
@@ -475,7 +475,7 @@ export class DatabaseStorage {
       ...entity,
       regulatoryFramework: entity.regulatoryFramework || null
     };
-    
+
     const [createdEntity] = await db.insert(legalEntities).values(processedEntity).returning();
     return createdEntity;
   }
@@ -493,21 +493,21 @@ export class DatabaseStorage {
     await db.delete(legalEntities).where(eq(legalEntities.id, id));
     return true;
   }
-  
+
   /**
    * RISK SUMMARY REPOSITORY METHODS
    */
-  
+
   async getLatestRiskSummary(): Promise<any | null> {
     const results = await db
       .select()
       .from(riskSummaries)
       .orderBy(desc(riskSummaries.createdAt))
       .limit(1);
-      
+
     return results.length > 0 ? results[0] : null;
   }
-  
+
   async createRiskSummary(summary: InsertRiskSummary): Promise<any> {
     // Make sure year and month are always provided
     const now = new Date();
@@ -516,7 +516,7 @@ export class DatabaseStorage {
       year: summary.year || now.getFullYear(),
       month: summary.month || now.getMonth() + 1, // JavaScript months are 0-based
     };
-    
+
     const [createdSummary] = await db
       .insert(riskSummaries)
       .values(summaryWithDate)
@@ -527,7 +527,7 @@ export class DatabaseStorage {
   /**
    * RISK-CONTROL RELATIONSHIP REPOSITORY METHODS
    */
-  
+
   async getControlsForRisk(riskId: number): Promise<Control[]> {
     try {
       const risk = await this.getRisk(riskId);
@@ -535,50 +535,50 @@ export class DatabaseStorage {
         console.log(`No risk found with ID ${riskId}`);
         return [];
       }
-      
+
       console.log(`Getting controls for risk ID ${riskId}, riskId: ${risk.riskId}`);
-      
+
       // Get the join records
       const joinRecords = await db
         .select()
         .from(riskControls)
         .where(eq(riskControls.riskId, riskId));
-      
+
       console.log(`Found ${joinRecords.length} risk-control relationships`);
-      
+
       if (joinRecords.length === 0) return [];
-      
+
       // Get the control IDs
       const controlIds = joinRecords.map(record => record.controlId);
       console.log(`Control IDs: ${controlIds.join(', ')}`);
-      
+
       // Get the controls
       const controlsList = await this.getControlsByIds(controlIds);
       console.log(`Found ${controlsList.length} controls`);
-      
+
       return controlsList;
     } catch (error) {
       console.error(`Error getting controls for risk ${riskId}:`, error);
       return [];
     }
   }
-  
+
   async getRisksForControl(controlId: number): Promise<Risk[]> {
     // Get the join records
     const joinRecords = await db
       .select()
       .from(riskControls)
       .where(eq(riskControls.controlId, controlId));
-    
+
     if (joinRecords.length === 0) return [];
-    
+
     // Get the risk IDs
     const riskIds = joinRecords.map(record => record.riskId);
-    
+
     // Get the risks
     return this.getRisksByIds(riskIds);
   }
-  
+
   async addControlToRisk(riskId: number, controlId: number): Promise<void> {
     // Check if the relationship already exists
     const [existing] = await db
@@ -590,16 +590,34 @@ export class DatabaseStorage {
           eq(riskControls.controlId, controlId)
         )
       );
-    
+
     // If it doesn't exist, create it
     if (!existing) {
       await db.insert(riskControls).values({
         riskId,
         controlId
       });
+
+      // Sync with controls.associatedRisks array column for UI compatibility
+      const control = await this.getControl(controlId);
+      if (control) {
+        // Ensure associatedRisks is treated as an array of strings
+        const currentRisks: string[] = Array.isArray(control.associatedRisks)
+          ? (control.associatedRisks as string[])
+          : [];
+
+        if (!currentRisks.includes(riskId.toString())) {
+          await db
+            .update(controls)
+            .set({
+              associatedRisks: [...currentRisks, riskId.toString()] as string[]
+            })
+            .where(eq(controls.id, controlId));
+        }
+      }
     }
   }
-  
+
   async removeControlFromRisk(riskId: number, controlId: number): Promise<void> {
     await db
       .delete(riskControls)
@@ -609,14 +627,26 @@ export class DatabaseStorage {
           eq(riskControls.controlId, controlId)
         )
       );
+
+    // Sync with controls.associatedRisks array column for UI compatibility
+    const control = await this.getControl(controlId);
+    if (control && control.associatedRisks) {
+      const updatedRisks = control.associatedRisks.filter(id => id !== riskId.toString());
+      await db
+        .update(controls)
+        .set({
+          associatedRisks: updatedRisks
+        })
+        .where(eq(controls.id, controlId));
+    }
   }
-  
+
   async removeControlsFromRisk(riskId: number): Promise<void> {
     await db
       .delete(riskControls)
       .where(eq(riskControls.riskId, riskId));
   }
-  
+
   async removeControlFromAllRisks(controlId: number): Promise<void> {
     await db
       .delete(riskControls)
@@ -626,7 +656,7 @@ export class DatabaseStorage {
   /**
    * RISK SUMMARY REPOSITORY METHODS
    */
-  
+
   async recalculateRiskSummaries(): Promise<void> {
     // This method would trigger risk summary recalculation
     // For now, we'll implement a simple placeholder
@@ -640,21 +670,21 @@ export class DatabaseStorage {
   /**
    * CONTROL LIBRARY REPOSITORY METHODS
    */
-  
+
   async getAllControlLibraryItems(): Promise<any[]> {
     return db.select().from(controlLibrary);
   }
-  
+
   async getControlLibraryItem(id: number): Promise<any | undefined> {
     const [item] = await db.select().from(controlLibrary).where(eq(controlLibrary.id, id));
     return item;
   }
-  
+
   async createControlLibraryItem(data: any): Promise<any> {
     const [item] = await db.insert(controlLibrary).values(data).returning();
     return item;
   }
-  
+
   async updateControlLibraryItem(id: number, data: any): Promise<any> {
     const [item] = await db
       .update(controlLibrary)
@@ -663,51 +693,15 @@ export class DatabaseStorage {
       .returning();
     return item;
   }
-  
+
   async deleteControlLibraryItem(id: number): Promise<void> {
     await db.delete(controlLibrary).where(eq(controlLibrary.id, id));
-  }
-  
-  /**
-   * RISK SUMMARY RECALCULATION
-   */
-  async recalculateRiskSummaries(): Promise<void> {
-    // Get all risks
-    const allRisks = await this.getAllRisks();
-    
-    // Calculate total inherent and residual risk
-    let totalInherentRisk = 0;
-    let totalResidualRisk = 0;
-    
-    for (const risk of allRisks) {
-      // Only include valid numerical risk values
-      if (risk.inherentRisk && !isNaN(Number(risk.inherentRisk))) {
-        totalInherentRisk += Number(risk.inherentRisk);
-      }
-      
-      if (risk.residualRisk && !isNaN(Number(risk.residualRisk))) {
-        totalResidualRisk += Number(risk.residualRisk);
-      }
-    }
-    
-    // Create new risk summary entry
-    const now = new Date();
-    await this.createRiskSummary({
-      year: now.getFullYear(),
-      month: now.getMonth() + 1,
-      totalInherentRisk: String(totalInherentRisk),
-      totalResidualRisk: String(totalResidualRisk),
-      riskCount: allRisks.length,
-      createdAt: now
-    });
-    
-    console.log(`Risk summaries recalculated: inherent=${totalInherentRisk}, residual=${totalResidualRisk}`);
   }
 
   /**
    * COST MODULE REPOSITORY METHODS
    */
-  
+
   async getRiskCosts(riskId: number): Promise<any[]> {
     const result = await db.execute(sql`
       SELECT rc.*, cm.name as module_name, cm.cost_type, cm.cost_factor, cm.cis_control
@@ -717,7 +711,7 @@ export class DatabaseStorage {
     `);
     return result.rows as any[];
   }
-  
+
   async getCostModule(id: number): Promise<any | undefined> {
     const result = await db.execute(sql`
       SELECT * FROM cost_modules WHERE id = ${id}
@@ -728,21 +722,21 @@ export class DatabaseStorage {
   /**
    * RISK LIBRARY REPOSITORY METHODS
    */
-  
+
   async getAllRiskLibraryItems(): Promise<any[]> {
     return db.select().from(riskLibrary);
   }
-  
+
   async getRiskLibraryItem(id: number): Promise<any | undefined> {
     const [item] = await db.select().from(riskLibrary).where(eq(riskLibrary.id, id));
     return item;
   }
-  
+
   async createRiskLibraryItem(data: any): Promise<any> {
     const [item] = await db.insert(riskLibrary).values(data).returning();
     return item;
   }
-  
+
   async updateRiskLibraryItem(id: number, data: any): Promise<any> {
     const [item] = await db
       .update(riskLibrary)
@@ -751,7 +745,7 @@ export class DatabaseStorage {
       .returning();
     return item;
   }
-  
+
   async deleteRiskLibraryItem(id: number): Promise<void> {
     await db.delete(riskLibrary).where(eq(riskLibrary.id, id));
   }
@@ -763,10 +757,10 @@ export class DatabaseStorage {
     // Get risks associated with the asset
     const assetRecord = await this.getAsset(assetId);
     if (!assetRecord) return [];
-    
+
     // Find risks that include this asset in their associated_assets array
     const allRisks = await this.getAllRisks();
-    return allRisks.filter(risk => 
+    return allRisks.filter(risk =>
       risk.associatedAssets && risk.associatedAssets.includes(assetRecord.assetId)
     );
   }
@@ -775,7 +769,7 @@ export class DatabaseStorage {
     // Get the legal entity to find its entityId
     const entity = await this.getLegalEntity(entityId);
     if (!entity) return [];
-    
+
     // Find assets belonging to this legal entity
     const allAssets = await this.getAllAssets();
     return allAssets.filter(asset => asset.legalEntity === entity.entityId);

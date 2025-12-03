@@ -168,7 +168,7 @@ export default function Layout({ children, pageTitle, pageDescription, pageActio
               </div>
               {!sidebarCollapsed && (
                 <div>
-                  <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">Safe One</p>
+                  <p className="text-xs uppercase tracking-[0.35em] text-muted-foreground">Sarmiz-One</p>
                   <p className="text-xl font-semibold text-white">Risk OS</p>
                 </div>
               )}

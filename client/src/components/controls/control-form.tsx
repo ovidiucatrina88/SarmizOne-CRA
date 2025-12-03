@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Control } from "@/shared/schema";
+import { Control } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 
 // Simplified control form schema without entity associations
@@ -39,7 +39,7 @@ const controlFormSchema = z.object({
   controlCategory: z.enum(["technical", "administrative", "physical"]),
   implementationStatus: z.enum([
     "not_implemented",
-    "in_progress", 
+    "in_progress",
     "fully_implemented",
     "planned",
     "partially_implemented"
@@ -75,10 +75,10 @@ type ControlFormProps = {
 export function ControlForm({ control, onClose, isTemplate = false }: ControlFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   // State for pricing type
   const [pricingType, setPricingType] = useState<string>(
-    control?.isPerAgentPricing ? "agent" : "total"
+    control?.isPerAgent ? "agent" : "total"
   );
 
   // Fetch risks for read-only display
@@ -91,39 +91,39 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
     resolver: zodResolver(controlFormSchema),
     defaultValues: control
       ? {
-          controlId: control.controlId,
-          name: control.name,
-          description: control.description || "",
-          controlType: control.controlType,
-          controlCategory: control.controlCategory,
-          implementationStatus: control.implementationStatus,
-          controlEffectiveness: Number(control.controlEffectiveness || 0),
-          implementationCost: Number(control.implementationCost || 0),
-          costPerAgent: Number(control.costPerAgent || 0),
-          deployedAgentCount: Number(control.deployedAgentCount || 0),
-          isPerAgentPricing: Boolean(control.isPerAgentPricing),
-          notes: control.notes || "",
-          itemType: (control.itemType || "instance") as "template" | "instance",
-          libraryItemId: control.libraryItemId || undefined,
-          complianceFramework: control.complianceFramework as any || undefined,
-        }
+        controlId: control.controlId,
+        name: control.name,
+        description: control.description || "",
+        controlType: control.controlType,
+        controlCategory: control.controlCategory,
+        implementationStatus: control.implementationStatus,
+        controlEffectiveness: Number(control.controlEffectiveness || 0),
+        implementationCost: Number(control.implementationCost || 0),
+        costPerAgent: Number(control.costPerAgent || 0),
+        deployedAgentCount: Number((control as any).deployedAgentCount || 0),
+        isPerAgentPricing: Boolean(control.isPerAgent),
+        notes: (control as any).notes || "",
+        itemType: ((control as any).itemType || "instance") as "template" | "instance",
+        libraryItemId: control.libraryItemId || undefined,
+        complianceFramework: control.complianceFramework as any || undefined,
+      }
       : {
-          controlId: "",
-          name: "",
-          description: "",
-          controlType: "preventive",
-          controlCategory: "technical",
-          implementationStatus: "not_implemented",
-          controlEffectiveness: 0,
-          implementationCost: 0,
-          costPerAgent: 0,
-          isPerAgentPricing: false,
-          deployedAgentCount: 0,
-          notes: "",
-          itemType: "instance",
-          libraryItemId: undefined,
-          complianceFramework: undefined,
-        },
+        controlId: "",
+        name: "",
+        description: "",
+        controlType: "preventive",
+        controlCategory: "technical",
+        implementationStatus: "not_implemented",
+        controlEffectiveness: 0,
+        implementationCost: 0,
+        costPerAgent: 0,
+        isPerAgentPricing: false,
+        deployedAgentCount: 0,
+        notes: "",
+        itemType: "instance",
+        libraryItemId: undefined,
+        complianceFramework: undefined,
+      },
   });
 
   // Create mutation for adding/updating control
@@ -135,21 +135,21 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
       // Use different endpoints based on isTemplate
       if (control) {
         // Update existing control/template
-        const endpoint = isTemplate 
-          ? `/api/control-library/${control.id}` 
+        const endpoint = isTemplate
+          ? `/api/control-library/${control.id}`
           : `/api/controls/${control.id}`;
         return apiRequest("PUT", endpoint, values);
       } else {
         // Create new control/template
-        const endpoint = isTemplate 
-          ? "/api/control-library" 
+        const endpoint = isTemplate
+          ? "/api/control-library"
           : "/api/controls";
         return apiRequest("POST", endpoint, values);
       }
     },
     onSuccess: (updatedControl) => {
       console.log("Form update successful, updated control:", updatedControl);
-      
+
       // Invalidate appropriate queries based on template vs instance
       if (isTemplate) {
         queryClient.invalidateQueries({ queryKey: ["/api/control-library"] });
@@ -159,7 +159,7 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
         queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
         queryClient.invalidateQueries({ queryKey: ["/api/risk-summary/latest"] });
       }
-      
+
       // Show success message
       const entityType = isTemplate ? "Template" : "Control";
       toast({
@@ -168,7 +168,7 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
           ? `The control ${isTemplate ? "template" : "instance"} has been updated successfully.`
           : `A new control ${isTemplate ? "template" : "instance"} has been added to your library.`,
       });
-      
+
       onClose();
     },
     onError: (error) => {
@@ -184,19 +184,19 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
   // Handle form submission
   const onSubmit = (values: z.infer<typeof controlFormSchema>) => {
     console.log("Form submission - raw values:", values);
-    
+
     const submissionData = { ...values };
-    
+
     console.log("Form submission - processed data:", submissionData);
     mutation.mutate(submissionData);
   };
 
   // Get associated risks for read-only display
   const getAssociatedRisks = () => {
-    if (!control?.associatedRisks || !risks?.data) return [];
-    
+    if (!control?.associatedRisks || !(risks as any)?.data) return [];
+
     return control.associatedRisks.map(dbId => {
-      const risk = risks.data.find((r: any) => r.id.toString() === dbId.toString());
+      const risk = (risks as any).data.find((r: any) => r.id.toString() === dbId.toString());
       return risk ? { id: risk.id, riskId: risk.riskId, name: risk.name, severity: risk.severity } : null;
     }).filter(Boolean);
   };
@@ -253,7 +253,7 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
             <FormItem>
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea 
+                <Textarea
                   placeholder="Describe the control's purpose and implementation"
                   className="min-h-[100px]"
                   {...field}
@@ -349,10 +349,10 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
               <FormItem>
                 <FormLabel>Control Effectiveness (%)</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number" 
-                    min="0" 
-                    max="100" 
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
                     step="0.1"
                     value={field.value}
                     onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
@@ -433,9 +433,9 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
                   <FormItem>
                     <FormLabel>Total Implementation Cost</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        min="0" 
+                      <Input
+                        type="number"
+                        min="0"
                         step="0.01"
                         placeholder="0.00"
                         value={field.value || ''}
@@ -455,9 +455,9 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
                     <FormItem>
                       <FormLabel>Cost Per Agent</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          min="0" 
+                        <Input
+                          type="number"
+                          min="0"
                           step="0.01"
                           placeholder="0.00"
                           value={field.value || ''}
@@ -476,9 +476,9 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
                     <FormItem>
                       <FormLabel>Deployed Agent Count</FormLabel>
                       <FormControl>
-                        <Input 
-                          type="number" 
-                          min="0" 
+                        <Input
+                          type="number"
+                          min="0"
                           placeholder="0"
                           value={field.value || ''}
                           onChange={(e) => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))}
@@ -513,9 +513,9 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
                       </div>
                       <Badge variant={
                         risk.severity === "critical" ? "destructive" :
-                        risk.severity === "high" ? "destructive" :
-                        risk.severity === "medium" ? "default" :
-                        "secondary"
+                          risk.severity === "high" ? "destructive" :
+                            risk.severity === "medium" ? "default" :
+                              "secondary"
                       }>
                         {risk.severity}
                       </Badge>
@@ -539,7 +539,7 @@ export function ControlForm({ control, onClose, isTemplate = false }: ControlFor
             <FormItem>
               <FormLabel>Notes (Optional)</FormLabel>
               <FormControl>
-                <Textarea 
+                <Textarea
                   placeholder="Additional notes or implementation details"
                   className="min-h-[80px]"
                   {...field}

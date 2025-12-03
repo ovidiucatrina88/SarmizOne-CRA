@@ -128,27 +128,23 @@ export default function Assets() {
             label="Total Assets"
             value={summary.stats.total.toLocaleString()}
             delta={summary.trends.total.delta}
-            trendSeries={summary.trends.total.series}
           />
           <KpiCard
             label="Active Assets"
             value={summary.stats.active.toLocaleString()}
             delta={summary.trends.active.delta}
-            trendSeries={summary.trends.active.series}
             trendColor="#93c5fd"
           />
           <KpiCard
             label="Application Services"
             value={summary.stats.apps.toLocaleString()}
             delta={summary.trends.apps.delta}
-            trendSeries={summary.trends.apps.series}
             trendColor="#c4b5fd"
           />
           <KpiCard
             label="Portfolio Value"
             value={formatCurrency(summary.stats.totalValue)}
             delta={summary.trends.totalValue.delta}
-            trendSeries={summary.trends.totalValue.series}
             trendColor="#fef08a"
           />
         </section>

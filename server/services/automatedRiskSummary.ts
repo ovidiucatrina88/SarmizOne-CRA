@@ -32,12 +32,17 @@ export class AutomatedRiskSummaryService {
     try {
       this.isRecalculating = true;
       await this.recalculateRiskSummaries();
-      
+
       // If another recalculation was requested while we were running, do it now
       if (this.pendingRecalculation) {
         this.pendingRecalculation = false;
+        // Add a small delay to let the event loop breathe
+        await new Promise(resolve => setTimeout(resolve, 100));
         await this.recalculateRiskSummaries();
       }
+    } catch (error) {
+      console.error('[AutoRiskSummary] Critical error in triggerRecalculation:', error);
+      // Don't rethrow to avoid crashing the main process
     } finally {
       this.isRecalculating = false;
     }
@@ -49,7 +54,7 @@ export class AutomatedRiskSummaryService {
   private async recalculateRiskSummaries(): Promise<void> {
     try {
       console.log('[AutoRiskSummary] Starting automated risk summary recalculation');
-      
+
       // Get current risk statistics using a single SQL query
       const result = await db.execute(sql`
         SELECT 
@@ -80,7 +85,7 @@ export class AutomatedRiskSummaryService {
 
       // Generate exposure curve data for visualization
       const exposureCurveData = await this.generateExposureCurveData();
-      
+
       // Create new risk summary entry
       const now = new Date();
       await db.execute(sql`
@@ -104,7 +109,7 @@ export class AutomatedRiskSummaryService {
       `);
 
       console.log(`[AutoRiskSummary] Updated: ${stats.total_risks} risks, $${Number(stats.total_residual_risk).toLocaleString()} total exposure`);
-      
+
     } catch (error) {
       console.error('[AutoRiskSummary] Error during recalculation:', error);
       throw error;
@@ -114,7 +119,7 @@ export class AutomatedRiskSummaryService {
   /**
    * Generate exposure curve data for loss exceedance visualization
    */
-  private async generateExposureCurveData(): Promise<Array<{impact: number, probability: number}>> {
+  private async generateExposureCurveData(): Promise<Array<{ impact: number, probability: number }>> {
     try {
       const result = await db.execute(sql`
         SELECT residual_risk
@@ -126,12 +131,12 @@ export class AutomatedRiskSummaryService {
       `);
 
       const exposures = result.rows.map(row => Number(row.residual_risk));
-      
+
       if (exposures.length === 0) return [];
 
       // Create probability curve points
-      const curveData: Array<{impact: number, probability: number}> = [];
-      
+      const curveData: Array<{ impact: number, probability: number }> = [];
+
       for (let i = 0; i < exposures.length; i++) {
         const probability = (i + 1) / exposures.length; // Probability of exceeding this impact
         const impact = exposures[i];
@@ -139,7 +144,7 @@ export class AutomatedRiskSummaryService {
       }
 
       return curveData.slice(0, 10); // Limit to 10 points for performance
-      
+
     } catch (error) {
       console.error('[AutoRiskSummary] Error generating exposure curve:', error);
       return [];

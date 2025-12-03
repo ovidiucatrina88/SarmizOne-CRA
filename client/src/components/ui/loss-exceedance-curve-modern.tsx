@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
@@ -74,8 +74,8 @@ interface LossExceedanceCurveModernProps {
   };
   // IRIS 2025 benchmark data for industry comparison
   irisBenchmarks?: {
-    smb: Array<{probability: number, impact: number}>;
-    enterprise: Array<{probability: number, impact: number}>;
+    smb: Array<{ probability: number, impact: number }>;
+    enterprise: Array<{ probability: number, impact: number }>;
   };
   // Filtering properties
   filterType?: 'all' | 'entity' | 'asset' | 'l1' | 'l2' | 'l3' | 'l4';
@@ -87,7 +87,7 @@ interface LossExceedanceCurveModernProps {
 // Format exposure values in a readable format
 const formatExposure = (value: number | undefined) => {
   if (value === undefined || isNaN(Number(value))) return '$0';
-  
+
   const numValue = Number(value);
   // For very large values (> 1 billion)
   if (numValue >= 1000000000) {
@@ -96,11 +96,11 @@ const formatExposure = (value: number | undefined) => {
   // For large values (> 1 million)
   else if (numValue >= 1000000) {
     return `$${(numValue / 1000000).toFixed(1)}M`;
-  } 
+  }
   // For medium values (> 1 thousand)
   else if (numValue >= 1000) {
-    return `$${(numValue / 1000).toFixed(1)}k`; 
-  } 
+    return `$${(numValue / 1000).toFixed(1)}k`;
+  }
   // For smaller values
   else {
     return new Intl.NumberFormat("en-US", {
@@ -124,13 +124,13 @@ const DEFAULT_THRESHOLDS = {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;
-    
+
     // Determine if this is a key threshold or exposure point
     let keypointLabel = "";
     // Access the exposureData from the component scope
     // Note: We'll use this variable from props in the parent component
     const exposureData = payload[0]?.payload?.exposureData;
-    
+
     if (Math.abs(data.lossExposure) < 1) {
       keypointLabel = "Zero Loss";
     } else if (exposureData && Math.abs(data.lossExposure - exposureData.minimum) < 500) {
@@ -150,7 +150,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     } else if (data.lossExposure && Math.abs(data.lossExposure - DEFAULT_THRESHOLDS.ZERO_ACCEPTANCE) < 500000) {
       keypointLabel = "0% Acceptable Risk";
     }
-    
+
     return (
       <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-3 rounded-lg shadow-lg border border-gray-700">
         {keypointLabel && (
@@ -173,12 +173,12 @@ const CustomTooltip = ({ active, payload, label }: any) => {
       </div>
     );
   }
-  
+
   return null;
 };
 
-export function LossExceedanceCurveModern({ 
-  risks = [], 
+export function LossExceedanceCurveModern({
+  risks = [],
   currentExposure,
   previousExposure,
   irisBenchmarks,
@@ -190,7 +190,7 @@ export function LossExceedanceCurveModern({
   // Helper function to format exposure values
   const formatExposureValue = useCallback((value: number | undefined) => {
     if (value === undefined || isNaN(Number(value))) return '$0';
-    
+
     const numValue = Number(value);
     // For very large values (> 1 billion)
     if (numValue >= 1000000000) {
@@ -199,11 +199,11 @@ export function LossExceedanceCurveModern({
     // For large values (> 1 million)
     else if (numValue >= 1000000) {
       return `$${(numValue / 1000000).toFixed(1)}M`;
-    } 
+    }
     // For medium values (> 1 thousand)
     else if (numValue >= 1000) {
-      return `$${(numValue / 1000).toFixed(1)}k`; 
-    } 
+      return `$${(numValue / 1000).toFixed(1)}k`;
+    }
     // For smaller values
     else {
       return new Intl.NumberFormat("en-US", {
@@ -218,11 +218,21 @@ export function LossExceedanceCurveModern({
   const [showHistory, setShowHistory] = useState(!!previousExposure);
   const [showTolerance, setShowTolerance] = useState(true);
   const [showInherentRisk, setShowInherentRisk] = useState(false);
+  const [showResidualRisk, setShowResidualRisk] = useState(true);
   const [showToleranceConfig, setShowToleranceConfig] = useState(false);
   const [showIrisBenchmarks, setShowIrisBenchmarks] = useState(!!irisBenchmarks);
   const [showSmbBenchmark, setShowSmbBenchmark] = useState(true);
   const [showEnterpriseBenchmark, setShowEnterpriseBenchmark] = useState(true);
-  
+
+  // Auto-enable industry benchmarks once data is loaded
+  useEffect(() => {
+    if (irisBenchmarks) {
+      setShowIrisBenchmarks(true);
+      if (irisBenchmarks.smb?.length) setShowSmbBenchmark(true);
+      if (irisBenchmarks.enterprise?.length) setShowEnterpriseBenchmark(true);
+    }
+  }, [irisBenchmarks]);
+
   // State for editable tolerance thresholds
   const [toleranceThresholds, setToleranceThresholds] = useState({
     fullAcceptance: DEFAULT_THRESHOLDS.FULL_ACCEPTANCE,
@@ -231,19 +241,19 @@ export function LossExceedanceCurveModern({
     lowAcceptance: DEFAULT_THRESHOLDS.LOW_ACCEPTANCE,
     zeroAcceptance: DEFAULT_THRESHOLDS.ZERO_ACCEPTANCE
   });
-  
+
   // Function to update thresholds
   const updateThreshold = (level: string, value: string) => {
     // Remove any formatting - keep only digits and decimal point
     const cleanedValue = value.replace(/[^0-9.]/g, '');
     const numValue = parseFloat(cleanedValue);
-    
+
     // Return early if not a valid number
     if (isNaN(numValue)) return;
-    
+
     // Ensure the value is positive and within reasonable limits
     const validValue = Math.max(0, Math.min(1000000000000, numValue)); // Max 1 trillion
-    
+
     setToleranceThresholds(prev => ({
       ...prev,
       [level]: validValue
@@ -261,23 +271,23 @@ export function LossExceedanceCurveModern({
     if (filterType === 'all' || !risks || risks.length === 0) {
       return risks;
     }
-    
+
     // Get a list of all assets to help with entity filtering
     const filteredByEntityOrAsset = risks.filter(risk => {
       // Filter by legal entity
       if (filterType === 'entity') {
         // If no entity is selected, don't include any risks
         if (!selectedEntityId) return false;
-        
+
         // Direct entity association
         if (risk.legalEntityId === selectedEntityId) {
           return true;
         }
-        
+
         // Check entity association through assets - every risk should have assets 
         // and every asset should belong to an entity
         let associatedAssets = risk.associatedAssets || [];
-        
+
         if (typeof associatedAssets === 'string') {
           try {
             // Try parsing as JSON
@@ -287,24 +297,24 @@ export function LossExceedanceCurveModern({
             associatedAssets = associatedAssets.split(',').map((a: string) => a.trim());
           }
         }
-        
+
         // Entity filtering based on actual data relationships
         if (Array.isArray(associatedAssets)) {
           // For ENT-003 (Company Group), include all risks as it represents the parent company
           if (selectedEntityId === 'ENT-003') {
             return true;
           }
-          
+
           // For ENT-001 (Company X Emea), check if risk includes specific assets
           if (selectedEntityId === 'ENT-001') {
             return associatedAssets.some(assetId => {
               // Based on the data, RISK-DATA-236 is associated with AST-003
               // which should belong to ENT-001 (Company X Emea)
-              return assetId === 'AST-003' || assetId === 'AST-001' || 
-                     (typeof assetId === 'string' && assetId.includes('003'));
+              return assetId === 'AST-003' || assetId === 'AST-001' ||
+                (typeof assetId === 'string' && assetId.includes('003'));
             });
           }
-          
+
           // For other entities, use pattern matching
           return associatedAssets.some(assetId => {
             if (typeof assetId === 'string') {
@@ -314,18 +324,18 @@ export function LossExceedanceCurveModern({
             return false;
           });
         }
-        
+
         return false;
       }
-      
+
       // Filter by asset
       if (filterType === 'asset') {
         // If no asset is selected, don't include any risks
         if (!selectedAssetId) return false;
-        
+
         // Handle different formats of associatedAssets
         let associatedAssets = risk.associatedAssets || [];
-        
+
         if (typeof associatedAssets === 'string') {
           try {
             // Try parsing as JSON
@@ -335,19 +345,19 @@ export function LossExceedanceCurveModern({
             associatedAssets = associatedAssets.split(',').map((a: string) => a.trim());
           }
         }
-        
-        return Array.isArray(associatedAssets) && 
-               associatedAssets.some(asset => asset === selectedAssetId);
+
+        return Array.isArray(associatedAssets) &&
+          associatedAssets.some(asset => asset === selectedAssetId);
       }
-      
+
       // Filter by enterprise architecture levels (L1-L4)
       if (filterType === 'l1' || filterType === 'l2' || filterType === 'l3' || filterType === 'l4') {
         // If no architecture level is selected, don't include any risks
         if (!selectedArchitectureId) return false;
-        
+
         // Get associated assets for this risk
         let associatedAssets = risk.associatedAssets || [];
-        
+
         if (typeof associatedAssets === 'string') {
           try {
             associatedAssets = JSON.parse(associatedAssets);
@@ -355,7 +365,7 @@ export function LossExceedanceCurveModern({
             associatedAssets = associatedAssets.split(',').map((a: string) => a.trim());
           }
         }
-        
+
         // For enterprise architecture filtering, we need to check if any assets
         // associated with this risk belong to the selected architecture level
         // or any of its child levels in the hierarchy
@@ -365,39 +375,39 @@ export function LossExceedanceCurveModern({
               // Since we need to check hierarchical relationships, we'd ideally
               // fetch asset and architecture data here, but for performance,
               // we'll use the fact that the parent component already has this data
-              
+
               // The enterprise architecture follows a hierarchy:
               // L1 (Strategic Capability) -> L2 (Value Capability) -> L3 (Business Service) -> L4 (Technical Component)
               // Assets can be mapped to any level, and filtering by a level should include all child levels
-              
+
               // Based on the data structure:
               // - Assets have hierarchy_level field that maps to enterprise architecture levels
               // - Assets with technical_component hierarchy_level belong to L4
               // - Assets with application_service hierarchy_level belong to L3
               // - And so on up the hierarchy
-              
+
               // For the current implementation, we'll use a simple mapping based on known data:
               // AST-003 (customer database) - technical_component level (L4)
               // AST-850 (SIEM) - application_service level (L3)  
               // AST-595 (datalake) - technical_component level (L4, child of AST-850)
-              
+
               const selectedLevel = filterType.toUpperCase();
-              
+
               // L4 filtering: Include only technical components
               if (selectedLevel === 'L4') {
                 return assetId === 'AST-003' || assetId === 'AST-595';
               }
-              
+
               // L3 filtering: Include application services and their technical components (hierarchical)
               if (selectedLevel === 'L3') {
                 return assetId === 'AST-850' || assetId === 'AST-003' || assetId === 'AST-595';
               }
-              
+
               // L2 filtering: Include value capabilities and all their children
               if (selectedLevel === 'L2') {
                 return true; // Include all assets as they all roll up to L2 level
               }
-              
+
               // L1 filtering: Include strategic capabilities and all their children
               if (selectedLevel === 'L1') {
                 return true; // Include all assets as they all roll up to L1 level
@@ -406,14 +416,14 @@ export function LossExceedanceCurveModern({
             return false;
           });
         }
-        
+
         return false;
       }
-      
+
       // Only if filter type is 'all' should we include all risks
       return filterType === 'all';
     });
-    
+
     console.log(`Filtered risks for ${filterType} ${selectedEntityId || selectedAssetId || selectedArchitectureId}: ${filteredByEntityOrAsset.length} risks`);
     return filteredByEntityOrAsset;
   }, [risks, filterType, selectedEntityId, selectedAssetId, selectedArchitectureId]);
@@ -439,7 +449,7 @@ export function LossExceedanceCurveModern({
         average: 0
       };
     }
-    
+
     // Extract enhanced percentiles
     const p10 = ensureFiniteNumber(currentExposure.percentile10Exposure);
     const p25 = ensureFiniteNumber(currentExposure.percentile25Exposure);
@@ -448,17 +458,17 @@ export function LossExceedanceCurveModern({
     const p90 = ensureFiniteNumber(currentExposure.percentile90Exposure);
     const p95 = ensureFiniteNumber(currentExposure.percentile95Exposure);
     const p99 = ensureFiniteNumber(currentExposure.percentile99Exposure);
-    
+
     // Extract primary fields
     const minimum = ensureFiniteNumber(currentExposure.minimumExposure);
     const average = ensureFiniteNumber(currentExposure.averageExposure);
     const maximum = ensureFiniteNumber(currentExposure.maximumExposure);
-    
+
     // Extract legacy values for fallback
     const tenthPercentile = ensureFiniteNumber(currentExposure.tenthPercentile);
     const mostLikely = ensureFiniteNumber(currentExposure.mostLikely);
     const ninetiethPercentile = ensureFiniteNumber(currentExposure.ninetiethPercentile);
-    
+
     return {
       // Enhanced percentiles with fallbacks to legacy
       percentile10: p10 || tenthPercentile || minimum,
@@ -484,17 +494,17 @@ export function LossExceedanceCurveModern({
     if (!previousExposure) {
       return null;
     }
-    
+
     // Prioritize primary fields, fall back to legacy fields if needed
     const minimum = ensureFiniteNumber(previousExposure.minimumExposure);
     const average = ensureFiniteNumber(previousExposure.averageExposure);
     const maximum = ensureFiniteNumber(previousExposure.maximumExposure);
-    
+
     // Safely extract legacy values with fallbacks as secondary options
     const tenthPercentile = ensureFiniteNumber(previousExposure.tenthPercentile);
     const mostLikely = ensureFiniteNumber(previousExposure.mostLikely);
     const ninetiethPercentile = ensureFiniteNumber(previousExposure.ninetiethPercentile);
-    
+
     // Use primary fields as source of truth, fall back to legacy fields if primary are not available
     return {
       minimum: minimum || tenthPercentile,
@@ -513,14 +523,14 @@ export function LossExceedanceCurveModern({
     let calculatedMinExposure = 0;
     let calculatedMaxExposure = 0;
     let calculatedAvgExposure = 0;
-    
+
     // Build exposure curve array for all filter types
     if (filterType === 'all') {
       // For ALL filter: Use aggregated data from risk_summaries directly
       console.log(`Using aggregated risk_summaries data for ALL filter`);
-      console.log(`Filtered risks count: ${filteredRisks.length}, with inherent risks:`, 
+      console.log(`Filtered risks count: ${filteredRisks.length}, with inherent risks:`,
         filteredRisks.map(r => ({ id: r.riskId, inherent: r.inherentRisk, residual: r.residualRisk })));
-      
+
       calculatedMinExposure = exposureData?.minimum || 0;
       calculatedMaxExposure = exposureData?.maximum || 0;
       calculatedAvgExposure = exposureData?.average || 0;
@@ -529,19 +539,19 @@ export function LossExceedanceCurveModern({
       const exposures = filteredRisks
         .map(risk => ensureFiniteNumber(risk.residualRisk || risk.inherentRisk || 0))
         .filter(v => v > 0);
-      
+
       console.log(`Filter type: ${filterType}, filtered risks: ${filteredRisks.length}, valid exposures: ${exposures.length}`);
-      console.log(`Inherent risks in filtered data:`, filteredRisks.map(r => ({ 
-        id: r.riskId, 
-        inherent: r.inherentRisk, 
-        residual: r.residualRisk 
+      console.log(`Inherent risks in filtered data:`, filteredRisks.map(r => ({
+        id: r.riskId,
+        inherent: r.inherentRisk,
+        residual: r.residualRisk
       })));
-      
+
       if (exposures.length === 0) {
         console.log(`No valid exposures found for filter ${filterType}`);
         return [];
       }
-      
+
       if (filterType === 'entity' || ['l1', 'l2', 'l3', 'l4'].includes(filterType || '')) {
         // For entity and architecture filters: Sum the exposures (aggregated risk)
         const totalExposure = exposures.reduce((sum, val) => sum + val, 0);
@@ -557,15 +567,17 @@ export function LossExceedanceCurveModern({
         console.log(`Individual exposure range for ${filterType}: ${calculatedMinExposure} - ${calculatedMaxExposure}`);
       }
     }
-    
-    // Ensure we have valid exposure values
+
+    // Ensure we have valid exposure values; if none, seed with tolerance thresholds so we at least render a curve
     if (calculatedMaxExposure <= 0) {
-      console.log(`Invalid maximum exposure: ${calculatedMaxExposure}, returning empty chart`);
-      return [];
+      console.log(`Invalid maximum exposure: ${calculatedMaxExposure}, seeding from thresholds for fallback display`);
+      calculatedMinExposure = DEFAULT_THRESHOLDS.FULL_ACCEPTANCE;
+      calculatedAvgExposure = DEFAULT_THRESHOLDS.MEDIUM_ACCEPTANCE;
+      calculatedMaxExposure = DEFAULT_THRESHOLDS.ZERO_ACCEPTANCE;
     }
-    
+
     const data: DataPoint[] = [];
-    
+
     // Use enhanced percentile data for more accurate Loss Exceedance Curve
     const percentileData = [
       { exposure: exposureData.percentile10, probability: 90.0 },
@@ -576,15 +588,15 @@ export function LossExceedanceCurveModern({
       { exposure: exposureData.percentile95, probability: 5.0 },
       { exposure: exposureData.percentile99, probability: 1.0 }
     ].filter(point => point.exposure > 0);
-    
+
     // Use calculated exposure values with enhanced percentiles
     const minExposure = Math.min(calculatedMinExposure, exposureData.percentile10 || calculatedMinExposure);
     const maxExposure = Math.max(calculatedMaxExposure, exposureData.percentile99 || calculatedMaxExposure);
     const avgExposure = exposureData.percentile50 || calculatedAvgExposure;
-    
+
     // Extend beyond P99 for tail visualization
     const extendedMaxExposure = maxExposure * 1.2;
-    
+
     // Add key percentile points as anchors
     percentileData.forEach(point => {
       // Calculate inherent probability for anchor points using scaled approach
@@ -605,20 +617,20 @@ export function LossExceedanceCurveModern({
         }
       });
     });
-    
+
     // Generate interpolated points for smooth curve
     const numPoints = 40;
     for (let i = 0; i <= numPoints; i++) {
       const lossExposure = i * (extendedMaxExposure / numPoints);
-      
+
       // Skip if we already have this as a percentile point
       if (percentileData.some(p => Math.abs(p.exposure - lossExposure) < maxExposure * 0.01)) {
         continue;
       }
-      
+
       // Interpolate probability using percentile anchors
       let probability = 0.1;
-      
+
       if (lossExposure <= minExposure) {
         probability = 100;
       } else if (lossExposure >= maxExposure) {
@@ -628,11 +640,11 @@ export function LossExceedanceCurveModern({
       } else {
         // Linear interpolation between percentile points
         const sortedPercentiles = percentileData.sort((a, b) => a.exposure - b.exposure);
-        
+
         for (let j = 0; j < sortedPercentiles.length - 1; j++) {
           const lower = sortedPercentiles[j];
           const upper = sortedPercentiles[j + 1];
-          
+
           if (lossExposure >= lower.exposure && lossExposure <= upper.exposure) {
             const range = upper.exposure - lower.exposure;
             const position = lossExposure - lower.exposure;
@@ -642,10 +654,10 @@ export function LossExceedanceCurveModern({
           }
         }
       }
-      
+
       // Calculate inherent risk probability using the same aggregated approach as residual risk
       let inherentProbability = null;
-      
+
       // Calculate inherent probability using the same method as the main curve
       // This creates a smooth inherent risk curve that's always above or equal to residual risk
       if (lossExposure <= minExposure) {
@@ -657,20 +669,20 @@ export function LossExceedanceCurveModern({
       } else {
         // Linear interpolation using the same percentile structure but scaled for inherent risk
         const sortedPercentiles = percentileData.sort((a, b) => a.exposure - b.exposure);
-        
+
         for (let j = 0; j < sortedPercentiles.length - 1; j++) {
           const lower = sortedPercentiles[j];
           const upper = sortedPercentiles[j + 1];
-          
+
           if (lossExposure >= lower.exposure && lossExposure <= upper.exposure) {
             const range = upper.exposure - lower.exposure;
             const position = lossExposure - lower.exposure;
             const ratio = range > 0 ? position / range : 0;
-            
+
             // Calculate inherent probability as a scaled version of residual probability
             // Inherent risk should typically be higher than residual risk
             const baseProbability = lower.probability - (lower.probability - upper.probability) * ratio;
-            
+
             // Scale inherent risk to be 1.5x to 3x higher than residual risk depending on the probability level
             // Higher scaling at lower probabilities (tail events)
             const scaleFactor = 1.5 + (1.5 * (100 - baseProbability) / 100);
@@ -678,10 +690,10 @@ export function LossExceedanceCurveModern({
             break;
           }
         }
-        
+
         // Fallback if no interpolation segment found
         if (inherentProbability === null && sortedPercentiles.length > 0) {
-          const closest = sortedPercentiles.reduce((prev, curr) => 
+          const closest = sortedPercentiles.reduce((prev, curr) =>
             Math.abs(curr.exposure - lossExposure) < Math.abs(prev.exposure - lossExposure) ? curr : prev
           );
           const scaleFactor = 1.5 + (1.5 * (100 - closest.probability) / 100);
@@ -697,16 +709,16 @@ export function LossExceedanceCurveModern({
           const residualRisk = ensureFiniteNumber(risk.residualRisk || 0);
           return residualRisk;
         }).filter(exposure => exposure > 0);
-        
+
         if (previousRiskExposures.length > 0) {
           const prevRisksExceedingLoss = previousRiskExposures.filter(exposure => exposure >= lossExposure);
           previousProbability = (prevRisksExceedingLoss.length / previousRiskExposures.length) * 100;
         }
       }
-      
+
       // Calculate tolerance level based on fixed organizational thresholds
       let toleranceProbability;
-      
+
       // Use fixed tolerance thresholds (organizational risk appetite)
       if (lossExposure <= toleranceThresholds.fullAcceptance) {
         toleranceProbability = 100; // 100% acceptable
@@ -737,22 +749,22 @@ export function LossExceedanceCurveModern({
       } else {
         toleranceProbability = 0; // 0% acceptable
       }
-      
+
       // Calculate acceptable risk buffer: difference between tolerance and actual risk
       const acceptableRiskBuffer = toleranceProbability > probability ? (toleranceProbability - probability) : null;
-      
+
       // Calculate IRIS benchmark probabilities - ensure values for every exposure point
       let smbBenchmarkProbability = null;
       let enterpriseBenchmarkProbability = null;
-      
+
       if (irisBenchmarks) {
         // SMB benchmark probability calculation with seamless curve generation
         if (irisBenchmarks.smb && irisBenchmarks.smb.length > 0) {
           const smbSorted = irisBenchmarks.smb.sort((a, b) => a.impact - b.impact);
-          
+
           const minImpact = smbSorted[0].impact;
           const maxImpact = smbSorted[smbSorted.length - 1].impact;
-          
+
           if (lossExposure < minImpact) {
             // Below range: extrapolate using exponential growth from first two points
             if (smbSorted.length >= 2) {
@@ -802,32 +814,32 @@ export function LossExceedanceCurveModern({
                 break;
               }
             }
-            
+
             // Fallback if no interpolation segment found (edge case)
             if (!found) {
-              const closest = smbSorted.reduce((prev, curr) => 
+              const closest = smbSorted.reduce((prev, curr) =>
                 Math.abs(curr.impact - lossExposure) < Math.abs(prev.impact - lossExposure) ? curr : prev
               );
               smbBenchmarkProbability = closest.probability * 100;
             }
           }
-          
+
           // Ensure we always have a valid SMB benchmark value
           if (smbBenchmarkProbability === null || smbBenchmarkProbability === undefined) {
-            const closest = smbSorted.reduce((prev, curr) => 
+            const closest = smbSorted.reduce((prev, curr) =>
               Math.abs(curr.impact - lossExposure) < Math.abs(prev.impact - lossExposure) ? curr : prev
             );
             smbBenchmarkProbability = closest.probability * 100;
           }
         }
-        
+
         // Enterprise benchmark probability calculation with seamless curve generation
         if (irisBenchmarks.enterprise && irisBenchmarks.enterprise.length > 0) {
           const enterpriseSorted = irisBenchmarks.enterprise.sort((a, b) => a.impact - b.impact);
-          
+
           const minImpact = enterpriseSorted[0].impact;
           const maxImpact = enterpriseSorted[enterpriseSorted.length - 1].impact;
-          
+
           if (lossExposure < minImpact) {
             // Below range: extrapolate using exponential growth from first two points
             if (enterpriseSorted.length >= 2) {
@@ -877,34 +889,34 @@ export function LossExceedanceCurveModern({
                 break;
               }
             }
-            
+
             // Fallback if no interpolation segment found (edge case)
             if (!found) {
-              const closest = enterpriseSorted.reduce((prev, curr) => 
+              const closest = enterpriseSorted.reduce((prev, curr) =>
                 Math.abs(curr.impact - lossExposure) < Math.abs(prev.impact - lossExposure) ? curr : prev
               );
               enterpriseBenchmarkProbability = closest.probability * 100;
             }
           }
-          
+
           // Ensure we always have a valid Enterprise benchmark value
           if (enterpriseBenchmarkProbability === null || enterpriseBenchmarkProbability === undefined) {
-            const closest = enterpriseSorted.reduce((prev, curr) => 
+            const closest = enterpriseSorted.reduce((prev, curr) =>
               Math.abs(curr.impact - lossExposure) < Math.abs(prev.impact - lossExposure) ? curr : prev
             );
             enterpriseBenchmarkProbability = closest.probability * 100;
           }
         }
       }
-      
+
       data.push({
         lossExposure,
         probability,
         inherentProbability,
         previousProbability,
         toleranceProbability,
-        unacceptableRisk: (probability !== null && toleranceProbability !== null && probability > toleranceProbability) 
-          ? (probability - toleranceProbability) 
+        unacceptableRisk: (probability !== null && toleranceProbability !== null && probability > toleranceProbability)
+          ? (probability - toleranceProbability)
           : 0,
         acceptableRiskBuffer,
         smbBenchmarkProbability,
@@ -917,10 +929,10 @@ export function LossExceedanceCurveModern({
         }
       });
     }
-    
+
     // Sort data by lossExposure and return
     return data.sort((a, b) => a.lossExposure - b.lossExposure);
-  }, [exposureData, previousData, toleranceThresholds, filteredRisks]);
+  }, [exposureData, previousData, toleranceThresholds, filteredRisks, irisBenchmarks]);
 
   return (
     <Card className="bg-gradient-to-br from-gray-800 to-gray-900 text-white rounded-xl shadow-2xl">
@@ -930,63 +942,71 @@ export function LossExceedanceCurveModern({
         </CardTitle>
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 mt-4 sm:mt-0">
           <div className="flex items-center space-x-2">
-            <Switch 
-              id="show-history" 
-              checked={showHistory} 
-              onCheckedChange={setShowHistory} 
+            <Switch
+              id="show-history"
+              checked={showHistory}
+              onCheckedChange={setShowHistory}
               disabled={!previousExposure}
             />
             <Label htmlFor="show-history" className="text-gray-300">Show History</Label>
           </div>
           <div className="flex items-center space-x-2">
-            <Switch 
-              id="show-tolerance" 
-              checked={showTolerance} 
-              onCheckedChange={setShowTolerance} 
+            <Switch
+              id="show-residual-risk"
+              checked={showResidualRisk}
+              onCheckedChange={setShowResidualRisk}
+            />
+            <Label htmlFor="show-residual-risk" className="text-gray-300">Show Residual Risk</Label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="show-tolerance"
+              checked={showTolerance}
+              onCheckedChange={setShowTolerance}
             />
             <Label htmlFor="show-tolerance" className="text-gray-300">Show Tolerance</Label>
           </div>
           <div className="flex items-center space-x-2">
-            <Switch 
-              id="show-inherent-risk" 
-              checked={showInherentRisk} 
-              onCheckedChange={setShowInherentRisk} 
+            <Switch
+              id="show-inherent-risk"
+              checked={showInherentRisk}
+              onCheckedChange={setShowInherentRisk}
             />
             <Label htmlFor="show-inherent-risk" className="text-gray-300">Show Inherent Risk</Label>
           </div>
           <div className="flex items-center space-x-2">
-            <Switch 
-              id="show-tolerance-config" 
-              checked={showToleranceConfig} 
-              onCheckedChange={setShowToleranceConfig} 
+            <Switch
+              id="show-tolerance-config"
+              checked={showToleranceConfig}
+              onCheckedChange={setShowToleranceConfig}
             />
             <Label htmlFor="show-tolerance-config" className="text-gray-300">Configure Thresholds</Label>
           </div>
           {irisBenchmarks && (
             <>
               <div className="flex items-center space-x-2">
-                <Switch 
-                  id="show-iris-benchmarks" 
-                  checked={showIrisBenchmarks} 
-                  onCheckedChange={setShowIrisBenchmarks} 
+                <Switch
+                  id="show-iris-benchmarks"
+                  checked={showIrisBenchmarks}
+                  onCheckedChange={setShowIrisBenchmarks}
                 />
                 <Label htmlFor="show-iris-benchmarks" className="text-gray-300">Industry Benchmarks</Label>
               </div>
               {showIrisBenchmarks && (
                 <>
                   <div className="flex items-center space-x-2">
-                    <Switch 
-                      id="show-smb-benchmark" 
-                      checked={showSmbBenchmark} 
-                      onCheckedChange={setShowSmbBenchmark} 
+                    <Switch
+                      id="show-smb-benchmark"
+                      checked={showSmbBenchmark}
+                      onCheckedChange={setShowSmbBenchmark}
                     />
                     <Label htmlFor="show-smb-benchmark" className="text-green-300">SMB</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Switch 
-                      id="show-enterprise-benchmark" 
-                      checked={showEnterpriseBenchmark} 
-                      onCheckedChange={setShowEnterpriseBenchmark} 
+                    <Switch
+                      id="show-enterprise-benchmark"
+                      checked={showEnterpriseBenchmark}
+                      onCheckedChange={setShowEnterpriseBenchmark}
                     />
                     <Label htmlFor="show-enterprise-benchmark" className="text-orange-300">Enterprise</Label>
                   </div>
@@ -1016,7 +1036,7 @@ export function LossExceedanceCurveModern({
                 />
               </div>
             </div>
-            
+
             <div>
               <Label htmlFor="high-acceptance" className="text-sm font-medium text-green-200 mb-1 block">
                 75% Acceptable ($)
@@ -1032,7 +1052,7 @@ export function LossExceedanceCurveModern({
                 />
               </div>
             </div>
-            
+
             <div>
               <Label htmlFor="medium-acceptance" className="text-sm font-medium text-yellow-300 mb-1 block">
                 50% Acceptable ($)
@@ -1048,7 +1068,7 @@ export function LossExceedanceCurveModern({
                 />
               </div>
             </div>
-            
+
             <div>
               <Label htmlFor="low-acceptance" className="text-sm font-medium text-orange-300 mb-1 block">
                 25% Acceptable ($)
@@ -1064,7 +1084,7 @@ export function LossExceedanceCurveModern({
                 />
               </div>
             </div>
-            
+
             <div>
               <Label htmlFor="zero-acceptance" className="text-sm font-medium text-red-300 mb-1 block">
                 0% Acceptable ($)
@@ -1083,7 +1103,7 @@ export function LossExceedanceCurveModern({
           </div>
         </div>
       )}
-      
+
       <CardContent className="px-4 py-4">
         <motion.div
           initial={{ opacity: 0 }}
@@ -1093,8 +1113,8 @@ export function LossExceedanceCurveModern({
         >
           {chartData.length > 0 ? (
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart 
-                data={chartData} 
+              <ComposedChart
+                data={chartData}
                 margin={{ top: 20, right: 30, bottom: 30, left: 20 }}
               >
                 <defs>
@@ -1103,29 +1123,29 @@ export function LossExceedanceCurveModern({
                     <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8} />
                     <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                   </linearGradient>
-                  
+
                   {/* Gradient for unacceptable risk area */}
                   <linearGradient id="riskAreaGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#a83244" stopOpacity={0.8} />
                     <stop offset="95%" stopColor="#a83244" stopOpacity={0.2} />
                   </linearGradient>
-                  
+
                   {/* Gradient for acceptable risk buffer area */}
                   <linearGradient id="acceptableAreaGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#10b981" stopOpacity={0.8} />
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0.2} />
                   </linearGradient>
                 </defs>
-                
+
                 <CartesianGrid stroke="rgba(255,255,255,0.1)" />
-                
-                <XAxis 
-                  dataKey="lossExposure" 
+
+                <XAxis
+                  dataKey="lossExposure"
                   type="number"
                   domain={[0, (dataMax: number) => {
                     // Use the actual P90 exposure value from risk calculations
                     let p90Exposure = exposureData?.maximum || dataMax;
-                    
+
                     console.log(`X-axis extending to show P90 exposure: ${p90Exposure}`);
                     return p90Exposure * 1.1; // Extend 10% beyond P90 for better visualization
                   }]}
@@ -1134,17 +1154,17 @@ export function LossExceedanceCurveModern({
                   axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
                   tickFormatter={(value) => formatExposureValue(value)}
                 />
-                
-                <YAxis 
-                  tickFormatter={(v) => `${v}%`} 
+
+                <YAxis
+                  tickFormatter={(v) => `${v}%`}
                   tick={{ fill: 'rgba(255,255,255,0.7)' }}
                   tickLine={{ stroke: 'rgba(255,255,255,0.2)' }}
                   axisLine={{ stroke: 'rgba(255,255,255,0.2)' }}
                   domain={[0, 100]}
                 />
-                
+
                 <Tooltip content={<CustomTooltip />} />
-                
+
                 {/* Base area for tolerance (transparent, just for stacking) */}
                 {chartData.length > 1 && (
                   <Area
@@ -1154,9 +1174,9 @@ export function LossExceedanceCurveModern({
                     stackId="risk"
                   />
                 )}
-                
+
                 {/* Red shaded area for unacceptable risk - stacked on top of tolerance */}
-                {chartData.length > 1 && (
+                {chartData.length > 1 && showTolerance && (
                   <Area
                     dataKey="unacceptableRisk"
                     stroke="none"
@@ -1176,9 +1196,9 @@ export function LossExceedanceCurveModern({
                     stackId="green"
                   />
                 )}
-                
+
                 {/* Green buffer area stacked above current probability */}
-                {chartData.length > 1 && (
+                {chartData.length > 1 && showTolerance && (
                   <Area
                     dataKey="acceptableRiskBuffer"
                     stroke="none"
@@ -1188,13 +1208,13 @@ export function LossExceedanceCurveModern({
                     connectNulls={true}
                   />
                 )}
-                
+
                 {/* Median line */}
                 {chartData.length > 0 && (
-                  <ReferenceLine 
-                    y="50" 
-                    stroke="rgba(255,255,255,0.4)" 
-                    strokeDasharray="3 3" 
+                  <ReferenceLine
+                    y="50"
+                    stroke="rgba(255,255,255,0.4)"
+                    strokeDasharray="3 3"
                     label={{
                       value: "50%",
                       position: "insideLeft",
@@ -1202,24 +1222,24 @@ export function LossExceedanceCurveModern({
                     }}
                   />
                 )}
-                
+
                 {/* Highlight minimum exposure - only show if we have valid chart data */}
-                {chartData.length > 0 && exposureData && 
+                {chartData.length > 0 && exposureData &&
                   // Find the closest data point instead of using raw value which can cause positioning issues
                   (() => {
                     try {
                       // Find the index in chartData that's closest to the minimum exposure value
                       const minimumValue = Number(exposureData.minimum);
-                      
+
                       // Validate we have a proper numeric value
                       if (isNaN(minimumValue) || minimumValue <= 0) {
                         return null;
                       }
-                      
+
                       // Find the closest matching chart point by distance
                       let closestIndex = 0;
                       let closestDistance = Infinity;
-                      
+
                       for (let i = 0; i < chartData.length; i++) {
                         const distance = Math.abs(chartData[i].lossExposure - minimumValue);
                         if (distance < closestDistance) {
@@ -1227,13 +1247,13 @@ export function LossExceedanceCurveModern({
                           closestIndex = i;
                         }
                       }
-                      
+
                       // Ensure the index is valid
                       if (closestIndex >= 0 && closestIndex < chartData.length) {
                         return (
-                          <ReferenceLine 
+                          <ReferenceLine
                             x={closestIndex}
-                            stroke="#3b82f6" 
+                            stroke="#3b82f6"
                             strokeWidth={2}
                             strokeDasharray="5 5"
                             ifOverflow="extendDomain"
@@ -1253,10 +1273,10 @@ export function LossExceedanceCurveModern({
                     }
                   })()
                 }
-                
+
                 {/* Tolerance line */}
                 {showTolerance && (
-                  <Line 
+                  <Line
                     type="natural"
                     dataKey="toleranceProbability"
                     name="Risk Tolerance"
@@ -1270,10 +1290,10 @@ export function LossExceedanceCurveModern({
                     connectNulls={true}
                   />
                 )}
-                
+
                 {/* Previous line */}
                 {showHistory && previousExposure && (
-                  <Line 
+                  <Line
                     type="monotone"
                     dataKey="previousProbability"
                     name="Previous Loss Probability"
@@ -1285,10 +1305,10 @@ export function LossExceedanceCurveModern({
                     isAnimationActive={true}
                   />
                 )}
-                
+
                 {/* Inherent risk line */}
                 {showInherentRisk && (
-                  <Line 
+                  <Line
                     type="natural"
                     dataKey="inherentProbability"
                     name="Inherent Risk (No Controls)"
@@ -1302,20 +1322,22 @@ export function LossExceedanceCurveModern({
                     connectNulls={true}
                   />
                 )}
-                
+
                 {/* Current line */}
-                <Line 
-                  type="monotone"
-                  dataKey="probability"
-                  name="Residual Risk (With Controls)"
-                  stroke="#3b82f6"
-                  strokeWidth={3}
-                  dot={false}
-                  activeDot={{ r: 6, stroke: 'white', strokeWidth: 2, fill: '#3b82f6' }}
-                  animationDuration={1200}
-                  isAnimationActive={true}
-                />
-                
+                {showResidualRisk && (
+                  <Line
+                    type="monotone"
+                    dataKey="probability"
+                    name="Residual Risk (With Controls)"
+                    stroke="#3b82f6"
+                    strokeWidth={3}
+                    dot={false}
+                    activeDot={{ r: 6, stroke: 'white', strokeWidth: 2, fill: '#3b82f6' }}
+                    animationDuration={1200}
+                    isAnimationActive={true}
+                  />
+                )}
+
                 {/* IRIS SMB Benchmark Curve */}
                 {showIrisBenchmarks && showSmbBenchmark && irisBenchmarks?.smb && (
                   <Line
@@ -1332,7 +1354,7 @@ export function LossExceedanceCurveModern({
                     connectNulls={true}
                   />
                 )}
-                
+
                 {/* IRIS Enterprise Benchmark Curve */}
                 {showIrisBenchmarks && showEnterpriseBenchmark && irisBenchmarks?.enterprise && (
                   <Line
@@ -1357,15 +1379,17 @@ export function LossExceedanceCurveModern({
             </div>
           )}
         </motion.div>
-        
+
         <div className="mt-4 flex flex-wrap justify-center gap-x-8 gap-y-2 text-sm">
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-            <span className="text-gray-300">Residual Risk (With Controls)</span>
-          </div>
+          {showResidualRisk && (
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+              <span className="text-gray-300">Residual Risk (With Controls)</span>
+            </div>
+          )}
           {showInherentRisk && (
             <div className="flex items-center">
-              <div className="w-3 h-1 bg-orange-500 mr-2" style={{borderStyle: 'dashed', borderWidth: '1px'}}></div>
+              <div className="w-3 h-1 bg-orange-500 mr-2" style={{ borderStyle: 'dashed', borderWidth: '1px' }}></div>
               <span className="text-gray-300">Inherent Risk (No Controls)</span>
             </div>
           )}
@@ -1383,28 +1407,32 @@ export function LossExceedanceCurveModern({
           )}
           {showIrisBenchmarks && showSmbBenchmark && irisBenchmarks?.smb && (
             <div className="flex items-center">
-              <div className="w-3 h-1 bg-green-400 mr-2" style={{borderStyle: 'dashed', borderWidth: '1px'}}></div>
+              <div className="w-3 h-1 bg-green-400 mr-2" style={{ borderStyle: 'dashed', borderWidth: '1px' }}></div>
               <span className="text-gray-300">SMB Benchmark</span>
             </div>
           )}
           {showIrisBenchmarks && showEnterpriseBenchmark && irisBenchmarks?.enterprise && (
             <div className="flex items-center">
-              <div className="w-3 h-1 bg-orange-400 mr-2" style={{borderStyle: 'dashed', borderWidth: '1px'}}></div>
+              <div className="w-3 h-1 bg-orange-400 mr-2" style={{ borderStyle: 'dashed', borderWidth: '1px' }}></div>
               <span className="text-gray-300">Enterprise Benchmark</span>
             </div>
           )}
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-red-700 rounded-full mr-2"></div>
-            <span className="text-gray-300">Unacceptable Risk Area</span>
-          </div>
-          <div className="flex items-center">
-            <div className="w-3 h-3 bg-green-600 rounded-full mr-2"></div>
-            <span className="text-gray-300">Risk Tolerance Buffer</span>
-          </div>
+          {showTolerance && (
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-red-700 rounded-full mr-2"></div>
+              <span className="text-gray-300">Unacceptable Risk Area</span>
+            </div>
+          )}
+          {showTolerance && (
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-green-600 rounded-full mr-2"></div>
+              <span className="text-gray-300">Risk Tolerance Buffer</span>
+            </div>
+          )}
         </div>
-        
+
         {/* Exposure summary */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}

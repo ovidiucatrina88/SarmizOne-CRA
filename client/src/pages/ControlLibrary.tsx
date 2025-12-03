@@ -621,9 +621,9 @@ export default function ControlLibrary() {
       <div className="space-y-8">
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard label="Total Templates" value={stats.total.toLocaleString()} delta={`${filteredCount.toLocaleString()} in view`} />
-        <KpiCard label="Framework Coverage" value={stats.frameworks.toLocaleString()} delta="Active mappings" trendSeries={Array.from({ length: 7 }, (_, idx) => stats.frameworks + Math.sin(idx))} trendColor="#c4b5fd" />
-        <KpiCard label="Avg Effectiveness" value={`${stats.avgEffectiveness.toFixed(1)}/10`} delta="Curated score" trendSeries={Array.from({ length: 7 }, (_, idx) => stats.avgEffectiveness + Math.cos(idx / 2))} trendColor="#86efac" />
-        <KpiCard label="Deployment Ready" value={stats.ready.toLocaleString()} delta={`${stats.inDesign} in design`} trendSeries={Array.from({ length: 7 }, (_, idx) => stats.ready + Math.sin(idx / 3))} trendColor="#fda4af" />
+        <KpiCard label="Framework Coverage" value={stats.frameworks.toLocaleString()} delta="Active mappings" trendColor="#c4b5fd" />
+        <KpiCard label="Avg Effectiveness" value={`${stats.avgEffectiveness.toFixed(1)}/10`} delta="Curated score" trendColor="#86efac" />
+        <KpiCard label="Deployment Ready" value={stats.ready.toLocaleString()} delta={`${stats.inDesign} in design`} trendColor="#fda4af" />
       </section>
 
       <div className="space-y-6">

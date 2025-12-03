@@ -35,8 +35,8 @@ const sessionConfig = {
   saveUninitialized: true,
   rolling: true,
   name: 'connect.sid',
-  cookie: { 
-    secure: isProduction, 
+  cookie: {
+    secure: isProduction,
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000,
     sameSite: isProduction ? 'none' as const : 'strict' as const,
@@ -81,7 +81,7 @@ app.use((req, res, next) => {
 
   // Intercept and log all Set-Cookie headers with production debugging
   const originalSetHeader = res.setHeader;
-  res.setHeader = function(name: string, value: any) {
+  res.setHeader = function (name: string, value: any) {
     if (name.toLowerCase() === 'set-cookie') {
       console.log('SET-COOKIE HEADER:', {
         path: req.path,
@@ -150,7 +150,7 @@ app.use((req, res, next) => {
 
   // Configure passport
   configurePassport();
-  
+
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
@@ -158,11 +158,11 @@ app.use((req, res, next) => {
     const message = err.message || "Internal Server Error";
 
     // Always return JSON for error responses, never HTML
-    res.status(status).json({ 
+    res.status(status).json({
       message,
       error: process.env.NODE_ENV === 'production' ? 'Server error' : (err.stack || String(err))
     });
-    
+
     // Log but don't rethrow the error
     console.error("Server error:", err);
   });
@@ -179,7 +179,7 @@ app.use((req, res, next) => {
   // ALWAYS serve the app on port 5000
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const port = 5000;
+  const port = process.env.PORT || 5000;
   server.listen({
     port,
     host: "0.0.0.0",

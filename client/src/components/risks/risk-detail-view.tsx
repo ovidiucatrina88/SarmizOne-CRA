@@ -37,7 +37,7 @@ const TimelineChart: React.FC<{
 }> = ({ data = [0.3, 0.5, 0.4, 0.7, 0.3, 0.2, 0.5], color = "#f97316", height = 80 }) => {
   const svgWidth = 100;
   const svgHeight = height;
-  const points = data.map((value, index) => 
+  const points = data.map((value, index) =>
     `${(index / (data.length - 1)) * svgWidth},${svgHeight - (value * svgHeight)}`
   ).join(" ");
 
@@ -55,16 +55,16 @@ const TimelineChart: React.FC<{
 
 export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
   const [activeTab, setActiveTab] = useState("suggestions");
-  
+
   // Fetch controls associated with this risk
   const { data: controlsData } = useQuery<{ data: Control[] }>({
     queryKey: ["/api/risks", risk.riskId, "controls"],
     enabled: !!risk.riskId,
   });
-  
+
   // Ensure controls is always an array
   const controls = Array.isArray(controlsData?.data) ? controlsData.data : Array.isArray(controlsData) ? (controlsData as any) : [];
-  
+
   // Fetch IRIS benchmark data (same endpoint as dashboard)
   const { data: irisData } = useQuery<{ data?: any }>({
     queryKey: ["/api/dashboard/iris-benchmarks"],
@@ -74,9 +74,9 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
   const currentExposure = useMemo(() => {
     const inherent = Number(risk.inherentRisk || 0);
     const residual = Number(risk.residualRisk || 0);
-    
+
     if (residual === 0) return undefined;
-    
+
     // Create simple exposure curve with 4 probability points
     const exposureCurveData = [
       { impact: residual * 1.5, probability: 0.10 },  // 10% probability (high impact)
@@ -84,7 +84,7 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
       { impact: residual * 0.7, probability: 0.75 },  // 75% probability 
       { impact: residual * 0.3, probability: 0.95 }   // 95% probability (low impact)
     ];
-    
+
     return {
       minimumExposure: residual * 0.3,
       averageExposure: residual,
@@ -95,7 +95,7 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
       exposureCurveData
     };
   }, [risk.inherentRisk, risk.residualRisk]);
-  
+
   // Get threat-specific control suggestions when no real controls exist
   const controlSuggestions = useMemo(() => {
     if (controls.length === 0) {
@@ -114,11 +114,11 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
   // Calculate the risk likelihood percentage based on loss event frequency
   const riskFrequency = typeof risk.lossEventFrequencyAvg === 'number' ? risk.lossEventFrequencyAvg : 0;
   const likelihoodPercentage = Math.round(riskFrequency * 100);
-  
+
   // Format loss magnitude
   const lossMagnitude = typeof risk.lossMagnitudeAvg === 'number' ? risk.lossMagnitudeAvg : 0;
   const formattedLossMagnitude = formatCurrency(lossMagnitude, 'USD');
-  
+
   // Format annualized loss
   const riskLossMagnitude = typeof risk.lossMagnitudeAvg === 'number' ? risk.lossMagnitudeAvg : 0;
   const riskLossEventFrequency = typeof risk.lossEventFrequencyAvg === 'number' ? risk.lossEventFrequencyAvg : 0;
@@ -126,13 +126,13 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
   const formattedAnnualizedLoss = formatCurrency(annualizedLoss, 'USD');
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-[#121212] text-white">
+    <div className="flex flex-col h-full bg-[#121212] text-white">
       {/* Header with back button and title */}
       <div className="p-4 flex items-center space-x-4">
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          onClick={onBack} 
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onBack}
           className="text-gray-300 hover:text-white hover:bg-gray-800"
         >
           <ArrowLeft />
@@ -180,7 +180,7 @@ export function RiskDetailView({ risk, onBack }: RiskDetailViewProps) {
               <h2 className="text-lg font-medium text-white">Loss Exceedance Curve</h2>
             </div>
             <div className="p-6">
-              <LossExceedanceCurveModern 
+              <LossExceedanceCurveModern
                 risks={[risk]}
                 currentExposure={currentExposure}
                 irisBenchmarks={irisData?.data ? {

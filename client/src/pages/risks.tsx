@@ -174,27 +174,23 @@ export default function Risks() {
             label="Total Risks"
             value={summary.stats.total.toLocaleString()}
             delta={summary.trends.total.delta}
-            trendSeries={summary.trends.total.series}
           />
           <KpiCard
             label="Critical/High"
             value={summary.stats.high.toLocaleString()}
             delta={summary.trends.high.delta}
-            trendSeries={summary.trends.high.series}
             trendColor="#fca5a5"
           />
           <KpiCard
             label="Open"
             value={summary.stats.open.toLocaleString()}
             delta={summary.trends.open.delta}
-            trendSeries={summary.trends.open.series}
             trendColor="#fdba74"
           />
           <KpiCard
             label="Mitigated"
             value={summary.stats.mitigated.toLocaleString()}
             delta={summary.trends.mitigated.delta}
-            trendSeries={summary.trends.mitigated.series}
             trendColor="#86efac"
           />
         </section>

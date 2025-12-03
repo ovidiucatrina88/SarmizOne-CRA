@@ -12,12 +12,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import { 
-  CheckCircle, 
-  XCircle, 
-  RefreshCw, 
-  Database, 
-  Settings, 
+import {
+  CheckCircle,
+  XCircle,
+  RefreshCw,
+  Database,
+  Settings,
   Clock,
   ExternalLink,
   AlertTriangle,
@@ -61,7 +61,7 @@ interface SyncLog {
 export function BackstageIntegration() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const [config, setConfig] = useState<BackstageConfig>({
     baseUrl: '',
     token: '',
@@ -69,7 +69,7 @@ export function BackstageIntegration() {
     catalogFilter: 'kind=component,api,resource,system',
     syncInterval: '1h',
   });
-  
+
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState<any>(null);
 
@@ -271,7 +271,7 @@ export function BackstageIntegration() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="mt-4">
                   <Label htmlFor="catalogFilter" className="text-white">Catalog Filter</Label>
                   <Textarea
@@ -301,7 +301,7 @@ export function BackstageIntegration() {
                     )}
                     Test Connection
                   </Button>
-                  
+
                   <Button
                     onClick={handlePreview}
                     disabled={previewMutation.isPending}
@@ -315,7 +315,7 @@ export function BackstageIntegration() {
                     )}
                     Preview Entities
                   </Button>
-                  
+
                   <Button
                     onClick={() => handleSync(true)}
                     disabled={syncMutation.isPending}
@@ -328,7 +328,7 @@ export function BackstageIntegration() {
                     )}
                     Dry Run
                   </Button>
-                  
+
                   <Button
                     onClick={() => handleSync(false)}
                     disabled={syncMutation.isPending}
@@ -348,44 +348,51 @@ export function BackstageIntegration() {
             <TabsContent value="assets" className="space-y-4">
               {backstageAssets && backstageAssets.length > 0 ? (
                 <div className="bg-gray-700 rounded-lg overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-gray-600">
-                        <TableHead className="text-gray-300">Asset</TableHead>
-                        <TableHead className="text-gray-300">Type</TableHead>
-                        <TableHead className="text-gray-300">Entity Ref</TableHead>
-                        <TableHead className="text-gray-300">Owner</TableHead>
-                        <TableHead className="text-gray-300">Last Sync</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {backstageAssets.map((asset: any) => (
-                        <TableRow key={asset.id} className="border-gray-600">
-                          <TableCell className="text-white">
-                            <div>
-                              <div className="font-medium">{asset.name}</div>
-                              <div className="text-sm text-gray-400">{asset.assetId}</div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="text-gray-300 border-gray-500">
-                              {asset.assetType}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-gray-300 font-mono text-sm">
-                            {asset.backstageEntityRef}
-                          </TableCell>
-                          <TableCell className="text-gray-300">{asset.owner}</TableCell>
-                          <TableCell className="text-gray-300">
-                            {asset.lastBackstageSync ? 
-                              new Date(asset.lastBackstageSync).toLocaleDateString() : 
-                              'Never'
-                            }
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <div className="overflow-hidden rounded-[28px] border border-white/10">
+                    <div className="bg-white/5 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-white/50">
+                      Discovered Assets
+                    </div>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader className="text-xs uppercase tracking-wide text-white/50">
+                          <TableRow className="border-b border-white/5">
+                            <TableHead>Asset</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Entity Ref</TableHead>
+                            <TableHead>Owner</TableHead>
+                            <TableHead>Last Sync</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {backstageAssets.map((asset: any) => (
+                            <TableRow key={asset.id} className="border-b border-white/5">
+                              <TableCell className="text-white">
+                                <div>
+                                  <div className="font-medium text-white">{asset.name}</div>
+                                  <div className="text-sm text-white/50 font-mono">{asset.assetId}</div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="text-white/70 border-white/20">
+                                  {asset.assetType}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-white/70 font-mono text-sm">
+                                {asset.backstageEntityRef}
+                              </TableCell>
+                              <TableCell className="text-white/70">{asset.owner}</TableCell>
+                              <TableCell className="text-white/70">
+                                {asset.lastBackstageSync ?
+                                  new Date(asset.lastBackstageSync).toLocaleDateString() :
+                                  'Never'
+                                }
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <Alert className="bg-gray-700 border-gray-600">
@@ -400,36 +407,48 @@ export function BackstageIntegration() {
             <TabsContent value="history" className="space-y-4">
               {syncHistory && syncHistory.length > 0 ? (
                 <div className="bg-gray-700 rounded-lg overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-gray-600">
-                        <TableHead className="text-gray-300">Date</TableHead>
-                        <TableHead className="text-gray-300">Type</TableHead>
-                        <TableHead className="text-gray-300">Status</TableHead>
-                        <TableHead className="text-gray-300">Entities</TableHead>
-                        <TableHead className="text-gray-300">Assets</TableHead>
-                        <TableHead className="text-gray-300">Duration</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {syncHistory.map((log: SyncLog) => (
-                        <TableRow key={log.id} className="border-gray-600">
-                          <TableCell className="text-gray-300">
-                            {new Date(log.createdAt).toLocaleString()}
-                          </TableCell>
-                          <TableCell className="text-gray-300">{log.syncType}</TableCell>
-                          <TableCell>{getSyncStatusBadge(log.syncStatus)}</TableCell>
-                          <TableCell className="text-gray-300">{log.entitiesProcessed}</TableCell>
-                          <TableCell className="text-gray-300">
-                            +{log.assetsCreated} / ~{log.assetsUpdated}
-                          </TableCell>
-                          <TableCell className="text-gray-300">
-                            {formatDuration(log.syncDuration)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <div className="overflow-hidden rounded-[28px] border border-white/10">
+                    <div className="bg-white/5 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-white/50">
+                      Sync History
+                    </div>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader className="text-xs uppercase tracking-wide text-white/50">
+                          <TableRow className="border-b border-white/5">
+                            <TableHead>Date</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Entities Processed</TableHead>
+                            <TableHead>Assets Created</TableHead>
+                            <TableHead>Assets Updated</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {syncHistory.map((sync: any) => (
+                            <TableRow key={sync.id} className="border-b border-white/5">
+                              <TableCell className="text-white">
+                                {new Date(sync.startedAt).toLocaleString()}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    sync.status === 'success'
+                                      ? 'border-emerald-500/50 text-emerald-500'
+                                      : 'border-red-500/50 text-red-500'
+                                  }
+                                >
+                                  {sync.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-white/70">{sync.entitiesProcessed}</TableCell>
+                              <TableCell className="text-white/70">{sync.assetsCreated}</TableCell>
+                              <TableCell className="text-white/70">{sync.assetsUpdated}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <Alert className="bg-gray-700 border-gray-600">
@@ -453,7 +472,7 @@ export function BackstageIntegration() {
               Preview of entities that will be imported from Backstage
             </DialogDescription>
           </DialogHeader>
-          
+
           {previewData && (
             <div className="space-y-4">
               <div className="flex items-center gap-4 text-sm">
@@ -464,7 +483,7 @@ export function BackstageIntegration() {
                   Showing: <span className="font-bold text-white">{previewData.previewCount}</span>
                 </span>
               </div>
-              
+
               <div className="bg-gray-700 rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>

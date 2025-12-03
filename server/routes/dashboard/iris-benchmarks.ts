@@ -4,8 +4,8 @@ import { pool } from '../../db';
 
 const router = Router();
 
-// IRIS 2025 benchmarking constants
-const IRIS_BENCHMARKS = {
+// Default IRIS 2025 benchmarking constants (fallback if DB values missing)
+const IRIS_BENCHMARKS_FALLBACK = {
   SMB: {
     geometricMean: 357000,
     standardDeviation: 1.77,
@@ -25,24 +25,24 @@ const IRIS_BENCHMARKS = {
  * @param points - number of points to generate
  * @returns Array of {probability, impact} points for the curve
  */
-function generateExceedanceCurve(geometricMean: number, standardDeviation: number, points: number = 50): Array<{probability: number, impact: number}> {
-  const curve: Array<{probability: number, impact: number}> = [];
-  
+function generateExceedanceCurve(geometricMean: number, standardDeviation: number, points: number = 50): Array<{ probability: number, impact: number }> {
+  const curve: Array<{ probability: number, impact: number }> = [];
+
   // Generate points from 0.01% to 99.99% exceedance probability
   for (let i = 0; i < points; i++) {
     const probability = 0.0001 + (0.9999 - 0.0001) * (i / (points - 1));
-    
+
     // Convert probability to z-score for normal distribution
     const zScore = inverseNormalCDF(1 - probability);
-    
+
     // Calculate impact using lognormal distribution
     const lnGeometricMean = Math.log(geometricMean);
     const lnImpact = lnGeometricMean + standardDeviation * zScore;
     const impact = Math.exp(lnImpact);
-    
+
     curve.push({ probability, impact });
   }
-  
+
   // Sort by probability descending (exceedance probability)
   return curve.sort((a, b) => b.probability - a.probability);
 }
@@ -52,26 +52,26 @@ function generateExceedanceCurve(geometricMean: number, standardDeviation: numbe
  */
 function inverseNormalCDF(p: number): number {
   if (p <= 0 || p >= 1) return 0;
-  
+
   // Constants for the approximation
   const a = [0, -3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02, 1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
   const b = [0, -5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02, 6.680131188771972e+01, -1.328068155288572e+01];
   const c = [0, -7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00, -2.549732539343734e+00, 4.374664141464968e+00, 2.938163982698783e+00];
   const d = [0, 7.784695709041462e-03, 3.224671290700398e-01, 2.445134137142996e+00, 3.754408661907416e+00];
-  
+
   let x = 0;
   let t = 0;
-  
+
   if (p < 0.5) {
     t = Math.sqrt(-2 * Math.log(p));
-    x = (((((c[1] * t + c[2]) * t + c[3]) * t + c[4]) * t + c[5]) * t + c[6]) / 
-        ((((d[1] * t + d[2]) * t + d[3]) * t + d[4]) * t + 1);
+    x = (((((c[1] * t + c[2]) * t + c[3]) * t + c[4]) * t + c[5]) * t + c[6]) /
+      ((((d[1] * t + d[2]) * t + d[3]) * t + d[4]) * t + 1);
   } else {
     t = Math.sqrt(-2 * Math.log(1 - p));
-    x = -(((((c[1] * t + c[2]) * t + c[3]) * t + c[4]) * t + c[5]) * t + c[6]) / 
-         ((((d[1] * t + d[2]) * t + d[3]) * t + d[4]) * t + 1);
+    x = -(((((c[1] * t + c[2]) * t + c[3]) * t + c[4]) * t + c[5]) * t + c[6]) /
+      ((((d[1] * t + d[2]) * t + d[3]) * t + d[4]) * t + 1);
   }
-  
+
   return x;
 }
 
@@ -91,9 +91,52 @@ interface IRISBenchmarkData {
     positioning: string;
   };
   exceedanceCurves: {
-    smb: Array<{probability: number, impact: number}>;
-    enterprise: Array<{probability: number, impact: number}>;
+    smb: Array<{ probability: number, impact: number }>;
+    enterprise: Array<{ probability: number, impact: number }>;
   };
+}
+
+// Fetch IRIS benchmark parameters from industry_insights table, fallback to defaults
+async function getBenchmarkParams(
+  client: any,
+  region: 'SMB' | 'ENTERPRISE'
+): Promise<{ geometricMean: number; standardDeviation: number; logMean: number }> {
+  const regionKey = region === 'SMB' ? 'SMB' : 'Global';
+  try {
+    const result = await client.query(
+      `
+        SELECT metric, value
+        FROM industry_insights
+        WHERE region = $1
+          AND metric IN ('LM_MU', 'LM_SIGMA')
+          AND source = 'IRIS 2025'
+        LIMIT 10
+      `,
+      [regionKey]
+    );
+
+    const rows = result.rows || [];
+    const muRow = rows.find((r: any) => r.metric === 'LM_MU');
+    const sigmaRow = rows.find((r: any) => r.metric === 'LM_SIGMA');
+
+    const logMean = muRow ? Number(muRow.value) : null;
+    const standardDeviation = sigmaRow ? Number(sigmaRow.value) : null;
+
+    if (logMean && standardDeviation) {
+      return {
+        logMean,
+        standardDeviation,
+        geometricMean: Math.exp(logMean),
+      };
+    }
+  } catch (err) {
+    console.error('Error fetching IRIS benchmarks from DB:', err);
+  }
+
+  // Fallback to defaults
+  return region === 'SMB'
+    ? IRIS_BENCHMARKS_FALLBACK.SMB
+    : IRIS_BENCHMARKS_FALLBACK.ENTERPRISE;
 }
 
 // GET /api/dashboard/iris-benchmarks - Fetch IRIS 2025 benchmarking data
@@ -108,20 +151,33 @@ router.get('/', async (req, res) => {
       WHERE CAST(r.residual_risk AS NUMERIC) > 0
       ORDER BY CAST(r.residual_risk AS NUMERIC) DESC
     `;
-    
+
     const client = await pool.connect();
     try {
+      const smbParams = await getBenchmarkParams(client, 'SMB');
+      const enterpriseParams = await getBenchmarkParams(client, 'ENTERPRISE');
+
       const risksResult = await client.query(risksQuery);
       const risks = risksResult.rows;
-    
+
+      // Generate exceedance curves for industry benchmarks
+      const smbCurve = generateExceedanceCurve(
+        smbParams.geometricMean,
+        smbParams.standardDeviation
+      );
+      const enterpriseCurve = generateExceedanceCurve(
+        enterpriseParams.geometricMean,
+        enterpriseParams.standardDeviation
+      );
+
       if (risks.length === 0) {
         return res.json({
           success: true,
           data: {
             currentRisk: 0,
             totalPortfolioRisk: 0,
-            smbBenchmark: IRIS_BENCHMARKS.SMB.geometricMean,
-            enterpriseBenchmark: IRIS_BENCHMARKS.ENTERPRISE.geometricMean,
+            smbBenchmark: smbParams.geometricMean,
+            enterpriseBenchmark: enterpriseParams.geometricMean,
             industryPosition: 'below_enterprise' as const,
             maturityScore: 0,
             recommendations: ['No risks found. Consider conducting a risk assessment.'],
@@ -131,6 +187,10 @@ router.get('/', async (req, res) => {
               smbMultiple: 0,
               enterpriseMultiple: 0,
               positioning: 'No data available'
+            },
+            exceedanceCurves: {
+              smb: smbCurve,
+              enterprise: enterpriseCurve
             }
           }
         });
@@ -141,15 +201,15 @@ router.get('/', async (req, res) => {
       const avgRiskSize = totalPortfolioRisk / risks.length;
 
       // Calculate industry position
-      const smbMultiple = totalPortfolioRisk / IRIS_BENCHMARKS.SMB.geometricMean;
-      const enterpriseMultiple = totalPortfolioRisk / IRIS_BENCHMARKS.ENTERPRISE.geometricMean;
+      const smbMultiple = totalPortfolioRisk / smbParams.geometricMean;
+      const enterpriseMultiple = totalPortfolioRisk / enterpriseParams.geometricMean;
 
       let industryPosition: 'above_smb' | 'below_enterprise' | 'between' | 'above_enterprise';
-      if (totalPortfolioRisk > IRIS_BENCHMARKS.ENTERPRISE.geometricMean) {
+      if (totalPortfolioRisk > enterpriseParams.geometricMean) {
         industryPosition = 'above_enterprise';
-      } else if (totalPortfolioRisk > IRIS_BENCHMARKS.SMB.geometricMean) {
+      } else if (totalPortfolioRisk > smbParams.geometricMean) {
         industryPosition = 'between';
-      } else if (totalPortfolioRisk > IRIS_BENCHMARKS.SMB.geometricMean * 0.5) {
+      } else if (totalPortfolioRisk > smbParams.geometricMean * 0.5) {
         industryPosition = 'above_smb';
       } else {
         industryPosition = 'below_enterprise';
@@ -175,20 +235,13 @@ router.get('/', async (req, res) => {
       }
 
       // Generate exceedance curves for industry benchmarks
-      const smbCurve = generateExceedanceCurve(
-        IRIS_BENCHMARKS.SMB.geometricMean, 
-        IRIS_BENCHMARKS.SMB.standardDeviation
-      );
-      const enterpriseCurve = generateExceedanceCurve(
-        IRIS_BENCHMARKS.ENTERPRISE.geometricMean, 
-        IRIS_BENCHMARKS.ENTERPRISE.standardDeviation
-      );
+
 
       const benchmarkData: IRISBenchmarkData = {
         currentRisk: totalPortfolioRisk,
         totalPortfolioRisk,
-        smbBenchmark: IRIS_BENCHMARKS.SMB.geometricMean,
-        enterpriseBenchmark: IRIS_BENCHMARKS.ENTERPRISE.geometricMean,
+        smbBenchmark: smbParams.geometricMean,
+        enterpriseBenchmark: enterpriseParams.geometricMean,
         industryPosition,
         maturityScore: Math.round(maturityScore),
         recommendations,
@@ -198,8 +251,8 @@ router.get('/', async (req, res) => {
           smbMultiple: Number(smbMultiple.toFixed(2)),
           enterpriseMultiple: Number(enterpriseMultiple.toFixed(2)),
           positioning: industryPosition === 'above_enterprise' ? 'Above Enterprise Average' :
-                      industryPosition === 'between' ? 'Between SMB and Enterprise' :
-                      industryPosition === 'above_smb' ? 'Above SMB Average' : 'Below Industry Average'
+            industryPosition === 'between' ? 'Between SMB and Enterprise' :
+              industryPosition === 'above_smb' ? 'Above SMB Average' : 'Below Industry Average'
         },
         exceedanceCurves: {
           smb: smbCurve,

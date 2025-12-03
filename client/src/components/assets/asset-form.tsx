@@ -1,14 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { Asset } from "@shared/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
-import { Asset, insertAssetSchema, LegalEntity } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-// formatCurrency no longer needed
-import { ArrowUp, Loader2 } from "lucide-react";
-
+import { useForm } from "react-hook-form";
 import {
   Form,
   FormControl,
@@ -19,8 +12,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -28,231 +21,188 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
+import { useMemo, useState } from "react";
 
+// Define utils locally
 type ApiListResponse<T> = {
+  success: boolean;
   data: T[];
+};
+
+function extractList<T>(response: ApiListResponse<T> | T[] | undefined): T[] {
+  if (!response) return [];
+  if (Array.isArray(response)) return response;
+  return response.data || [];
+}
+
+type AssetOption = Asset & {
+  parentBusinessServiceId?: number | null;
+  hierarchy_level?: string;
 };
 
 type EnterpriseItem = {
   id: number;
   name: string;
+  level: string;
   hierarchyLevel?: string;
-  level?: string;
 };
 
-type AssetOption = Asset & {
-  hierarchy_level?: string;
-  parentBusinessServiceId?: number | null;
+type AssetFormProps = {
+  asset?: Asset | null;
+  onClose: () => void;
 };
 
-const extractList = <T,>(source?: ApiListResponse<T> | T[]): T[] => {
-  if (!source) return [];
-  return Array.isArray(source) ? source : source.data ?? [];
-};
-
-// Simplified schema that matches the actual asset structure
 const assetFormSchema = z.object({
   assetId: z.string().optional(),
   name: z.string().min(1, "Asset name is required"),
-  type: z.enum([
-    "data", "application", "device", "system", "network", "facility", "personnel", "other",
-    "application_service", "technical_component"
-  ]),
-  status: z.enum(["Active", "Decommissioned", "To Adopt"]).default("Active"),
+  type: z.enum(["application", "data", "device", "system", "network", "facility", "personnel", "other", "application_service", "technical_component"]),
+  status: z.enum(["Active", "Decommissioned", "To Adopt"]),
   owner: z.string().min(1, "Owner is required"),
+  description: z.string().optional(),
   confidentiality: z.enum(["low", "medium", "high"]),
   integrity: z.enum(["low", "medium", "high"]),
   availability: z.enum(["low", "medium", "high"]),
-  assetValue: z.union([
-    z.number().min(0, "Asset value must be a positive number"),
-    z.string().transform(val => {
-      const cleanVal = val.replace(/[^0-9.-]/g, '');
-      const numValue = parseFloat(cleanVal);
-      return isNaN(numValue) ? 0 : numValue;
-    })
-  ]),
+  assetValue: z.number().min(0, "Asset value must be a positive number"),
   currency: z.enum(["USD", "EUR"]),
-  regulatoryImpact: z.array(z.string()).optional(),
-  externalInternal: z.enum(["external", "internal"]),
-  dependencies: z.array(z.string()).optional(),
-  description: z.string().default(''),
-  parentId: z.union([
-    z.number(),
-    z.string().transform(val => val === "none" || val === "" ? null : parseInt(val))
-  ]).optional().nullable(),
-  parentBusinessServiceId: z.union([
-    z.number(),
-    z.string().transform((val) => (val === "none" || val === "" ? null : parseInt(val)))
-  ]).optional().nullable(),
-  agentCount: z.union([
-    z.number(),
-    z.string().transform(val => parseInt(val) || 1)
-  ]).optional(),
-  legalEntity: z.string().optional().nullable(),
+  regulatoryImpact: z.array(z.string()).default([]),
+  externalInternal: z.enum(["internal", "external"]),
+  dependencies: z.array(z.string()).default([]),
+  agentCount: z.number().min(1, "At least one agent is required"),
+  legalEntity: z.string().nullable().optional(),
+  parentId: z.number().nullable().optional(),
+  parentBusinessServiceId: z.number().nullable().optional(),
 });
-
-// Regulatory frameworks list
-const regulatoryOptions = [
-  { value: "GDPR", label: "GDPR" },
-  { value: "HIPAA", label: "HIPAA" },
-  { value: "PCI-DSS", label: "PCI-DSS" },
-  { value: "SOX", label: "SOX" },
-  { value: "CCPA", label: "CCPA" },
-  { value: "ISO27001", label: "ISO 27001" },
-  { value: "NIST", label: "NIST CSF" },
-];
-
-type AssetFormProps = {
-  asset: Asset | null;
-  onClose: () => void;
-};
 
 export function AssetForm({ asset, onClose }: AssetFormProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  const [selectedRegulations, setSelectedRegulations] = useState<string[]>(
-    asset?.regulatoryImpact || []
-  );
 
-  // Not needed anymore since we're handling the conversion directly in the Input component
-  
-  // Fetch legal entities for dropdown
-  const { data: legalEntitiesResponse, isLoading: isLoadingEntities } = useQuery<ApiListResponse<LegalEntity> | LegalEntity[]>({
+  const { data: legalEntitiesResponse, isLoading: isLoadingEntities } = useQuery<ApiListResponse<any> | any[]>({
     queryKey: ['/api/legal-entities'],
   });
-  
-  // Fetch assets for parent selection (L4 assets for L5 components)
+
   const { data: assetsResponse, isLoading: isLoadingAssets } = useQuery<ApiListResponse<AssetOption> | AssetOption[]>({
     queryKey: ['/api/assets'],
   });
-  
-  // Fetch enterprise architecture items (L3 items for L4 assets)
+
   const { data: enterpriseResponse, isLoading: isLoadingEnterprise } = useQuery<ApiListResponse<EnterpriseItem> | EnterpriseItem[]>({
     queryKey: ['/api/enterprise-architecture'],
   });
-  
-  // Process assets data to handle different response formats
-  const allAssets = useMemo<AssetOption[]>(() => extractList<AssetOption>(assetsResponse), [assetsResponse]);
-  
-  // Process enterprise architecture items (L3 level items)
-  const enterpriseItems = useMemo<EnterpriseItem[]>(() => {
-    return extractList<EnterpriseItem>(enterpriseResponse).filter(
-      (item) =>
-        item.hierarchyLevel === "business_service" || item.level === "L3",
-    );
-  }, [enterpriseResponse]);
-  
-  // Application service assets (L4) for L5 technical components
-  const applicationServiceAssets = useMemo<AssetOption[]>(() => {
-    return allAssets.filter(asset => 
-      asset.type === 'application_service' || 
-      asset.hierarchy_level === 'application_service'
-    );
-  }, [allAssets]);
-  
-  // Ensure we handle both response formats (direct array or data.data structure)
-  const legalEntities = useMemo<LegalEntity[]>(() => extractList<LegalEntity>(legalEntitiesResponse), [legalEntitiesResponse]);
 
-  // Initialize form with asset data or defaults
+  const allAssets = extractList(assetsResponse);
+  const enterpriseItems = extractList(enterpriseResponse);
+  const legalEntities = extractList(legalEntitiesResponse);
+
+  // Safeguard against malformed regulatoryImpact
+  const initialRegulations = useMemo(() => {
+    if (!asset) return [];
+    if (Array.isArray(asset.regulatoryImpact)) return asset.regulatoryImpact;
+    return [];
+  }, [asset]);
+
+  const [selectedRegulations, setSelectedRegulations] = useState<string[]>(initialRegulations);
+
   const form = useForm<z.infer<typeof assetFormSchema>>({
     resolver: zodResolver(assetFormSchema),
     defaultValues: asset
       ? {
-          assetId: asset.assetId || "",
-          name: asset.name || "",
-          type: asset.type || "application",
-          status: asset.status || "Active",
-          owner: asset.owner || "",
-          confidentiality: asset.confidentiality || "medium",
-          integrity: asset.integrity || "medium",
-          availability: asset.availability || "medium",
-          assetValue: typeof asset.assetValue === 'string' ? parseFloat(asset.assetValue) || 0 : asset.assetValue || 0,
-          currency: asset.currency || "USD",
-          regulatoryImpact: asset.regulatoryImpact || [],
-          externalInternal: asset.externalInternal || "internal",
-          dependencies: asset.dependencies || [],
-          agentCount: asset.agentCount || 1,
-          description: asset.description || "",
-          parentId: asset.parentId || null,
-          parentBusinessServiceId: (asset as AssetOption).parentBusinessServiceId ?? null,
-          legalEntity: asset.legalEntity || null,
-        }
+        assetId: asset.assetId || "",
+        name: asset.name || "",
+        type: (asset.type as any) || "application",
+        status: (asset.status as any) || "Active",
+        owner: asset.owner || "",
+        description: asset.description || "",
+        confidentiality: (asset.confidentiality as any) || "medium",
+        integrity: (asset.integrity as any) || "medium",
+        availability: (asset.availability as any) || "medium",
+        assetValue: typeof asset.assetValue === 'string' ? parseFloat(asset.assetValue) || 0 : asset.assetValue || 0,
+        currency: (asset.currency as any) || "USD",
+        regulatoryImpact: asset.regulatoryImpact || [],
+        externalInternal: (asset.externalInternal as any) || "internal",
+        dependencies: asset.dependencies || [],
+        agentCount: asset.agentCount || 1,
+        legalEntity: asset.legalEntity || null,
+        parentId: asset.parentId || null,
+        parentBusinessServiceId: (asset as any).parentBusinessServiceId || null,
+      }
       : {
-          assetId: "",
-          name: "",
-          type: "application",
-          status: "Active",
-          owner: "",
-          confidentiality: "medium",
-          integrity: "medium",
-          availability: "medium",
-          assetValue: 0,
-          currency: "USD",
-          regulatoryImpact: [],
-          externalInternal: "internal",
-          dependencies: [],
-          agentCount: 1,
-          description: "",
-          parentId: null,
-          parentBusinessServiceId: null,
-          legalEntity: null,
-        },
+        assetId: "",
+        name: "",
+        type: "application",
+        status: "Active",
+        owner: "",
+        description: "",
+        confidentiality: "medium",
+        integrity: "medium",
+        availability: "medium",
+        assetValue: 0,
+        currency: "USD",
+        regulatoryImpact: [],
+        externalInternal: "internal",
+        dependencies: [],
+        agentCount: 1,
+        legalEntity: null,
+        parentId: null,
+        parentBusinessServiceId: null,
+      },
   });
-  
-  // Watch the asset type field to dynamically update parent options
-  const assetType = form.watch('type');
 
-  // Create mutation for adding/updating asset
+  // Watch asset type to conditionally show parent fields
+  const assetType = form.watch("type");
+
+  function onSubmit(data: z.infer<typeof assetFormSchema>) {
+    // If creating a new asset, remove the ID if it's empty so the backend generates it
+    if (!asset && !data.assetId) {
+      delete (data as any).assetId;
+    }
+
+    // Ensure numeric values are numbers
+    const formattedData = {
+      ...data,
+      assetValue: Number(data.assetValue),
+      agentCount: Number(data.agentCount),
+      parentId: data.parentId ? Number(data.parentId) : null,
+      parentBusinessServiceId: data.parentBusinessServiceId ? Number(data.parentBusinessServiceId) : null,
+      regulatoryImpact: selectedRegulations
+    };
+
+    mutation.mutate(formattedData);
+  }
+
   const mutation = useMutation({
-    mutationFn: async (values: z.infer<typeof assetFormSchema>) => {
-      // Include the selected regulations
-      values.regulatoryImpact = selectedRegulations;
+    mutationFn: async (data: any) => {
+      // Use fetch directly since apiRequest is not available locally
+      const url = asset ? `/api/assets/${asset.id}` : "/api/assets";
+      const method = asset ? "PATCH" : "POST";
 
-      if (asset) {
-        // Update existing asset
-        return apiRequest("PUT", `/api/assets/${asset.id}`, values);
-      } else {
-        // Create new asset
-        return apiRequest("POST", "/api/assets", values);
+      const response = await fetch(url, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to ${asset ? "update" : "create"} asset`);
       }
+
+      return response.json();
     },
-    onSuccess: (response) => {
-      // Invalidate assets query to refresh the list
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/assets"] });
-      
-      // If we're updating an existing asset, also invalidate the specific asset
-      if (asset) {
-        queryClient.invalidateQueries({ queryKey: [`/api/assets/${asset.id}`] });
-        queryClient.invalidateQueries({ queryKey: [`/api/assets/${asset.assetId}`] });
-      }
-      
-      // Invalidate associated data that depends on assets
-      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/risk-summary/latest"] });
-      
-      // Also invalidate any related risk data for this asset
-      if (asset) {
-        queryClient.invalidateQueries({ queryKey: [`/api/assets/${asset.assetId}/risks`] });
-      }
-      
-      console.log(`Asset ${asset ? 'updated' : 'created'} successfully`, response);
-      
-      // Show success message
       toast({
         title: asset ? "Asset updated" : "Asset created",
         description: asset
           ? "The asset has been updated successfully."
-          : "A new asset has been added to your inventory.",
+          : "The new asset has been created successfully.",
       });
-      
-      // Close the form modal
       onClose();
     },
-    onError: (error) => {
-      // Show error message
+    onError: (error: Error) => {
       toast({
         title: "Error",
         description: `Failed to ${asset ? "update" : "create"} asset: ${error.message}`,
@@ -260,52 +210,6 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
       });
     },
   });
-
-  // Form submission handler
-  const onSubmit = (values: z.infer<typeof assetFormSchema>) => {
-    // Create a completely new object with only the exact fields needed by the API
-    // This avoids sending any unexpected or removed fields
-    
-    // Only generate new asset ID for creation, not updates
-    let assetId = values.assetId;
-    if (!asset && !assetId) {
-      // Create a sequential asset ID following the existing pattern in the database
-      // Looking at existing assets, they use AST-XXX format (e.g., AST-001, AST-002)
-      // Create a higher number to avoid conflicts
-      assetId = `AST-${(Math.floor(Math.random() * 900) + 100).toString().padStart(3, '0')}`;
-    } else if (asset) {
-      // For updates, preserve the existing asset ID
-      assetId = asset.assetId;
-    }
-    
-    // Create simplified payload for asset update/creation
-    const payload = {
-      assetId: assetId,
-      name: values.name,
-      type: values.type,
-      status: values.status,
-      owner: values.owner,
-      legalEntity: values.legalEntity,
-      confidentiality: values.confidentiality,
-      integrity: values.integrity,
-      availability: values.availability,
-      assetValue: values.assetValue,
-      currency: values.currency,
-      regulatoryImpact: selectedRegulations,
-      externalInternal: values.externalInternal,
-      dependencies: values.dependencies || [],
-      agentCount: values.agentCount || 1,
-      description: values.description || "",
-      parentId: values.parentId,
-      parentBusinessServiceId: values.parentBusinessServiceId ?? null,
-    };
-    
-    console.log('Form values before processing:', values);
-    console.log('Submitting asset payload:', payload);
-    console.log('Asset ID for update:', assetId);
-    console.log('Is update operation:', !!asset);
-    mutation.mutate(payload);
-  };
 
   // Handle regulatory impact selection change
   const handleRegulationChange = (checked: boolean, regulation: string) => {
@@ -317,28 +221,10 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
-          {/* Asset ID field */}
-          <FormField
-            control={form.control}
-            name="assetId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Asset ID (Optional)</FormLabel>
-                <FormControl>
-                  <Input placeholder="Leave blank for auto-generation" {...field} />
-                </FormControl>
-                <FormDescription>
-                  If left blank, an ID will be automatically generated
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Asset Name field */}
+    <div className="p-4">
+      <h2 className="text-xl font-bold mb-4">{asset ? "Edit Asset" : "Create New Asset"}</h2>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
             control={form.control}
             name="name"
@@ -353,69 +239,76 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
             )}
           />
 
-          {/* Asset Type field */}
           <FormField
             control={form.control}
-            name="type"
+            name="description"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Asset Type</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select asset type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {/* Only L4 and L5 Enterprise Architecture types */}
-                    <SelectItem value="application_service">Application Service (L4)</SelectItem>
-                    <SelectItem value="technical_component">Technical Component (L5)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  The asset's type (only L4 or L5 enterprise architecture levels)
-                </FormDescription>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Provide details about the asset..."
+                    className="h-20"
+                    {...field}
+                    value={field.value || ""}
+                  />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          {/* Asset Status field */}
           <FormField
             control={form.control}
-            name="status"
-            render={({ field }) => (
+            name="regulatoryImpact"
+            render={() => (
               <FormItem>
-                <FormLabel>Asset Status</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select asset status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Active">Active</SelectItem>
-                    <SelectItem value="Decommissioned">Decommissioned</SelectItem>
-                    <SelectItem value="To Adopt">To Adopt</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Active/To Adopt assets contribute to risk calculations, Decommissioned assets are excluded
-                </FormDescription>
+                <div className="mb-4">
+                  <FormLabel className="text-base">Regulatory Impact</FormLabel>
+                  <FormDescription>
+                    Select the regulations that apply to this asset.
+                  </FormDescription>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {["GDPR", "CCPA", "HIPAA", "PCI DSS", "SOX", "FISMA", "NIST", "ISO 27001"].map((item) => (
+                    <FormField
+                      key={item}
+                      control={form.control}
+                      name="regulatoryImpact"
+                      render={({ field }) => {
+                        return (
+                          <FormItem
+                            key={item}
+                            className="flex flex-row items-start space-x-3 space-y-0"
+                          >
+                            <FormControl>
+                              <Checkbox
+                                checked={selectedRegulations.includes(item)}
+                                onCheckedChange={(checked) => {
+                                  handleRegulationChange(checked as boolean, item);
+                                  // Update the form field as well
+                                  const current = selectedRegulations;
+                                  const updated = checked
+                                    ? [...current, item]
+                                    : current.filter((value) => value !== item);
+                                  field.onChange(updated);
+                                }}
+                              />
+                            </FormControl>
+                            <FormLabel className="font-normal">
+                              {item}
+                            </FormLabel>
+                          </FormItem>
+                        )
+                      }}
+                    />
+                  ))}
+                </div>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          {/* Business Unit field removed */}
-
-          {/* Owner field */}
           <FormField
             control={form.control}
             name="owner"
@@ -423,285 +316,275 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
               <FormItem>
                 <FormLabel>Owner</FormLabel>
                 <FormControl>
-                  <Input placeholder="Person responsible for the asset" {...field} />
+                  <Input placeholder="Owner" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          {/* Asset Value field */}
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="application">Application</SelectItem>
+                      <SelectItem value="data">Data</SelectItem>
+                      <SelectItem value="device">Device</SelectItem>
+                      <SelectItem value="system">System</SelectItem>
+                      <SelectItem value="network">Network</SelectItem>
+                      <SelectItem value="facility">Facility</SelectItem>
+                      <SelectItem value="personnel">Personnel</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Decommissioned">Decommissioned</SelectItem>
+                      <SelectItem value="To Adopt">To Adopt</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="assetValue"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Asset Value</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={0}
+                      placeholder="0.00"
+                      {...field}
+                      onChange={(e) => field.onChange(Number(e.target.value))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="currency"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Currency</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="USD">USD</SelectItem>
+                      <SelectItem value="EUR">EUR</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="externalInternal"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>External/Internal</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select scope" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="internal">Internal</SelectItem>
+                      <SelectItem value="external">External</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="legalEntity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Legal Entity</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value || undefined}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select legal entity" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {legalEntities.map((entity: any) => (
+                        <SelectItem key={entity.id} value={entity.name}>
+                          {entity.name}
+                        </SelectItem>
+                      ))}
+                      <SelectItem value="Unknown">Unknown</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <FormField
+              control={form.control}
+              name="confidentiality"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confidentiality</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select level" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="integrity"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Integrity</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select level" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="availability"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Availability</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select level" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="low">Low</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
           <FormField
             control={form.control}
-            name="assetValue"
-          render={({ field }) => {
-            const value = field.value as string | number | undefined;
-            const hasDisplayValue =
-              typeof value === "number" ||
-              (typeof value === "string" && value.trim() !== "");
-
-            const formattedValue = () => {
-              if (typeof value === "number") {
-                return value.toLocaleString("en-US");
-              }
-              if (typeof value === "string") {
-                const numericValue = Number(value.replace(/[^0-9.-]/g, ""));
-                return Number.isFinite(numericValue)
-                  ? numericValue.toLocaleString("en-US")
-                  : "0";
-              }
-              return "0";
-            };
-
-            return (
+            name="dependencies"
+            render={({ field }) => (
               <FormItem>
-                <FormLabel>Asset Value</FormLabel>
+                <FormLabel>Dependencies</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                      {form.getValues().currency === "EUR" ? "€" : "$"}
-                    </span>
-                    <Input
-                      type="text"
-                      placeholder="100000"
-                      className="pl-8 pr-20"
-                      value={field.value || ""}
-                      onChange={(e) => {
-                        field.onChange(e.target.value);
-                      }}
-                    />
-                    {hasDisplayValue && (
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs bg-slate-700 text-white px-2 py-0.5 rounded pointer-events-none">
-                        {formattedValue()}
-                      </div>
+                  <div className="border rounded-md p-4 max-h-40 overflow-y-auto space-y-2">
+                    {allAssets.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No other assets available.</p>
+                    ) : (
+                      allAssets
+                        .filter(a => a.id !== asset?.id) // Prevent self-dependency
+                        .map((item) => (
+                          <div key={item.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              checked={field.value?.includes(item.assetId)}
+                              onCheckedChange={(checked) => {
+                                const current = field.value || [];
+                                const updated = checked
+                                  ? [...current, item.assetId]
+                                  : current.filter((val) => val !== item.assetId);
+                                field.onChange(updated);
+                              }}
+                            />
+                            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                              {item.name} ({item.assetId})
+                            </label>
+                          </div>
+                        ))
                     )}
                   </div>
                 </FormControl>
                 <FormDescription>
-                  Enter the asset value. You can use formatted numbers like "50,000,000" (with commas).
+                  Select other assets that this asset depends on.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
-            );
-          }}
-        />
-          
-          {/* Application service parent to Business Service (L4 to L3) */}
-          {assetType === 'application_service' && (
-            <FormField
-              control={form.control}
-              name="parentBusinessServiceId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Parent Business Service (L3)</FormLabel>
-                  <Select
-                    onValueChange={(value) => field.onChange(value !== "none" ? Number(value) : null)}
-                    value={field.value !== null ? String(field.value) : "none"}
-                    disabled={isLoadingEnterprise}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select parent business service" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">None (Independent Application Service)</SelectItem>
-                      
-                      {enterpriseItems.map((item) => (
-                        <SelectItem key={item.id} value={String(item.id)}>
-                          {item.name} {item.level && `(${item.level})`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Associate this application service (L4) with a business service (L3). Can be independent.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
-          {/* Technical component parent to Application Service (L5 to L4) */}
-          {assetType === 'technical_component' && (
-            <FormField
-              control={form.control}
-              name="parentId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Parent Application Service (L4)</FormLabel>
-                  <Select
-                    onValueChange={(value) => field.onChange(value !== "none" ? Number(value) : null)}
-                    value={field.value !== null ? String(field.value) : "none"}
-                    disabled={isLoadingAssets}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select parent application service" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="none">None (Independent Technical Component)</SelectItem>
-                      
-                      {applicationServiceAssets.map((asset) => (
-                        <SelectItem key={asset.id} value={String(asset.id)}>
-                          {asset.name} {asset.assetId && `(${asset.assetId})`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Associate this technical component (L5) with an application service (L4). Can be independent.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
-
-          {/* Currency field */}
-          <FormField
-            control={form.control}
-            name="currency"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Currency</FormLabel>
-                <Select
-                  onValueChange={(value) => {
-                    field.onChange(value);
-                    // Update the asset value field display when currency changes
-                    const assetValueField = form.getValues("assetValue");
-                    if (assetValueField) {
-                      setTimeout(() => {
-                        form.setValue("assetValue", assetValueField, { shouldValidate: true });
-                      }, 0);
-                    }
-                  }}
-                  defaultValue={field.value || "USD"}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="USD">USD ($)</SelectItem>
-                    <SelectItem value="EUR">EUR (€)</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="confidentiality"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Confidentiality</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select rating" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Integrity field */}
-          <FormField
-            control={form.control}
-            name="integrity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Integrity</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select rating" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Availability field */}
-          <FormField
-            control={form.control}
-            name="availability"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Availability</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select rating" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* External/Internal field */}
-          <FormField
-            control={form.control}
-            name="externalInternal"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Location</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select location" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="internal">Internal</SelectItem>
-                    <SelectItem value="external">External</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Agent Count field */}
           <FormField
             control={form.control}
             name="agentCount"
@@ -711,190 +594,95 @@ export function AssetForm({ asset, onClose }: AssetFormProps) {
                 <FormControl>
                   <Input
                     type="number"
-                    min="1"
+                    min={1}
                     placeholder="1"
                     {...field}
                     onChange={(e) => field.onChange(Number(e.target.value))}
                   />
                 </FormControl>
-                <FormDescription>
-                  Number of agents/users for this asset
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
-          {/* Legal Entity field */}
-          <FormField
-            control={form.control}
-            name="legalEntity"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Legal Entity</FormLabel>
-                <Select
-                  onValueChange={(value) => field.onChange(value || null)}
-                  value={field.value ?? ""}
-                  disabled={isLoadingEntities}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select legal entity" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {legalEntities.length === 0 ? (
-                      <SelectItem value="">No legal entities found</SelectItem>
-                    ) : (
-                      legalEntities.map((entity) => (
-                        <SelectItem
-                          key={entity.entityId ?? entity.id ?? entity.name}
-                          value={entity.name}
-                        >
-                          {entity.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                <FormDescription>
-                  Legal entity that owns this asset
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          
-          {/* Parent Asset field */}
+
           <FormField
             control={form.control}
             name="parentId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Parent Asset</FormLabel>
+                <FormLabel>Parent Architecture Item</FormLabel>
                 <Select
-                  onValueChange={(value) => field.onChange(value === "none" ? null : parseInt(value))}
-                  value={field.value?.toString() || "none"}
-                  disabled={isLoadingAssets}
+                  onValueChange={(val) => field.onChange(val ? Number(val) : null)}
+                  defaultValue={field.value ? String(field.value) : undefined}
                 >
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select parent asset (optional)" />
+                      <SelectValue placeholder="Select parent item (optional)" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="none">None (Top-level asset)</SelectItem>
-                    {!allAssets || allAssets.length === 0 ? (
-                      <SelectItem value="no-assets" disabled>No assets found</SelectItem>
-                    ) : (
-                      allAssets
-                        .filter(a => !asset || a.id !== asset.id) // Don't show current asset as potential parent
-                        .map((a) => (
-                          <SelectItem key={a.id} value={a.id.toString()}>
-                            {a.name} ({a.type})
-                          </SelectItem>
-                        ))
-                    )}
+                    <SelectItem value="0">None</SelectItem>
+                    {enterpriseItems.map((item) => (
+                      <SelectItem key={item.id} value={String(item.id)}>
+                        {item.name} ({item.level})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                <FormDescription>
-                  The parent asset in the hierarchy (if any)
-                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
-          
-          {/* Hierarchy Level field removed */}
-          
-          {/* Architecture Domain field removed */}
-        </div>
 
-        {/* Regulatory Impact field */}
-        <div>
-          <FormLabel>Regulatory Impact</FormLabel>
-          <div className="grid grid-cols-3 gap-2 mt-2">
-            {regulatoryOptions.map((regulation) => (
-              <div className="flex items-center space-x-2" key={regulation.value}>
-                <Checkbox
-                  id={`regulation-${regulation.value}`}
-                  checked={selectedRegulations.includes(regulation.value)}
-                  onCheckedChange={(checked) =>
-                    handleRegulationChange(checked as boolean, regulation.value)
-                  }
-                />
-                <label
-                  htmlFor={`regulation-${regulation.value}`}
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
-                  {regulation.label}
-                </label>
-              </div>
-            ))}
+          {/* Conditional Parent Fields */}
+          {(assetType === "application" || assetType === "data") && (
+            <FormField
+              control={form.control}
+              name="parentBusinessServiceId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Parent Business Service</FormLabel>
+                  <Select
+                    onValueChange={(val) => field.onChange(val ? Number(val) : null)}
+                    defaultValue={field.value ? String(field.value) : undefined}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select business service" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {enterpriseItems
+                        .filter(item => item.level === "Business Service")
+                        .map((item) => (
+                          <SelectItem key={item.id} value={String(item.id)}>
+                            {item.name}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {/* Form actions */}
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={mutation.isPending}
+              className="gap-1"
+            >
+              {mutation.isPending && <span className="animate-spin">⏳</span>}
+              {asset ? "Update Asset" : "Create Asset"}
+            </Button>
           </div>
-        </div>
-
-        {/* Dependencies field */}
-        <FormField
-          control={form.control}
-          name="dependencies"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Dependencies (comma-separated asset IDs)</FormLabel>
-              <FormControl>
-                <Input
-                  placeholder="AST-002, AST-003"
-                  value={field.value?.join(", ") || ""}
-                  onChange={(e) => {
-                    // Convert comma-separated string to array
-                    const deps = e.target.value
-                      .split(",")
-                      .map((dep) => dep.trim())
-                      .filter((dep) => dep !== "");
-                    field.onChange(deps);
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Description field */}
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Provide details about the asset..."
-                  className="h-20"
-                  {...field}
-                  value={field.value || ""}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Form actions */}
-        <div className="flex justify-end space-x-2">
-          <Button type="button" variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={mutation.isPending}
-            className="gap-1"
-          >
-            {mutation.isPending && <Loader className="h-4 w-4 animate-spin" />}
-            {asset ? "Update Asset" : "Create Asset"}
-          </Button>
-        </div>
-      </form>
-    </Form>
+        </form>
+      </Form>
+    </div>
   );
 }

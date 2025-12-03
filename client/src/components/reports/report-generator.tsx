@@ -1,6 +1,6 @@
-import React from "@/common/react-import";
-import { useState } from "@/common/react-import";
+import React, { useState } from "react";
 import { Asset, Risk, Control, RiskResponse } from "@shared/schema";
+import { GlowCard } from "@/components/ui/glow-card";
 import {
   Table,
   TableBody,
@@ -23,7 +23,7 @@ interface ReportGeneratorProps {
 
 export function ReportGenerator({ type, data }: ReportGeneratorProps) {
   const [summaryTab, setSummaryTab] = useState("overview");
-  
+
   // Calculate control effectiveness metrics
   const getControlEffectiveness = () => {
     // Check if we have controls data
@@ -36,16 +36,16 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
         eResist: 0.25
       };
     }
-    
+
     // Count fully implemented and in-progress controls
     const fullyImplemented = data.controls.filter(
       c => c.implementationStatus === "fully_implemented" || c.implementationStatus === "Fully Implemented"
     );
-    
+
     const inProgress = data.controls.filter(
       c => c.implementationStatus === "in_progress" || c.implementationStatus === "In Progress"
     );
-    
+
     // Initialize effectiveness values
     let effectiveness = {
       eAvoid: 0.05,
@@ -53,21 +53,21 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
       eDetect: 0.05,
       eResist: 0.05
     };
-    
+
     // Apply a weighted factor for in-progress controls (50% effectiveness)
     const inProgressFactor = 0.5;
-    
+
     // Track counts for averaging
     let avoidCount = 0;
     let deterCount = 0;
     let resistCount = 0;
     let detectCount = 0;
-    
+
     // Process fully implemented controls
     for (const control of fullyImplemented) {
       // Convert from 0-10 scale to 0-1 scale
       const effectivenessValue = control.controlEffectiveness ? control.controlEffectiveness / 10 : 0.5;
-      
+
       // Apply effectiveness based on control type
       if (control.controlType === "preventive") {
         effectiveness.eAvoid += effectivenessValue * 0.5;
@@ -82,14 +82,14 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
         resistCount++;
       }
     }
-    
+
     // Process in-progress controls at 50% effectiveness
     for (const control of inProgress) {
       // Convert from 0-10 scale to 0-1 scale and apply progress factor
-      const effectivenessValue = control.controlEffectiveness ? 
-        (control.controlEffectiveness / 10) * inProgressFactor : 
+      const effectivenessValue = control.controlEffectiveness ?
+        (control.controlEffectiveness / 10) * inProgressFactor :
         0.25;
-      
+
       // Apply effectiveness based on control type
       if (control.controlType === "preventive") {
         effectiveness.eAvoid += effectivenessValue * 0.5;
@@ -104,19 +104,19 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
         resistCount++;
       }
     }
-    
+
     // Calculate averages
     if (avoidCount > 0) effectiveness.eAvoid /= avoidCount;
     if (deterCount > 0) effectiveness.eDeter /= deterCount;
     if (resistCount > 0) effectiveness.eResist /= resistCount;
     if (detectCount > 0) effectiveness.eDetect /= detectCount;
-    
+
     // Cap effectiveness values at 0.95 (95%)
     effectiveness.eAvoid = Math.min(effectiveness.eAvoid, 0.95);
     effectiveness.eDeter = Math.min(effectiveness.eDeter, 0.95);
     effectiveness.eResist = Math.min(effectiveness.eResist, 0.95);
     effectiveness.eDetect = Math.min(effectiveness.eDetect, 0.95);
-    
+
     // If we have at least one control, ensure minimum effectiveness of 0.1 (10%)
     if (fullyImplemented.length > 0 || inProgress.length > 0) {
       effectiveness.eAvoid = Math.max(effectiveness.eAvoid, 0.1);
@@ -124,13 +124,13 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
       effectiveness.eResist = Math.max(effectiveness.eResist, 0.1);
       effectiveness.eDetect = Math.max(effectiveness.eDetect, 0.1);
     }
-    
+
     return effectiveness;
   };
 
   // Get severity badge color
   const getSeverityColor = (severity: string) => {
-    switch(severity) {
+    switch (severity) {
       case "critical": return "bg-red-100 text-red-800";
       case "high": return "bg-amber-100 text-amber-800";
       case "medium": return "bg-yellow-100 text-yellow-800";
@@ -138,20 +138,20 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
       default: return "bg-gray-100 text-gray-800";
     }
   };
-  
+
   // Get control type badge color
   const getControlTypeColor = (controlType: string) => {
-    switch(controlType) {
+    switch (controlType) {
       case "preventive": return "bg-green-100 text-green-800";
       case "detective": return "bg-blue-100 text-blue-800";
       case "corrective": return "bg-amber-100 text-amber-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
-  
+
   // Get response type badge color
   const getResponseTypeColor = (responseType: string) => {
-    switch(responseType) {
+    switch (responseType) {
       case "mitigate": return "bg-blue-100 text-blue-800";
       case "transfer": return "bg-purple-100 text-purple-800";
       case "avoid": return "bg-red-100 text-red-800";
@@ -162,7 +162,7 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
 
   // Format implementation status for display
   const formatImplementationStatus = (status: string) => {
-    switch(status) {
+    switch (status) {
       case "fully_implemented": return "Fully Implemented";
       case "in_progress": return "In Progress";
       case "not_implemented": return "Not Implemented";
@@ -189,15 +189,15 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
   // Render Summary Report
   const renderSummaryReport = () => {
     const { assets, risks, controls, responses, summary, dashboard } = data;
-    
+
     // Ensure dashboard data is properly parsed for numeric display
-    const totalInherentRisk = dashboard?.riskSummary?.totalInherentRisk ? 
+    const totalInherentRisk = dashboard?.riskSummary?.totalInherentRisk ?
       parseFloat(dashboard.riskSummary.totalInherentRisk) : 0;
-    
-    const totalResidualRisk = dashboard?.riskSummary?.totalResidualRisk ? 
+
+    const totalResidualRisk = dashboard?.riskSummary?.totalResidualRisk ?
       parseFloat(dashboard.riskSummary.totalResidualRisk) : 0;
-    
-    const riskReduction = dashboard?.riskSummary?.riskReduction ? 
+
+    const riskReduction = dashboard?.riskSummary?.riskReduction ?
       parseFloat(dashboard.riskSummary.riskReduction) : 0;
 
     return (
@@ -220,7 +220,7 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
             <TabsTrigger value="control-effectiveness">Control Effectiveness</TabsTrigger>
             <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="overview" className="pt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
@@ -229,7 +229,7 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
                 </CardHeader>
                 <CardContent>
                   <p className="mb-4">
-                    This report provides an assessment of the organization's cybersecurity risk posture 
+                    This report provides an assessment of the organization's cybersecurity risk posture
                     using FAIR-U quantitative risk analysis methodology.
                   </p>
                   <div className="space-y-2">
@@ -271,7 +271,7 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
                       <div className="flex justify-between mb-2">
                         <span className="text-sm font-medium">Risk Reduction:</span>
                         <span className="text-sm font-medium text-green-600">
-                          {formatCurrency((summary?.data?.riskSummary?.totalInherentRisk || summary?.riskSummary?.totalInherentRisk || 0) - (summary?.data?.riskSummary?.totalResidualRisk || summary?.riskSummary?.totalResidualRisk || 0), 'USD')} 
+                          {formatCurrency((summary?.data?.riskSummary?.totalInherentRisk || summary?.riskSummary?.totalInherentRisk || 0) - (summary?.data?.riskSummary?.totalResidualRisk || summary?.riskSummary?.totalResidualRisk || 0), 'USD')}
                           ({(summary?.data?.riskSummary?.riskReduction || summary?.riskSummary?.riskReduction || 0).toFixed(0)}%)
                         </span>
                       </div>
@@ -292,16 +292,16 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
                 </CardContent>
               </Card>
             </div>
-            
+
             {summary?.heatmap && (
               <Card className="mt-6">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg">Risk Heatmap</CardTitle>
                 </CardHeader>
                 <CardContent className="flex justify-center">
-                  <Heatmap 
-                    data={summary.heatmap} 
-                    width={600} 
+                  <Heatmap
+                    data={summary.heatmap}
+                    width={600}
                     height={400}
                     title="Risk Distribution - Loss Event Frequency vs Probable Loss Magnitude"
                   />
@@ -309,59 +309,67 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
               </Card>
             )}
           </TabsContent>
-          
+
           <TabsContent value="risk-analysis" className="pt-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg">Top Risks by Expected Loss</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {(Array.isArray(risks) && risks.length > 0) ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Risk ID</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Severity</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead>Inherent Risk</TableHead>
-                        <TableHead>Residual Risk</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {Array.isArray(risks) ? 
-                        [...risks]
-                          // Sort by residual risk (highest first)
-                          .sort((a, b) => {
-                            const valA = parseFloat(a.residualRisk);
-                            const valB = parseFloat(b.residualRisk);
-                            return (isNaN(valB) ? 0 : valB) - (isNaN(valA) ? 0 : valA);
-                          })
-                          // Take top 5 risks
-                          .slice(0, 5)
-                          .map((risk: Risk) => (
-                            <TableRow key={risk.id}>
-                              <TableCell className="font-medium">{risk.riskId}</TableCell>
-                              <TableCell>{risk.name}</TableCell>
-                              <TableCell>
-                                <Badge className={getSeverityColor(risk.severity)}>
-                                  {risk.severity.charAt(0).toUpperCase() + risk.severity.slice(1)}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="capitalize">{risk.riskCategory}</TableCell>
-                              <TableCell>{formatCurrency(risk.inherentRisk || 0, 'USD')}</TableCell>
-                              <TableCell>{formatCurrency(risk.residualRisk || 0, 'USD')}</TableCell>
-                            </TableRow>
-                          ))
-                      : <TableRow><TableCell colSpan={6} className="text-center">No risk data available</TableCell></TableRow>}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <p className="text-center py-4 text-gray-500">No risk data available</p>
-                )}
-              </CardContent>
-            </Card>
-            
+            <GlowCard className="space-y-6">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-white/50">Risk Analysis</p>
+                  <p className="text-lg font-semibold text-white">Top Risks by Expected Loss</p>
+                </div>
+              </div>
+              {(Array.isArray(risks) && risks.length > 0) ? (
+                <div className="overflow-hidden rounded-[28px] border border-white/10">
+                  <div className="bg-white/5 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-white/50">
+                    Top Risks
+                  </div>
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader className="text-xs uppercase tracking-wide text-white/50">
+                        <TableRow className="border-b border-white/5">
+                          <TableHead>Risk ID</TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Severity</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Inherent Risk</TableHead>
+                          <TableHead>Residual Risk</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {Array.isArray(risks) ?
+                          [...risks]
+                            // Sort by residual risk (highest first)
+                            .sort((a, b) => {
+                              const valA = parseFloat(a.residualRisk);
+                              const valB = parseFloat(b.residualRisk);
+                              return (isNaN(valB) ? 0 : valB) - (isNaN(valA) ? 0 : valA);
+                            })
+                            // Take top 5 risks
+                            .slice(0, 5)
+                            .map((risk: Risk) => (
+                              <TableRow key={risk.id} className="border-b border-white/5">
+                                <TableCell className="font-medium text-white">{risk.riskId}</TableCell>
+                                <TableCell className="text-white">{risk.name}</TableCell>
+                                <TableCell>
+                                  <Badge className={getSeverityColor(risk.severity)}>
+                                    {risk.severity.charAt(0).toUpperCase() + risk.severity.slice(1)}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="capitalize text-white/70">{risk.riskCategory}</TableCell>
+                                <TableCell className="text-white/70">{formatCurrency(risk.inherentRisk || 0, 'USD')}</TableCell>
+                                <TableCell className="text-white/70">{formatCurrency(risk.residualRisk || 0, 'USD')}</TableCell>
+                              </TableRow>
+                            ))
+                          : <TableRow><TableCell colSpan={6} className="text-center text-white/50">No risk data available</TableCell></TableRow>}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-center py-4 text-gray-500">No risk data available</p>
+              )}
+            </GlowCard>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <Card>
                 <CardHeader className="pb-2">
@@ -434,7 +442,7 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg">Risk by Category</CardTitle>
@@ -508,7 +516,7 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
               </Card>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="control-effectiveness" className="pt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
@@ -521,25 +529,25 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
                     {(() => {
                       // Create control status data from actual controls if available
                       const totalControls = controls?.length || 1;
-                      const implementedControls = controls?.filter(c => 
+                      const implementedControls = controls?.filter(c =>
                         c.implementationStatus === "fully_implemented" ||
                         c.implementationStatus === "Fully Implemented"
                       ).length || 1;
-                      const inProgressControls = controls?.filter(c => 
+                      const inProgressControls = controls?.filter(c =>
                         c.implementationStatus === "in_progress" ||
                         c.implementationStatus === "In Progress"
                       ).length || 0;
-                      const notImplementedControls = controls?.filter(c => 
+                      const notImplementedControls = controls?.filter(c =>
                         c.implementationStatus === "not_implemented" ||
                         c.implementationStatus === "Not Implemented" ||
                         !c.implementationStatus
                       ).length || 0;
-                      
+
                       // Calculate percentages (avoid division by zero)
                       const implementedPercent = (implementedControls / totalControls) * 100;
                       const inProgressPercent = (inProgressControls / totalControls) * 100;
                       const notImplementedPercent = (notImplementedControls / totalControls) * 100;
-                      
+
                       return (
                         <>
                           <div>
@@ -590,7 +598,7 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg">Control by Type</CardTitle>
@@ -601,21 +609,21 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
                     {(() => {
                       // Create control type data from actual controls
                       const totalControls = controls?.length || 1;
-                      const preventiveControls = controls?.filter(c => 
+                      const preventiveControls = controls?.filter(c =>
                         c.controlType === "preventive" || c.controlType === "Preventive"
                       ).length || 1;
-                      const detectiveControls = controls?.filter(c => 
+                      const detectiveControls = controls?.filter(c =>
                         c.controlType === "detective" || c.controlType === "Detective"
                       ).length || 0;
-                      const correctiveControls = controls?.filter(c => 
+                      const correctiveControls = controls?.filter(c =>
                         c.controlType === "corrective" || c.controlType === "Corrective"
                       ).length || 0;
-                      
+
                       // Calculate percentages
                       const preventivePercent = (preventiveControls / totalControls) * 100;
                       const detectivePercent = (detectiveControls / totalControls) * 100;
                       const correctivePercent = (correctiveControls / totalControls) * 100;
-                      
+
                       return (
                         <>
                           <div>
@@ -667,7 +675,7 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
                 </CardContent>
               </Card>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <Card>
                 <CardHeader className="pb-2">
@@ -745,7 +753,7 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg">Average Control Effectiveness</CardTitle>
@@ -758,9 +766,9 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
                           <h3 className="text-sm font-medium">Overall Control Effectiveness</h3>
                           <span className="text-lg font-bold">
                             {Math.round(((
-                              (getControlEffectiveness().eAvoid || 0.25) + 
-                              (getControlEffectiveness().eDeter || 0.25) + 
-                              (getControlEffectiveness().eDetect || 0.25) + 
+                              (getControlEffectiveness().eAvoid || 0.25) +
+                              (getControlEffectiveness().eDeter || 0.25) +
+                              (getControlEffectiveness().eDetect || 0.25) +
                               (getControlEffectiveness().eResist || 0.25)
                             ) / 4) * 100)}%
                           </span>
@@ -768,12 +776,14 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
                         <div className="w-full h-4 mb-2 bg-gray-200 dark:bg-gray-700 rounded-full">
                           <div
                             className="h-4 rounded-full bg-gradient-to-r from-red-500 via-amber-500 to-green-500"
-                            style={{ width: `${((
-                              (getControlEffectiveness().eAvoid || 0.25) + 
-                              (getControlEffectiveness().eDeter || 0.25) + 
-                              (getControlEffectiveness().eDetect || 0.25) + 
-                              (getControlEffectiveness().eResist || 0.25)
-                            ) / 4) * 100}%` }}
+                            style={{
+                              width: `${((
+                                (getControlEffectiveness().eAvoid || 0.25) +
+                                (getControlEffectiveness().eDeter || 0.25) +
+                                (getControlEffectiveness().eDetect || 0.25) +
+                                (getControlEffectiveness().eResist || 0.25)
+                              ) / 4) * 100}%`
+                            }}
                           />
                         </div>
                         <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
@@ -782,7 +792,7 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
                           <div>100%</div>
                         </div>
                       </div>
-                      
+
                       <div className="space-y-2 mt-4">
                         <h3 className="text-sm font-medium mb-2">Top Effective Controls</h3>
                         {Array.isArray(controls) && controls.length > 0 ? (
@@ -813,7 +823,7 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
                 </CardContent>
               </Card>
             </div>
-            
+
             <div className="mt-6">
               <Card>
                 <CardHeader className="pb-2">
@@ -860,7 +870,7 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
               </Card>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="recommendations" className="pt-4">
             <Card>
               <CardHeader className="pb-2">
@@ -876,7 +886,7 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
                       <li>Perform a quarterly review of the top 5 risks to ensure control effectiveness.</li>
                     </ul>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-md font-medium mb-2">Medium Priority Actions</h3>
                     <ul className="list-disc pl-5 space-y-2">
@@ -885,7 +895,7 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
                       <li>Consider additional detective controls to balance the control portfolio.</li>
                     </ul>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-md font-medium mb-2">Long-term Strategy</h3>
                     <ul className="list-disc pl-5 space-y-2">
@@ -907,269 +917,284 @@ export function ReportGenerator({ type, data }: ReportGeneratorProps) {
   // Render Asset Inventory Report
   const renderAssetReport = () => {
     const assets = data.assets;
-    
+
     return (
-      <div className="bg-gray-800 rounded-lg border border-gray-600">
-        <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
+      <GlowCard className="space-y-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">Asset Inventory Report</h1>
-            <p className="text-gray-400">Generated on {new Date().toLocaleDateString()}</p>
+            <p className="text-xs uppercase tracking-wide text-white/50">Asset Management</p>
+            <p className="text-lg font-semibold text-white">Asset Inventory Report</p>
+          </div>
+          <div className="text-sm text-white/60">
+            Generated on {new Date().toLocaleDateString()}
           </div>
         </div>
 
         <div className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-gray-600 hover:bg-transparent">
-                <TableHead className="text-gray-300 font-medium">Asset ID</TableHead>
-                <TableHead className="text-gray-300 font-medium">Name</TableHead>
-                <TableHead className="text-gray-300 font-medium">Type</TableHead>
-                <TableHead className="text-gray-300 font-medium">Business Unit</TableHead>
-                <TableHead className="text-gray-300 font-medium">Owner</TableHead>
-                <TableHead className="text-gray-300 font-medium">CIA Rating</TableHead>
-                <TableHead className="text-gray-300 font-medium">Value</TableHead>
-                <TableHead className="text-gray-300 font-medium">Location</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {assets && assets.length > 0 ? (
-                assets.map((asset: Asset) => (
-                  <TableRow key={asset.id} className="border-gray-600 hover:bg-gray-700/50">
-                    <TableCell className="font-medium text-white">{asset.assetId}</TableCell>
-                    <TableCell className="text-gray-300">{asset.name}</TableCell>
-                    <TableCell className="capitalize text-gray-300">{asset.type}</TableCell>
-                    <TableCell className="text-gray-300">{asset.businessUnit}</TableCell>
-                    <TableCell className="text-gray-300">{asset.owner}</TableCell>
-                    <TableCell className="text-gray-300">
-                      C:{asset.confidentiality.charAt(0).toUpperCase()},
-                      I:{asset.integrity.charAt(0).toUpperCase()},
-                      A:{asset.availability.charAt(0).toUpperCase()}
-                    </TableCell>
-                    <TableCell className="text-green-400 font-medium">{formatCurrency(asset.assetValue, asset.currency)}</TableCell>
-                    <TableCell className="capitalize text-gray-300">{asset.externalInternal}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-4 text-gray-400">
-                    No assets data available
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          
-          <div className="text-sm text-gray-400 text-right px-6 py-4 border-t border-gray-600">
-            Total Assets: {assets?.length || 0}
-          </div>
+          {(assets && assets.length > 0) ? (
+            <div className="overflow-hidden rounded-[28px] border border-white/10">
+              <div className="bg-white/5 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-white/50">
+                Asset Inventory
+              </div>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="text-xs uppercase tracking-wide text-white/50">
+                    <TableRow className="border-b border-white/5">
+                      <TableHead>Asset ID</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Business Unit</TableHead>
+                      <TableHead>Owner</TableHead>
+                      <TableHead>CIA Rating</TableHead>
+                      <TableHead>Value</TableHead>
+                      <TableHead>Location</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {assets.map((asset: Asset) => (
+                      <TableRow key={asset.id} className="border-b border-white/5">
+                        <TableCell className="font-medium text-white">{asset.assetId}</TableCell>
+                        <TableCell className="text-white">{asset.name}</TableCell>
+                        <TableCell className="capitalize text-white/70">{asset.type}</TableCell>
+                        <TableCell className="text-white/70">{asset.businessUnit}</TableCell>
+                        <TableCell className="text-white/70">{asset.owner}</TableCell>
+                        <TableCell className="text-white/70">
+                          C:{asset.confidentiality.charAt(0).toUpperCase()},
+                          I:{asset.integrity.charAt(0).toUpperCase()},
+                          A:{asset.availability.charAt(0).toUpperCase()}
+                        </TableCell>
+                        <TableCell className="text-green-400 font-medium">{formatCurrency(asset.assetValue, asset.currency)}</TableCell>
+                        <TableCell className="capitalize text-white/70">{asset.externalInternal}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          ) : (
+            <p className="text-center py-4 text-gray-500">No assets data available</p>
+          )}
         </div>
-      </div>
+
+        <div className="text-sm text-gray-400 text-right px-6 py-4 border-t border-gray-600">
+          Total Assets: {assets?.length || 0}
+        </div>
+      </GlowCard>
     );
   };
 
   // Render Risk Register Report
   const renderRiskReport = () => {
     const risks = data.risks;
-    
+
     return (
-      <div className="bg-gray-800 rounded-lg border border-gray-600">
-        <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
+      <GlowCard className="space-y-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">Risk Register Report</h1>
-            <p className="text-gray-400">Generated on {new Date().toLocaleDateString()}</p>
+            <p className="text-xs uppercase tracking-wide text-white/50">Risk Management</p>
+            <p className="text-lg font-semibold text-white">Risk Register Report</p>
+          </div>
+          <div className="text-sm text-white/60">
+            Generated on {new Date().toLocaleDateString()}
           </div>
         </div>
 
         <div className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-gray-600 hover:bg-transparent">
-                <TableHead className="text-gray-300 font-medium">Risk ID</TableHead>
-                <TableHead className="text-gray-300 font-medium">Name</TableHead>
-                <TableHead className="text-gray-300 font-medium">Category</TableHead>
-                <TableHead className="text-gray-300 font-medium">Severity</TableHead>
-                <TableHead className="text-gray-300 font-medium">Threat Community</TableHead>
-                <TableHead className="text-gray-300 font-medium">Vulnerability</TableHead>
-                <TableHead className="text-gray-300 font-medium">Inherent Risk</TableHead>
-                <TableHead className="text-gray-300 font-medium">Residual Risk</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {risks && risks.length > 0 ? (
-                risks.map((risk: Risk) => (
-                  <TableRow key={risk.id} className="border-gray-600 hover:bg-gray-700/50">
-                    <TableCell className="font-medium text-white">{risk.riskId}</TableCell>
-                    <TableCell className="text-gray-300">{risk.name}</TableCell>
-                    <TableCell className="capitalize text-gray-300">{risk.riskCategory}</TableCell>
-                    <TableCell>
-                      <Badge className={getSeverityColor(risk.severity)}>
-                        {risk.severity.charAt(0).toUpperCase() + risk.severity.slice(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-gray-300">{risk.threatCommunity}</TableCell>
-                    <TableCell className="text-gray-300">{risk.vulnerability}</TableCell>
-                    <TableCell className="text-red-400 font-medium">{formatCurrency(risk.inherentRisk || 0, 'USD')}</TableCell>
-                    <TableCell className="text-green-400 font-medium">{formatCurrency(risk.residualRisk || 0, 'USD')}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={8} className="text-center py-4 text-gray-400">
-                    No risks data available
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          
-          <div className="text-sm text-gray-400 text-right px-6 py-4 border-t border-gray-600">
-            Total Risks: {risks?.length || 0}
-          </div>
+          {(risks && risks.length > 0) ? (
+            <div className="overflow-hidden rounded-[28px] border border-white/10">
+              <div className="bg-white/5 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-white/50">
+                Risk Register
+              </div>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="text-xs uppercase tracking-wide text-white/50">
+                    <TableRow className="border-b border-white/5">
+                      <TableHead>Risk ID</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Severity</TableHead>
+                      <TableHead>Threat Community</TableHead>
+                      <TableHead>Vulnerability</TableHead>
+                      <TableHead>Inherent Risk</TableHead>
+                      <TableHead>Residual Risk</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {risks.map((risk: Risk) => (
+                      <TableRow key={risk.id} className="border-b border-white/5">
+                        <TableCell className="font-medium text-white">{risk.riskId}</TableCell>
+                        <TableCell className="text-white">{risk.name}</TableCell>
+                        <TableCell className="capitalize text-white/70">{risk.riskCategory}</TableCell>
+                        <TableCell>
+                          <Badge className={getSeverityColor(risk.severity)}>
+                            {risk.severity.charAt(0).toUpperCase() + risk.severity.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-white/70">{risk.threatCommunity}</TableCell>
+                        <TableCell className="text-white/70">{risk.vulnerability}</TableCell>
+                        <TableCell className="text-red-400 font-medium">{formatCurrency(risk.inherentRisk || 0, 'USD')}</TableCell>
+                        <TableCell className="text-green-400 font-medium">{formatCurrency(risk.residualRisk || 0, 'USD')}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          ) : (
+            <p className="text-center py-4 text-gray-500">No risks data available</p>
+          )}
         </div>
-      </div>
+
+        <div className="text-sm text-gray-400 text-right px-6 py-4 border-t border-gray-600">
+          Total Risks: {risks?.length || 0}
+        </div>
+      </GlowCard>
     );
   };
 
   // Render Control Library Report
   const renderControlReport = () => {
     const controls = data.controls;
-    
+
     return (
-      <div className="bg-gray-800 rounded-lg border border-gray-600">
-        <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
+      <GlowCard className="space-y-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">Control Library Report</h1>
-            <p className="text-gray-400">Generated on {new Date().toLocaleDateString()}</p>
+            <p className="text-xs uppercase tracking-wide text-white/50">Control Management</p>
+            <p className="text-lg font-semibold text-white">Control Library Report</p>
+          </div>
+          <div className="text-sm text-white/60">
+            Generated on {new Date().toLocaleDateString()}
           </div>
         </div>
 
         <div className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-gray-600 hover:bg-transparent">
-                <TableHead className="text-gray-300 font-medium">Control ID</TableHead>
-                <TableHead className="text-gray-300 font-medium">Name</TableHead>
-                <TableHead className="text-gray-300 font-medium">Type</TableHead>
-                <TableHead className="text-gray-300 font-medium">Category</TableHead>
-                <TableHead className="text-gray-300 font-medium">Status</TableHead>
-                <TableHead className="text-gray-300 font-medium">Effectiveness</TableHead>
-                <TableHead className="text-gray-300 font-medium">Cost</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {controls && controls.length > 0 ? (
-                controls.map((control: Control) => (
-                  <TableRow key={control.id} className="border-gray-600 hover:bg-gray-700/50">
-                    <TableCell className="font-medium text-white">{control.controlId}</TableCell>
-                    <TableCell className="text-gray-300">{control.name}</TableCell>
-                    <TableCell>
-                      <Badge className={getControlTypeColor(control.controlType)}>
-                        {control.controlType.charAt(0).toUpperCase() + control.controlType.slice(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="capitalize text-gray-300">{control.controlCategory}</TableCell>
-                    <TableCell className="text-gray-300">
-                      {formatImplementationStatus(control.implementationStatus)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Progress value={control.controlEffectiveness * 10} className="w-16 h-2" />
-                        <span className="text-sm text-gray-300">{control.controlEffectiveness.toFixed(1)}/10</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-blue-400 font-medium">{formatCurrency(control.implementationCost || 0, 'USD')}</TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4 text-gray-400">
-                    No controls data available
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          
-          <div className="text-sm text-gray-400 text-right px-6 py-4 border-t border-gray-600">
-            Total Controls: {controls?.length || 0}
-          </div>
+          {(Array.isArray(controls) && controls.length > 0) ? (
+            <div className="overflow-hidden rounded-[28px] border border-white/10">
+              <div className="bg-white/5 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-white/50">
+                Control Library
+              </div>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="text-xs uppercase tracking-wide text-white/50">
+                    <TableRow className="border-b border-white/5">
+                      <TableHead>Control ID</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Effectiveness</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {controls.map((control: Control) => (
+                      <TableRow key={control.id} className="border-b border-white/5">
+                        <TableCell className="font-medium text-white">{control.controlId}</TableCell>
+                        <TableCell className="text-white">{control.name}</TableCell>
+                        <TableCell>
+                          <Badge className={getControlTypeColor(control.controlType)}>
+                            {control.controlType.charAt(0).toUpperCase() + control.controlType.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-white/70">{formatImplementationStatus(control.implementationStatus)}</TableCell>
+                        <TableCell className="text-white/70">
+                          {control.controlEffectiveness ? `${control.controlEffectiveness}/10` : 'N/A'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          ) : (
+            <p className="text-center py-4 text-gray-500">No control data available</p>
+          )}
         </div>
-      </div>
+
+        <div className="text-sm text-gray-400 text-right px-6 py-4 border-t border-gray-600">
+          Total Controls: {controls?.length || 0}
+        </div>
+      </GlowCard>
     );
   };
 
   // Render Risk Response Report
   const renderResponseReport = () => {
     const { responses, risks } = data;
-    
+
     return (
-      <div className="bg-gray-800 rounded-lg border border-gray-600">
-        <div className="bg-gray-700 px-6 py-4 border-b border-gray-600 rounded-t-lg">
+      <GlowCard className="space-y-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-white">Risk Response Report</h1>
-            <p className="text-gray-400">Generated on {new Date().toLocaleDateString()}</p>
+            <p className="text-xs uppercase tracking-wide text-white/50">Risk Treatment</p>
+            <p className="text-lg font-semibold text-white">Risk Response Plan</p>
+          </div>
+          <div className="text-sm text-white/60">
+            Generated on {new Date().toLocaleDateString()}
           </div>
         </div>
 
         <div className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-gray-600 hover:bg-transparent">
-                <TableHead className="text-gray-300 font-medium">Risk ID</TableHead>
-                <TableHead className="text-gray-300 font-medium">Risk Name</TableHead>
-                <TableHead className="text-gray-300 font-medium">Response Type</TableHead>
-                <TableHead className="text-gray-300 font-medium">Justification</TableHead>
-                <TableHead className="text-gray-300 font-medium">Details</TableHead>
-                <TableHead className="text-gray-300 font-medium">Controls</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {responses && responses.length > 0 ? (
-                responses.map((response: RiskResponse) => (
-                  <TableRow key={response.id} className="border-gray-600 hover:bg-gray-700/50">
-                    <TableCell className="font-medium text-white">{response.riskId}</TableCell>
-                    <TableCell className="text-gray-300">{getRiskName(response.riskId)}</TableCell>
-                    <TableCell>
-                      <Badge className={getResponseTypeColor(response.responseType)}>
-                        {response.responseType.charAt(0).toUpperCase() + response.responseType.slice(1)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-gray-300">{response.justification}</TableCell>
-                    <TableCell className="text-gray-300">
-                      {response.responseType === "transfer" && response.transferMethod && (
-                        <span>Transfer: {response.transferMethod}</span>
-                      )}
-                      {response.responseType === "avoid" && response.avoidanceStrategy && (
-                        <span>Avoidance: {response.avoidanceStrategy}</span>
-                      )}
-                      {response.responseType === "accept" && response.acceptanceReason && (
-                        <span>Acceptance: {response.acceptanceReason}</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-gray-300">
-                      {response.responseType === "mitigate" && response.assignedControls ? (
-                        <span>{response.assignedControls.length} controls</span>
-                      ) : (
-                        <span>N/A</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-4 text-gray-400">
-                    No risk responses data available
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-          
-          <div className="text-sm text-gray-400 text-right px-6 py-4 border-t border-gray-600">
-            Total Responses: {responses?.length || 0}
-          </div>
+          {(responses && responses.length > 0) ? (
+            <div className="overflow-hidden rounded-[28px] border border-white/10">
+              <div className="bg-white/5 px-6 py-3 text-xs font-semibold uppercase tracking-wide text-white/50">
+                Risk Responses
+              </div>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="text-xs uppercase tracking-wide text-white/50">
+                    <TableRow className="border-b border-white/5">
+                      <TableHead>Risk ID</TableHead>
+                      <TableHead>Risk Name</TableHead>
+                      <TableHead>Response Type</TableHead>
+                      <TableHead>Justification</TableHead>
+                      <TableHead>Details</TableHead>
+                      <TableHead>Controls</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {responses.map((response: RiskResponse) => (
+                      <TableRow key={response.id} className="border-b border-white/5">
+                        <TableCell className="font-medium text-white">{response.riskId}</TableCell>
+                        <TableCell className="text-white">{getRiskName(response.riskId)}</TableCell>
+                        <TableCell>
+                          <Badge className={getResponseTypeColor(response.responseType)}>
+                            {response.responseType.charAt(0).toUpperCase() + response.responseType.slice(1)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-white/70">{response.justification}</TableCell>
+                        <TableCell className="text-white/70">
+                          {response.responseType === "transfer" && response.transferMethod && (
+                            <span>Transfer: {response.transferMethod}</span>
+                          )}
+                          {response.responseType === "avoid" && response.avoidanceStrategy && (
+                            <span>Avoidance: {response.avoidanceStrategy}</span>
+                          )}
+                          {response.responseType === "accept" && response.acceptanceReason && (
+                            <span>Acceptance: {response.acceptanceReason}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-white/70">
+                          {response.responseType === "mitigate" && response.assignedControls ? (
+                            <span>{response.assignedControls.length} controls</span>
+                          ) : (
+                            <span>N/A</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          ) : (
+            <p className="text-center py-4 text-gray-500">No risk responses data available</p>
+          )}
         </div>
-      </div>
+
+        <div className="text-sm text-gray-400 text-right px-6 py-4 border-t border-gray-600">
+          Total Responses: {responses?.length || 0}
+        </div>
+      </GlowCard>
     );
   };
 

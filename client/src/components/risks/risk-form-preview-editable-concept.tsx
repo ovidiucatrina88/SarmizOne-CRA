@@ -208,6 +208,12 @@ function TriangularFormField({
     );
 }
 
+type FairParameter = {
+    min: number;
+    avg: number;
+    max: number;
+};
+
 type CalculatedRiskData = {
     inherentRisk?: number | string;
     residualRisk?: number | string;
@@ -232,6 +238,13 @@ type CalculatedRiskData = {
     secondaryLossMagnitudeMin?: number | string;
     secondaryLossMagnitudeAvg?: number | string;
     secondaryLossMagnitudeMax?: number | string;
+
+    // Structured properties
+    threatEventFrequency?: FairParameter;
+    lossEventFrequency?: FairParameter;
+    lossMagnitude?: FairParameter;
+    secondaryLossMagnitude?: FairParameter;
+    susceptibilityDetail?: FairParameter;
 };
 
 // Helper component for Tree Nodes
@@ -308,50 +321,41 @@ export function RiskFormPreviewEditableConcept({
 
     useEffect(() => {
         if (!calcValues) return;
-        const numericFields: (keyof CalculatedRiskData)[] = [
-            "threatEventFrequencyMin",
-            "threatEventFrequencyAvg",
-            "threatEventFrequencyMax",
-            "lossEventFrequencyMin",
-            "lossEventFrequencyAvg",
-            "lossEventFrequencyMax",
-            "susceptibilityMin",
-            "susceptibilityAvg",
-            "susceptibilityMax",
-            "lossMagnitudeMin",
-            "lossMagnitudeAvg",
-            "lossMagnitudeMax",
-            "primaryLossMagnitudeMin",
-            "primaryLossMagnitudeAvg",
-            "primaryLossMagnitudeMax",
-            "secondaryLossEventFrequencyMin",
-            "secondaryLossEventFrequencyAvg",
-            "secondaryLossEventFrequencyMax",
-            "secondaryLossMagnitudeMin",
-            "secondaryLossMagnitudeAvg",
-            "secondaryLossMagnitudeMax",
-        ];
 
-        numericFields.forEach((field) => {
-            const raw = calcValues[field];
-            const num = typeof raw === "string" ? Number(raw) : raw;
-            if (typeof num === "number" && Number.isFinite(num)) {
-                form.setValue(field as any, num, { shouldValidate: false, shouldDirty: false });
-            }
-        });
+        // Map structured API response to form fields
+        const mapToForm = (category: string, data: any) => {
+            if (!data) return;
+            form.setValue(`parameters.${category}.min`, Number(data.min), { shouldValidate: false, shouldDirty: false });
+            form.setValue(`parameters.${category}.avg`, Number(data.avg), { shouldValidate: false, shouldDirty: false });
+            form.setValue(`parameters.${category}.max`, Number(data.max), { shouldValidate: false, shouldDirty: false });
+        };
+
+        mapToForm("threatEventFrequency", calcValues.threatEventFrequency);
+        mapToForm("lossEventFrequency", calcValues.lossEventFrequency);
+        mapToForm("lossMagnitude", calcValues.lossMagnitude);
+        mapToForm("secondaryLossMagnitude", calcValues.secondaryLossMagnitude);
+        mapToForm("susceptibility", calcValues.susceptibilityDetail); // Assuming susceptibilityDetail is returned
+
+        // Handle flat fallbacks if structured data is missing (backward compatibility)
+        if (!calcValues.threatEventFrequency) {
+            form.setValue("parameters.threatEventFrequency.min", Number(calcValues.threatEventFrequencyMin), { shouldValidate: false, shouldDirty: false });
+            form.setValue("parameters.threatEventFrequency.avg", Number(calcValues.threatEventFrequencyAvg), { shouldValidate: false, shouldDirty: false });
+            form.setValue("parameters.threatEventFrequency.max", Number(calcValues.threatEventFrequencyMax), { shouldValidate: false, shouldDirty: false });
+        }
+        // ... add other fallbacks if needed
 
         const serverInherent = typeof calcValues.inherentRisk === "string" ? Number(calcValues.inherentRisk) : calcValues.inherentRisk;
         const serverResidual = typeof calcValues.residualRisk === "string" ? Number(calcValues.residualRisk) : calcValues.residualRisk;
         if (typeof serverInherent === "number" && Number.isFinite(serverInherent)) {
-            form.setValue("inherentRisk" as any, serverInherent, { shouldValidate: false, shouldDirty: false });
+            form.setValue("inherentRisk", serverInherent, { shouldValidate: false, shouldDirty: false });
         }
         if (typeof serverResidual === "number" && Number.isFinite(serverResidual)) {
-            form.setValue("residualRisk" as any, serverResidual, { shouldValidate: false, shouldDirty: false });
+            form.setValue("residualRisk", serverResidual, { shouldValidate: false, shouldDirty: false });
         }
     }, [calcValues, form]);
 
-    const watchNumber = (field: string) => {
-        const value = form.watch(field as any);
+    const watchNumber = (path: string) => {
+        const value = form.watch(path);
         if (value === undefined || value === null || value === "") return 0;
         const numeric = typeof value === "string" ? Number(value) : value;
         return Number.isFinite(numeric) ? Number(numeric) : 0;
@@ -366,28 +370,28 @@ export function RiskFormPreviewEditableConcept({
         return `${formatValue(min)} - ${formatValue(max)}`;
     };
 
-    // Watch values
-    const tefMin = watchNumber("threatEventFrequencyMin");
-    const tefAvg = watchNumber("threatEventFrequencyAvg");
-    const tefMax = watchNumber("threatEventFrequencyMax");
-    const lossEventFrequencyMin = watchNumber("lossEventFrequencyMin");
-    const lossEventFrequencyAvg = watchNumber("lossEventFrequencyAvg");
-    const lossEventFrequencyMax = watchNumber("lossEventFrequencyMax");
-    const susceptibilityMin = watchNumber("susceptibilityMin");
-    const susceptibilityAvg = watchNumber("susceptibilityAvg");
-    const susceptibilityMax = watchNumber("susceptibilityMax");
-    const lossMagnitudeMin = watchNumber("lossMagnitudeMin");
-    const lossMagnitudeAvg = watchNumber("lossMagnitudeAvg");
-    const lossMagnitudeMax = watchNumber("lossMagnitudeMax");
-    const primaryLossMin = watchNumber("primaryLossMagnitudeMin");
-    const primaryLossAvg = watchNumber("primaryLossMagnitudeAvg");
-    const primaryLossMax = watchNumber("primaryLossMagnitudeMax");
-    const secondaryLossEventFrequencyMin = watchNumber("secondaryLossEventFrequencyMin");
-    const secondaryLossEventFrequencyAvg = watchNumber("secondaryLossEventFrequencyAvg");
-    const secondaryLossEventFrequencyMax = watchNumber("secondaryLossEventFrequencyMax");
-    const secondaryLossMagnitudeMin = watchNumber("secondaryLossMagnitudeMin");
-    const secondaryLossMagnitudeAvg = watchNumber("secondaryLossMagnitudeAvg");
-    const secondaryLossMagnitudeMax = watchNumber("secondaryLossMagnitudeMax");
+    // Watch values using structured paths
+    const tefMin = watchNumber("parameters.threatEventFrequency.min");
+    const tefAvg = watchNumber("parameters.threatEventFrequency.avg");
+    const tefMax = watchNumber("parameters.threatEventFrequency.max");
+    const lossEventFrequencyMin = watchNumber("parameters.lossEventFrequency.min");
+    const lossEventFrequencyAvg = watchNumber("parameters.lossEventFrequency.avg");
+    const lossEventFrequencyMax = watchNumber("parameters.lossEventFrequency.max");
+    const susceptibilityMin = watchNumber("parameters.susceptibility.min"); // Note: Susceptibility might be calculated differently
+    const susceptibilityAvg = watchNumber("parameters.susceptibility.avg");
+    const susceptibilityMax = watchNumber("parameters.susceptibility.max");
+    const lossMagnitudeMin = watchNumber("parameters.lossMagnitude.min");
+    const lossMagnitudeAvg = watchNumber("parameters.lossMagnitude.avg");
+    const lossMagnitudeMax = watchNumber("parameters.lossMagnitude.max");
+    const primaryLossMin = watchNumber("parameters.primaryLossMagnitude.min");
+    const primaryLossAvg = watchNumber("parameters.primaryLossMagnitude.avg");
+    const primaryLossMax = watchNumber("parameters.primaryLossMagnitude.max");
+    const secondaryLossEventFrequencyMin = watchNumber("parameters.secondaryLossEventFrequency.min");
+    const secondaryLossEventFrequencyAvg = watchNumber("parameters.secondaryLossEventFrequency.avg");
+    const secondaryLossEventFrequencyMax = watchNumber("parameters.secondaryLossEventFrequency.max");
+    const secondaryLossMagnitudeMin = watchNumber("parameters.secondaryLossMagnitude.min");
+    const secondaryLossMagnitudeAvg = watchNumber("parameters.secondaryLossMagnitude.avg");
+    const secondaryLossMagnitudeMax = watchNumber("parameters.secondaryLossMagnitude.max");
 
     return (
         <div className="w-full overflow-x-auto pb-4">
@@ -434,10 +438,10 @@ export function RiskFormPreviewEditableConcept({
                             <TriangularFormField
                                 form={form}
                                 title="Loss Event Freq"
-                                minField="lossEventFrequencyMin"
-                                avgField="lossEventFrequencyAvg"
-                                maxField="lossEventFrequencyMax"
-                                confidenceField="lossEventFrequencyConfidence"
+                                minField="parameters.lossEventFrequency.min"
+                                avgField="parameters.lossEventFrequency.avg"
+                                maxField="parameters.lossEventFrequency.max"
+                                confidenceField="parameters.lossEventFrequency.confidence"
                                 unit="/yr"
                                 min={0} max={365} step={0.1}
                                 hideTitle compact darkMode
@@ -447,7 +451,7 @@ export function RiskFormPreviewEditableConcept({
                         <VerticalLine height="h-3" />
 
                         {/* Branching to TEF and Susceptibility */}
-                        <div className="relative w-full flex justify-center gap-2">
+                        <div className="relative w-full flex justify-center gap-10">
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-2 border-t border-l border-r border-slate-700/50 rounded-t-lg"></div>
 
                             {/* TEF Node */}
@@ -457,15 +461,15 @@ export function RiskFormPreviewEditableConcept({
                                     subtitle="Contact × Action"
                                     valueRange={formatRange(tefMin, tefAvg, tefMax, { unit: "evt/yr" })}
                                     type="calculated"
-                                    className="w-[200px]"
+                                    className="w-[250px]"
                                 >
                                     <TriangularFormField
                                         form={form}
                                         title="Threat Event Freq"
-                                        minField="threatEventFrequencyMin"
-                                        avgField="threatEventFrequencyAvg"
-                                        maxField="threatEventFrequencyMax"
-                                        confidenceField="threatEventFrequencyConfidence"
+                                        minField="parameters.threatEventFrequency.min"
+                                        avgField="parameters.threatEventFrequency.avg"
+                                        maxField="parameters.threatEventFrequency.max"
+                                        confidenceField="parameters.threatEventFrequency.confidence"
                                         unit="/yr"
                                         min={0} max={365} step={0.1}
                                         hideTitle compact darkMode
@@ -478,10 +482,10 @@ export function RiskFormPreviewEditableConcept({
                                         <TriangularFormField
                                             form={form}
                                             title="Contact Freq"
-                                            minField="contactFrequencyMin"
-                                            avgField="contactFrequencyAvg"
-                                            maxField="contactFrequencyMax"
-                                            confidenceField="contactFrequencyConfidence"
+                                            minField="parameters.contactFrequency.min"
+                                            avgField="parameters.contactFrequency.avg"
+                                            maxField="parameters.contactFrequency.max"
+                                            confidenceField="parameters.contactFrequency.confidence"
                                             unit="/yr"
                                             min={0} max={365} step={0.1}
                                             hideTitle compact darkMode
@@ -491,10 +495,10 @@ export function RiskFormPreviewEditableConcept({
                                         <TriangularFormField
                                             form={form}
                                             title="Prob Action"
-                                            minField="probabilityOfActionMin"
-                                            avgField="probabilityOfActionAvg"
-                                            maxField="probabilityOfActionMax"
-                                            confidenceField="probabilityOfActionConfidence"
+                                            minField="parameters.probabilityOfAction.min"
+                                            avgField="parameters.probabilityOfAction.avg"
+                                            maxField="parameters.probabilityOfAction.max"
+                                            confidenceField="parameters.probabilityOfAction.confidence"
                                             unit="%"
                                             min={0} max={1} step={0.01}
                                             hideTitle compact darkMode
@@ -515,10 +519,10 @@ export function RiskFormPreviewEditableConcept({
                                     <TriangularFormField
                                         form={form}
                                         title="Susceptibility"
-                                        minField="susceptibilityMin"
-                                        avgField="susceptibilityAvg"
-                                        maxField="susceptibilityMax"
-                                        confidenceField="susceptibilityConfidence"
+                                        minField="parameters.susceptibility.min"
+                                        avgField="parameters.susceptibility.avg"
+                                        maxField="parameters.susceptibility.max"
+                                        confidenceField="parameters.susceptibility.confidence"
                                         unit=""
                                         min={0} max={10} step={0.1}
                                         hideTitle compact darkMode
@@ -531,10 +535,10 @@ export function RiskFormPreviewEditableConcept({
                                         <TriangularFormField
                                             form={form}
                                             title="Threat Cap"
-                                            minField="threatCapabilityMin"
-                                            avgField="threatCapabilityAvg"
-                                            maxField="threatCapabilityMax"
-                                            confidenceField="threatCapabilityConfidence"
+                                            minField="parameters.threatCapability.min"
+                                            avgField="parameters.threatCapability.avg"
+                                            maxField="parameters.threatCapability.max"
+                                            confidenceField="parameters.threatCapability.confidence"
                                             unit="lvl"
                                             min={0} max={10} step={0.1}
                                             hideTitle compact darkMode
@@ -544,10 +548,10 @@ export function RiskFormPreviewEditableConcept({
                                         <TriangularFormField
                                             form={form}
                                             title="Resistance"
-                                            minField="resistanceStrengthMin"
-                                            avgField="resistanceStrengthAvg"
-                                            maxField="resistanceStrengthMax"
-                                            confidenceField="resistanceStrengthConfidence"
+                                            minField="parameters.resistanceStrength.min"
+                                            avgField="parameters.resistanceStrength.avg"
+                                            maxField="parameters.resistanceStrength.max"
+                                            confidenceField="parameters.resistanceStrength.confidence"
                                             unit="lvl"
                                             min={0} max={10} step={0.1}
                                             hideTitle compact darkMode
@@ -570,10 +574,10 @@ export function RiskFormPreviewEditableConcept({
                             <TriangularFormField
                                 form={form}
                                 title="Loss Magnitude"
-                                minField="lossMagnitudeMin"
-                                avgField="lossMagnitudeAvg"
-                                maxField="lossMagnitudeMax"
-                                confidenceField="lossMagnitudeConfidence"
+                                minField="parameters.lossMagnitude.min"
+                                avgField="parameters.lossMagnitude.avg"
+                                maxField="parameters.lossMagnitude.max"
+                                confidenceField="parameters.lossMagnitude.confidence"
                                 unit="$"
                                 min={0} max={1000000000} step={1000}
                                 hideTitle compact darkMode
@@ -583,11 +587,11 @@ export function RiskFormPreviewEditableConcept({
                         <VerticalLine height="h-3" />
 
                         {/* Branching to Primary and Secondary Loss */}
-                        <div className="relative w-full flex justify-center gap-2">
+                        <div className="relative w-full flex justify-right gap-2">
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[80%] h-2 border-t border-l border-r border-slate-700/50 rounded-t-lg"></div>
 
                             {/* Primary Loss Node */}
-                            <div className="flex flex-col items-center pt-2">
+                            <div className="flex flex-col items-center pt-2 ml-10">
                                 {/* Spacer to align with Level 3 nodes (TEF, Susc, Sec Loss) */}
                                 <TreeNode
                                     title="Primary Loss"
@@ -599,10 +603,10 @@ export function RiskFormPreviewEditableConcept({
                                     <TriangularFormField
                                         form={form}
                                         title="Primary Loss"
-                                        minField="primaryLossMagnitudeMin"
-                                        avgField="primaryLossMagnitudeAvg"
-                                        maxField="primaryLossMagnitudeMax"
-                                        confidenceField="primaryLossMagnitudeConfidence"
+                                        minField="parameters.primaryLossMagnitude.min"
+                                        avgField="parameters.primaryLossMagnitude.avg"
+                                        maxField="parameters.primaryLossMagnitude.max"
+                                        confidenceField="parameters.primaryLossMagnitude.confidence"
                                         unit="$"
                                         min={0} max={1000000000} step={1000}
                                         hideTitle compact darkMode
@@ -612,7 +616,7 @@ export function RiskFormPreviewEditableConcept({
                             </div>
 
                             {/* Secondary Loss Node */}
-                            <div className="flex flex-col items-center pt-2 ml-6">
+                            <div className="flex flex-col items-center pt-2">
                                 <TreeNode
                                     title="Secondary Loss"
                                     subtitle="SLEF × SLM"
@@ -622,25 +626,15 @@ export function RiskFormPreviewEditableConcept({
                                     <TriangularFormField
                                         form={form}
                                         title="Secondary Loss"
-                                        minField="secondaryLossMagnitudeMin"
-                                        avgField="secondaryLossMagnitudeAvg"
-                                        maxField="secondaryLossMagnitudeMax"
-                                        confidenceField="secondaryLossMagnitudeConfidence"
+                                        minField="parameters.secondaryLossMagnitude.min"
+                                        avgField="parameters.secondaryLossMagnitude.avg"
+                                        maxField="parameters.secondaryLossMagnitude.max"
+                                        confidenceField="parameters.secondaryLossMagnitude.confidence"
                                         unit="$"
                                         min={0} max={1000000000} step={1000}
                                         hideTitle compact darkMode
                                         readOnly
                                     />
-                                    <div className="text-[10px] text-slate-300 space-y-1 mt-2">
-                                        <div className="flex items-center justify-between gap-2">
-                                            <span className="uppercase tracking-wide">SLEF</span>
-                                            <span className="text-right">{formatRange(secondaryLossEventFrequencyMin, secondaryLossEventFrequencyAvg, secondaryLossEventFrequencyMax, { unit: "%" })}</span>
-                                        </div>
-                                        <div className="flex items-center justify-between gap-2">
-                                            <span className="uppercase tracking-wide">SLM</span>
-                                            <span className="text-right">{formatRange(secondaryLossMagnitudeMin, secondaryLossMagnitudeAvg, secondaryLossMagnitudeMax, { currency: true })}</span>
-                                        </div>
-                                    </div>
                                 </TreeNode>
                                 <VerticalLine height="h-2" />
                                 <div className="flex gap-5">
@@ -654,10 +648,10 @@ export function RiskFormPreviewEditableConcept({
                                         <TriangularFormField
                                             form={form}
                                             title="SLEF"
-                                            minField="secondaryLossEventFrequencyMin"
-                                            avgField="secondaryLossEventFrequencyAvg"
-                                            maxField="secondaryLossEventFrequencyMax"
-                                            confidenceField="secondaryLossEventFrequencyConfidence"
+                                            minField="parameters.secondaryLossEventFrequency.min"
+                                            avgField="parameters.secondaryLossEventFrequency.avg"
+                                            maxField="parameters.secondaryLossEventFrequency.max"
+                                            confidenceField="parameters.secondaryLossEventFrequency.confidence"
                                             unit="%"
                                             min={0} max={1} step={0.01}
                                             hideTitle compact darkMode
@@ -674,10 +668,10 @@ export function RiskFormPreviewEditableConcept({
                                         <TriangularFormField
                                             form={form}
                                             title="SLM"
-                                            minField="secondaryLossMagnitudeMin"
-                                            avgField="secondaryLossMagnitudeAvg"
-                                            maxField="secondaryLossMagnitudeMax"
-                                            confidenceField="secondaryLossMagnitudeConfidence"
+                                            minField="parameters.secondaryLossMagnitude.min"
+                                            avgField="parameters.secondaryLossMagnitude.avg"
+                                            maxField="parameters.secondaryLossMagnitude.max"
+                                            confidenceField="parameters.secondaryLossMagnitude.confidence"
                                             unit="$"
                                             min={0} max={1000000000} step={1000}
                                             hideTitle compact darkMode

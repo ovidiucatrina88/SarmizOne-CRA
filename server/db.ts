@@ -1,12 +1,28 @@
 import { Pool } from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import dotenv from 'dotenv';
-import * as schema from "@shared/schema";
+import { drizzle } from "drizzle-orm/node-postgres";
+import pg from "pg"; // Added as per instruction
+import * as schema from "../shared/schema"; // Path changed as per instruction
+import * as dotenv from 'dotenv'; // Changed to namespace import as per instruction
+import path from 'path'; // Added as per instruction
 
-// Load environment variables early so local dev picks up .env.development
-const envFile = process.env.NODE_ENV ? `.env.${process.env.NODE_ENV}` : '.env';
-dotenv.config({ path: envFile });
-dotenv.config();
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Load environment variables if not already loaded
+if (!process.env.DATABASE_URL) {
+  const envPath = path.resolve(__dirname, '../.env.development');
+  dotenv.config({ path: envPath });
+}
+
+// Fallback to general .env loading if DATABASE_URL is still not set
+if (!process.env.DATABASE_URL) {
+  const envFile = process.env.NODE_ENV ? `.env.${process.env.NODE_ENV} ` : '.env';
+  dotenv.config({ path: envFile });
+  dotenv.config(); // Load default .env as well
+}
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -40,23 +56,23 @@ pool.on('connect', (client) => {
   isConnected = true;
   reconnectAttempts = 0;
   lastError = null;
-  
+
   // Set connection-level timeouts to prevent hanging connections
-  client.query('SET statement_timeout = 60000').catch(() => {});
-  client.query('SET idle_in_transaction_session_timeout = 60000').catch(() => {});
+  client.query('SET statement_timeout = 60000').catch(() => { });
+  client.query('SET idle_in_transaction_session_timeout = 60000').catch(() => { });
 });
 
 pool.on('error', (err) => {
   console.error('Database pool error:', err.message);
   isConnected = false;
   lastError = err;
-  
+
   // Don't overwhelm with reconnection attempts
   if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
     reconnectAttempts++;
-    console.log(`Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
+    console.log(`Attempting to reconnect(${reconnectAttempts} / ${MAX_RECONNECT_ATTEMPTS})...`);
     setTimeout(() => {
-      checkDatabaseConnection().catch(e => 
+      checkDatabaseConnection().catch(e =>
         console.error('Reconnection attempt failed:', e)
       );
     }, 5000 * reconnectAttempts); // Exponential backoff
@@ -95,26 +111,26 @@ export async function executeQueryWithRetry<T>(
   maxRetries = 3
 ): Promise<T> {
   let retries = 0;
-  
+
   while (retries < maxRetries) {
     try {
       return await queryFn();
     } catch (error) {
       retries++;
-      console.error(`Query failed (attempt ${retries}/${maxRetries}):`, error);
-      
+      console.error(`Query failed(attempt ${retries} / ${maxRetries}): `, error);
+
       if (retries >= maxRetries) {
         throw error;
       }
-      
+
       // Wait before retrying (exponential backoff)
       await new Promise(resolve => setTimeout(resolve, 1000 * retries));
-      
+
       // Check connection before retry
       await checkDatabaseConnection();
     }
   }
-  
+
   // This shouldn't be reached due to the throw in the loop, but TypeScript requires a return
   throw new Error('Max retries exceeded');
 }

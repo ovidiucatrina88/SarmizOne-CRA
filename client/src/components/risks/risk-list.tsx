@@ -29,13 +29,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Edit, Trash2, Search, ChevronLeft, ChevronRight, Calculator, Tv, ExternalLink, Shield, AlertTriangle } from "lucide-react";
-import { 
-  Dialog, 
+import {
+  Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription
 } from "@/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+} from "@/components/ui/sheet";
 import { GlowCard } from "@/components/ui/glow-card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -47,9 +51,9 @@ type RiskListProps = {
   onCreateFromTemplate?: (templateId: number) => void;
 };
 
-export function RiskList({ 
-  risks, 
-  onEdit, 
+export function RiskList({
+  risks,
+  onEdit,
   isTemplateView = false,
   onCreateFromTemplate
 }: RiskListProps) {
@@ -62,10 +66,10 @@ export function RiskList({
   const [detailsRisk, setDetailsRisk] = useState<RiskWithParams | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [showFactorsView, setShowFactorsView] = useState(false);
-  
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
+
   const itemsPerPage = 10;
 
   // Filter risks based on search query and filters
@@ -83,7 +87,7 @@ export function RiskList({
 
       return matchesSearch && matchesCategory && matchesSeverity;
     }) || [];
-  
+
   // Calculate pagination
   const totalPages = Math.ceil(filteredRisks.length / itemsPerPage);
   const paginatedRisks = filteredRisks.slice(
@@ -99,7 +103,7 @@ export function RiskList({
 
   // Delete mutation - works with both regular risks and risk library templates
   const deleteMutation = useMutation({
-    mutationFn: async (risk: {id: number, riskId: string}) => {
+    mutationFn: async (risk: { id: number, riskId: string }) => {
       if (isTemplateView) {
         // For risk library templates, use the risk-library endpoint
         const response = await apiRequest("DELETE", `/api/risk-library/${risk.id}`);
@@ -125,13 +129,13 @@ export function RiskList({
         queryClient.invalidateQueries({ queryKey: ["/api/risks"] });
         queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
         queryClient.invalidateQueries({ queryKey: ["/api/risk-summary/latest"] });
-        
+
         // Force refresh the risk list
         setTimeout(() => {
           queryClient.invalidateQueries({ queryKey: ["/api/risks"] });
         }, 500);
       }
-      
+
       toast({
         title: isTemplateView ? "Risk template deleted" : "Risk deleted",
         description: isTemplateView ? "The risk template has been deleted successfully." : "The risk has been deleted successfully.",
@@ -156,17 +160,17 @@ export function RiskList({
           id: riskToDelete.id,
           riskId: riskToDelete.riskId
         });
-        
+
         console.log(`Risk ${riskToDelete.id} (${riskToDelete.riskId}) deleted successfully`);
-        
+
         // Immediately update local UI by filtering out the deleted risk
         // This makes the deletion appear to happen instantly
         const currentRisks = queryClient.getQueryData<RiskWithParams[]>(["/api/risks"]) || [];
         const updatedRisks = currentRisks.filter(r => r.id !== riskToDelete.id);
-        
+
         // Update the cache directly for instant UI feedback
         queryClient.setQueryData(["/api/risks"], updatedRisks);
-        
+
         // Set timeout to force a refresh after deletion completes
         setTimeout(() => {
           queryClient.invalidateQueries({ queryKey: ["/api/risks"] });
@@ -198,7 +202,7 @@ export function RiskList({
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/summary"] });
       // Invalidate risk summary for Loss Exceedance Curve
       queryClient.invalidateQueries({ queryKey: ["/api/risk-summary/latest"] });
-      
+
       // Show the calculated values to the user
       toast({
         title: "Risk calculation completed",
@@ -218,7 +222,7 @@ export function RiskList({
   const handleCalculate = (risk: RiskWithParams) => {
     calculateMutation.mutate(risk.riskId);
   };
-  
+
   // Handle view details
   const handleViewDetails = (risk: RiskWithParams) => {
     setDetailsRisk(risk);
@@ -322,9 +326,8 @@ export function RiskList({
                         return (
                           <div>
                             <span
-                              className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-                                severityStyles[severityKey] || "bg-white/10 border border-white/10 text-white/70"
-                              }`}
+                              className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${severityStyles[severityKey] || "bg-white/10 border border-white/10 text-white/70"
+                                }`}
                             >
                               {severityKey}
                             </span>
@@ -465,12 +468,18 @@ export function RiskList({
 
       {/* Risk details dark theme view */}
       {detailsRisk && detailsOpen && (
-        <RiskDetailView 
-          risk={detailsRisk} 
-          onBack={() => setDetailsOpen(false)} 
-        />
+        <Sheet open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <SheetContent side="right" className="w-[90vw] sm:max-w-[900px] p-0 bg-gray-900 border-l border-gray-800 overflow-y-auto">
+            <div className="h-full">
+              <RiskDetailView
+                risk={detailsRisk}
+                onBack={() => setDetailsOpen(false)}
+              />
+            </div>
+          </SheetContent>
+        </Sheet>
       )}
-      
+
       {/* Alternate dialog for the Annualized Loss Factors view */}
       <Dialog open={showFactorsView} onOpenChange={setShowFactorsView}>
         <DialogContent className="max-w-4xl p-0 bg-transparent border-none">
