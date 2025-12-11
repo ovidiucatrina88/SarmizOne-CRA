@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import { Asset, Risk, Control, RiskResponse } from '@shared/schema';
 
 // Format currency display
@@ -29,183 +29,278 @@ const formatImplementationStatus = (status: string): string => {
  */
 export const exportToExcel = async (data: any): Promise<void> => {
   const { reportType, assets, risks, controls, responses, summary } = data;
-  
+
   // Create a new workbook
-  const wb = XLSX.utils.book_new();
-  
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'Risk Platform';
+  workbook.lastModifiedBy = 'Risk Platform';
+  workbook.created = new Date();
+  workbook.modified = new Date();
+
+  // Helper to auto-size columns
+  const autoSizeColumns = (worksheet: ExcelJS.Worksheet) => {
+    worksheet.columns.forEach(column => {
+      let maxLength = 0;
+      column["eachCell"]({ includeEmpty: true }, (cell) => {
+        const columnLength = cell.value ? cell.value.toString().length : 10;
+        if (columnLength > maxLength) {
+          maxLength = columnLength;
+        }
+      });
+      column.width = maxLength < 10 ? 10 : maxLength + 2;
+    });
+  };
+
   if (reportType === 'summary' || reportType === 'risks') {
     // Risk Register Sheet
     if (risks && risks.length > 0) {
-      const risksData = risks.map((risk: Risk) => ({
-        'Risk ID': risk.riskId,
-        'Name': risk.name,
-        'Category': risk.riskCategory.charAt(0).toUpperCase() + risk.riskCategory.slice(1),
-        'Severity': risk.severity.charAt(0).toUpperCase() + risk.severity.slice(1),
-        'Threat Community': risk.threatCommunity,
-        'Vulnerability': risk.vulnerability,
-        'Contact Frequency': risk.contactFrequency?.toFixed(2) || '0',
-        'Probability of Action': risk.probabilityOfAction ? `${(risk.probabilityOfAction * 100).toFixed(0)}%` : '0%',
-        'Threat Capability': risk.threatCapability?.toFixed(1) || '0',
-        'Probable Loss Magnitude': formatCurrency(risk.probableLossMagnitude || 0),
-        'Inherent Risk': formatCurrency(risk.inherentRisk || 0),
-        'Residual Risk': formatCurrency(risk.residualRisk || 0),
-        'Risk Reduction': risk.inherentRisk && risk.residualRisk 
-          ? formatCurrency(risk.inherentRisk - risk.residualRisk) 
-          : '$0',
-        'Risk Reduction %': risk.inherentRisk && risk.residualRisk && risk.inherentRisk > 0
-          ? `${((risk.inherentRisk - risk.residualRisk) / risk.inherentRisk * 100).toFixed(1)}%`
-          : '0%',
-        'Associated Assets': risk.associatedAssets ? risk.associatedAssets.join(', ') : ''
-      }));
-      
-      const riskWs = XLSX.utils.json_to_sheet(risksData);
-      XLSX.utils.book_append_sheet(wb, riskWs, 'Risk Register');
+      const worksheet = workbook.addWorksheet('Risk Register');
+
+      worksheet.columns = [
+        { header: 'Risk ID', key: 'riskId' },
+        { header: 'Name', key: 'name' },
+        { header: 'Category', key: 'category' },
+        { header: 'Severity', key: 'severity' },
+        { header: 'Threat Community', key: 'threatCommunity' },
+        { header: 'Vulnerability', key: 'vulnerability' },
+        { header: 'Contact Frequency', key: 'contactFrequency' },
+        { header: 'Probability of Action', key: 'probabilityOfAction' },
+        { header: 'Threat Capability', key: 'threatCapability' },
+        { header: 'Probable Loss Magnitude', key: 'probableLossMagnitude' },
+        { header: 'Inherent Risk', key: 'inherentRisk' },
+        { header: 'Residual Risk', key: 'residualRisk' },
+        { header: 'Risk Reduction', key: 'riskReduction' },
+        { header: 'Risk Reduction %', key: 'riskReductionPercent' },
+        { header: 'Associated Assets', key: 'associatedAssets' }
+      ];
+
+      risks.forEach((risk: Risk) => {
+        worksheet.addRow({
+          riskId: risk.riskId,
+          name: risk.name,
+          category: risk.riskCategory.charAt(0).toUpperCase() + risk.riskCategory.slice(1),
+          severity: risk.severity.charAt(0).toUpperCase() + risk.severity.slice(1),
+          threatCommunity: risk.threatCommunity,
+          vulnerability: risk.vulnerability,
+          contactFrequency: risk.contactFrequency?.toFixed(2) || '0',
+          probabilityOfAction: risk.probabilityOfAction ? `${(risk.probabilityOfAction * 100).toFixed(0)}%` : '0%',
+          threatCapability: risk.threatCapability?.toFixed(1) || '0',
+          probableLossMagnitude: formatCurrency(risk.probableLossMagnitude || 0),
+          inherentRisk: formatCurrency(risk.inherentRisk || 0),
+          residualRisk: formatCurrency(risk.residualRisk || 0),
+          riskReduction: risk.inherentRisk && risk.residualRisk
+            ? formatCurrency(risk.inherentRisk - risk.residualRisk)
+            : '$0',
+          riskReductionPercent: risk.inherentRisk && risk.residualRisk && risk.inherentRisk > 0
+            ? `${((risk.inherentRisk - risk.residualRisk) / risk.inherentRisk * 100).toFixed(1)}%`
+            : '0%',
+          associatedAssets: risk.associatedAssets ? risk.associatedAssets.join(', ') : ''
+        });
+      });
+
+      autoSizeColumns(worksheet);
     }
   }
-  
+
   if (reportType === 'summary' || reportType === 'assets') {
     // Asset Inventory Sheet
     if (assets && assets.length > 0) {
-      const assetsData = assets.map((asset: Asset) => ({
-        'Asset ID': asset.assetId,
-        'Name': asset.name,
-        'Type': asset.type.charAt(0).toUpperCase() + asset.type.slice(1),
-        'Business Unit': asset.businessUnit,
-        'Owner': asset.owner,
-        'Confidentiality': asset.confidentiality.charAt(0).toUpperCase(),
-        'Integrity': asset.integrity.charAt(0).toUpperCase(),
-        'Availability': asset.availability.charAt(0).toUpperCase(),
-        'Asset Value': formatCurrency(asset.assetValue),
-        'Location': asset.externalInternal.charAt(0).toUpperCase() + asset.externalInternal.slice(1),
-        'Regulatory Impact': asset.regulatoryImpact ? asset.regulatoryImpact.join(', ') : '',
-        'Dependencies': asset.dependencies ? asset.dependencies.join(', ') : '',
-        'Description': asset.description || ''
-      }));
-      
-      const assetWs = XLSX.utils.json_to_sheet(assetsData);
-      XLSX.utils.book_append_sheet(wb, assetWs, 'Asset Inventory');
+      const worksheet = workbook.addWorksheet('Asset Inventory');
+
+      worksheet.columns = [
+        { header: 'Asset ID', key: 'assetId' },
+        { header: 'Name', key: 'name' },
+        { header: 'Type', key: 'type' },
+        { header: 'Business Unit', key: 'businessUnit' },
+        { header: 'Owner', key: 'owner' },
+        { header: 'Confidentiality', key: 'confidentiality' },
+        { header: 'Integrity', key: 'integrity' },
+        { header: 'Availability', key: 'availability' },
+        { header: 'Asset Value', key: 'assetValue' },
+        { header: 'Location', key: 'location' },
+        { header: 'Regulatory Impact', key: 'regulatoryImpact' },
+        { header: 'Dependencies', key: 'dependencies' },
+        { header: 'Description', key: 'description' }
+      ];
+
+      assets.forEach((asset: Asset) => {
+        worksheet.addRow({
+          assetId: asset.assetId,
+          name: asset.name,
+          type: asset.type.charAt(0).toUpperCase() + asset.type.slice(1),
+          businessUnit: asset.businessUnit,
+          owner: asset.owner,
+          confidentiality: asset.confidentiality.charAt(0).toUpperCase(),
+          integrity: asset.integrity.charAt(0).toUpperCase(),
+          availability: asset.availability.charAt(0).toUpperCase(),
+          assetValue: formatCurrency(asset.assetValue),
+          location: asset.externalInternal.charAt(0).toUpperCase() + asset.externalInternal.slice(1),
+          regulatoryImpact: asset.regulatoryImpact ? asset.regulatoryImpact.join(', ') : '',
+          dependencies: asset.dependencies ? asset.dependencies.join(', ') : '',
+          description: asset.description || ''
+        });
+      });
+
+      autoSizeColumns(worksheet);
     }
   }
-  
+
   if (reportType === 'summary' || reportType === 'controls') {
     // Control Library Sheet
     if (controls && controls.length > 0) {
-      const controlsData = controls.map((control: Control) => ({
-        'Control ID': control.controlId,
-        'Name': control.name,
-        'Type': control.controlType.charAt(0).toUpperCase() + control.controlType.slice(1),
-        'Category': control.controlCategory.charAt(0).toUpperCase() + control.controlCategory.slice(1),
-        'Status': formatImplementationStatus(control.implementationStatus),
-        'Effectiveness': `${control.controlEffectiveness.toFixed(1)}/10`,
-        'Cost': formatCurrency(control.implementationCost || 0),
-        'Associated Risks': control.associatedRisks ? control.associatedRisks.join(', ') : '',
-        'Description': control.description || '',
-        'Notes': control.notes || ''
-      }));
-      
-      const controlWs = XLSX.utils.json_to_sheet(controlsData);
-      XLSX.utils.book_append_sheet(wb, controlWs, 'Control Library');
+      const worksheet = workbook.addWorksheet('Control Library');
+
+      worksheet.columns = [
+        { header: 'Control ID', key: 'controlId' },
+        { header: 'Name', key: 'name' },
+        { header: 'Type', key: 'type' },
+        { header: 'Category', key: 'category' },
+        { header: 'Status', key: 'status' },
+        { header: 'Effectiveness', key: 'effectiveness' },
+        { header: 'Cost', key: 'cost' },
+        { header: 'Associated Risks', key: 'associatedRisks' },
+        { header: 'Description', key: 'description' },
+        { header: 'Notes', key: 'notes' }
+      ];
+
+      controls.forEach((control: Control) => {
+        worksheet.addRow({
+          controlId: control.controlId,
+          name: control.name,
+          type: control.controlType.charAt(0).toUpperCase() + control.controlType.slice(1),
+          category: control.controlCategory.charAt(0).toUpperCase() + control.controlCategory.slice(1),
+          status: formatImplementationStatus(control.implementationStatus),
+          effectiveness: `${control.controlEffectiveness.toFixed(1)}/10`,
+          cost: formatCurrency(control.implementationCost || 0),
+          associatedRisks: control.associatedRisks ? control.associatedRisks.join(', ') : '',
+          description: control.description || '',
+          notes: control.notes || ''
+        });
+      });
+
+      autoSizeColumns(worksheet);
     }
   }
-  
+
   if (reportType === 'summary' || reportType === 'responses') {
     // Risk Response Sheet
     if (responses && responses.length > 0) {
+      const worksheet = workbook.addWorksheet('Risk Responses');
+
+      worksheet.columns = [
+        { header: 'Risk ID', key: 'riskId' },
+        { header: 'Risk Name', key: 'riskName' },
+        { header: 'Response Type', key: 'responseType' },
+        { header: 'Justification', key: 'justification' },
+        { header: 'Assigned Controls', key: 'assignedControls' },
+        { header: 'Transfer Method', key: 'transferMethod' },
+        { header: 'Avoidance Strategy', key: 'avoidanceStrategy' },
+        { header: 'Acceptance Reason', key: 'acceptanceReason' }
+      ];
+
       // Get risk name from risk ID
       const getRiskName = (riskId: string): string => {
         if (!risks) return "Unknown Risk";
         const risk = risks.find((r: Risk) => r.riskId === riskId);
         return risk ? risk.name : "Unknown Risk";
       };
-      
-      const responsesData = responses.map((response: RiskResponse) => {
-        // Create a base object for all response types
-        const baseResponse: any = {
-          'Risk ID': response.riskId,
-          'Risk Name': getRiskName(response.riskId),
-          'Response Type': response.responseType.charAt(0).toUpperCase() + response.responseType.slice(1),
-          'Justification': response.justification || '',
+
+      responses.forEach((response: RiskResponse) => {
+        const row: any = {
+          riskId: response.riskId,
+          riskName: getRiskName(response.riskId),
+          responseType: response.responseType.charAt(0).toUpperCase() + response.responseType.slice(1),
+          justification: response.justification || '',
         };
-        
-        // Add response type specific fields
+
         if (response.responseType === 'mitigate') {
-          baseResponse['Assigned Controls'] = response.assignedControls ? response.assignedControls.join(', ') : '';
-          baseResponse['Transfer Method'] = 'N/A';
-          baseResponse['Avoidance Strategy'] = 'N/A';
-          baseResponse['Acceptance Reason'] = 'N/A';
+          row.assignedControls = response.assignedControls ? response.assignedControls.join(', ') : '';
+          row.transferMethod = 'N/A';
+          row.avoidanceStrategy = 'N/A';
+          row.acceptanceReason = 'N/A';
         } else if (response.responseType === 'transfer') {
-          baseResponse['Assigned Controls'] = 'N/A';
-          baseResponse['Transfer Method'] = response.transferMethod || '';
-          baseResponse['Avoidance Strategy'] = 'N/A';
-          baseResponse['Acceptance Reason'] = 'N/A';
+          row.assignedControls = 'N/A';
+          row.transferMethod = response.transferMethod || '';
+          row.avoidanceStrategy = 'N/A';
+          row.acceptanceReason = 'N/A';
         } else if (response.responseType === 'avoid') {
-          baseResponse['Assigned Controls'] = 'N/A';
-          baseResponse['Transfer Method'] = 'N/A';
-          baseResponse['Avoidance Strategy'] = response.avoidanceStrategy || '';
-          baseResponse['Acceptance Reason'] = 'N/A';
+          row.assignedControls = 'N/A';
+          row.transferMethod = 'N/A';
+          row.avoidanceStrategy = response.avoidanceStrategy || '';
+          row.acceptanceReason = 'N/A';
         } else if (response.responseType === 'accept') {
-          baseResponse['Assigned Controls'] = 'N/A';
-          baseResponse['Transfer Method'] = 'N/A';
-          baseResponse['Avoidance Strategy'] = 'N/A';
-          baseResponse['Acceptance Reason'] = response.acceptanceReason || '';
+          row.assignedControls = 'N/A';
+          row.transferMethod = 'N/A';
+          row.avoidanceStrategy = 'N/A';
+          row.acceptanceReason = response.acceptanceReason || '';
         }
-        
-        return baseResponse;
+
+        worksheet.addRow(row);
       });
-      
-      const responseWs = XLSX.utils.json_to_sheet(responsesData);
-      XLSX.utils.book_append_sheet(wb, responseWs, 'Risk Responses');
+
+      autoSizeColumns(worksheet);
     }
   }
-  
+
   if (reportType === 'summary') {
     // Summary Sheet
-    const summaryData = [
-      { 'Metric': 'Total Assets', 'Value': assets?.length || 0 },
-      { 'Metric': 'Identified Risks', 'Value': risks?.length || 0 },
-      { 'Metric': 'Implemented Controls', 'Value': Array.isArray(controls) ? controls.filter((c: Control) => c.implementationStatus === 'fully_implemented').length : 0 },
-      { 'Metric': 'Risk Exposure', 'Value': formatCurrency(summary?.counts?.riskExposure || 0) },
-      { 'Metric': 'Inherent Risk', 'Value': formatCurrency(summary?.riskReduction?.inherentRisk || 0) },
-      { 'Metric': 'Residual Risk', 'Value': formatCurrency(summary?.riskReduction?.residualRisk || 0) },
-      { 'Metric': 'Risk Reduction', 'Value': formatCurrency(summary?.riskReduction?.reduction || 0) },
-      { 'Metric': 'Risk Reduction Percentage', 'Value': `${(summary?.riskReduction?.reductionPercentage || 0).toFixed(1)}%` }
+    const worksheet = workbook.addWorksheet('Summary');
+
+    worksheet.columns = [
+      { header: 'Metric', key: 'metric', width: 40 },
+      { header: 'Value', key: 'value', width: 20 }
     ];
-    
+
+    worksheet.addRow({ metric: 'Total Assets', value: assets?.length || 0 });
+    worksheet.addRow({ metric: 'Identified Risks', value: risks?.length || 0 });
+    worksheet.addRow({ metric: 'Implemented Controls', value: Array.isArray(controls) ? controls.filter((c: Control) => c.implementationStatus === 'fully_implemented').length : 0 });
+    worksheet.addRow({ metric: 'Risk Exposure', value: formatCurrency(summary?.counts?.riskExposure || 0) });
+    worksheet.addRow({ metric: 'Inherent Risk', value: formatCurrency(summary?.riskReduction?.inherentRisk || 0) });
+    worksheet.addRow({ metric: 'Residual Risk', value: formatCurrency(summary?.riskReduction?.residualRisk || 0) });
+    worksheet.addRow({ metric: 'Risk Reduction', value: formatCurrency(summary?.riskReduction?.reduction || 0) });
+    worksheet.addRow({ metric: 'Risk Reduction Percentage', value: `${(summary?.riskReduction?.reductionPercentage || 0).toFixed(1)}%` });
+
     // Risk Severity Breakdown
     if (summary?.riskBySeverity) {
-      summaryData.push({ 'Metric': '', 'Value': '' });
-      summaryData.push({ 'Metric': 'Risk Severity Breakdown', 'Value': '' });
-      summaryData.push({ 'Metric': 'Critical Risks', 'Value': summary.riskBySeverity.critical || 0 });
-      summaryData.push({ 'Metric': 'High Risks', 'Value': summary.riskBySeverity.high || 0 });
-      summaryData.push({ 'Metric': 'Medium Risks', 'Value': summary.riskBySeverity.medium || 0 });
-      summaryData.push({ 'Metric': 'Low Risks', 'Value': summary.riskBySeverity.low || 0 });
+      worksheet.addRow({ metric: '', value: '' });
+      worksheet.addRow({ metric: 'Risk Severity Breakdown', value: '' }).font = { bold: true };
+      worksheet.addRow({ metric: 'Critical Risks', value: summary.riskBySeverity.critical || 0 });
+      worksheet.addRow({ metric: 'High Risks', value: summary.riskBySeverity.high || 0 });
+      worksheet.addRow({ metric: 'Medium Risks', value: summary.riskBySeverity.medium || 0 });
+      worksheet.addRow({ metric: 'Low Risks', value: summary.riskBySeverity.low || 0 });
     }
-    
+
     // Control Implementation Status
     if (summary?.controlByStatus) {
-      summaryData.push({ 'Metric': '', 'Value': '' });
-      summaryData.push({ 'Metric': 'Control Implementation Status', 'Value': '' });
-      summaryData.push({ 'Metric': 'Fully Implemented', 'Value': summary.controlByStatus.implemented || 0 });
-      summaryData.push({ 'Metric': 'In Progress', 'Value': summary.controlByStatus.inProgress || 0 });
-      summaryData.push({ 'Metric': 'Not Implemented', 'Value': summary.controlByStatus.notImplemented || 0 });
+      worksheet.addRow({ metric: '', value: '' });
+      worksheet.addRow({ metric: 'Control Implementation Status', value: '' }).font = { bold: true };
+      worksheet.addRow({ metric: 'Fully Implemented', value: summary.controlByStatus.implemented || 0 });
+      worksheet.addRow({ metric: 'In Progress', value: summary.controlByStatus.inProgress || 0 });
+      worksheet.addRow({ metric: 'Not Implemented', value: summary.controlByStatus.notImplemented || 0 });
     }
-    
+
     // Control Type Breakdown
     if (summary?.controlByType) {
-      summaryData.push({ 'Metric': '', 'Value': '' });
-      summaryData.push({ 'Metric': 'Control Type Breakdown', 'Value': '' });
-      summaryData.push({ 'Metric': 'Preventive', 'Value': summary.controlByType.preventive || 0 });
-      summaryData.push({ 'Metric': 'Detective', 'Value': summary.controlByType.detective || 0 });
-      summaryData.push({ 'Metric': 'Corrective', 'Value': summary.controlByType.corrective || 0 });
+      worksheet.addRow({ metric: '', value: '' });
+      worksheet.addRow({ metric: 'Control Type Breakdown', value: '' }).font = { bold: true };
+      worksheet.addRow({ metric: 'Preventive', value: summary.controlByType.preventive || 0 });
+      worksheet.addRow({ metric: 'Detective', value: summary.controlByType.detective || 0 });
+      worksheet.addRow({ metric: 'Corrective', value: summary.controlByType.corrective || 0 });
     }
-    
-    const summaryWs = XLSX.utils.json_to_sheet(summaryData);
-    XLSX.utils.book_append_sheet(wb, summaryWs, 'Summary');
   }
-  
+
   // Generate filename
   const fileName = `${reportType}_report_${new Date().toISOString().slice(0, 10)}.xlsx`;
-  
-  // Write the workbook and trigger download
-  XLSX.writeFile(wb, fileName);
+
+  // Write buffer and trigger download
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+  // Create download link
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  window.URL.revokeObjectURL(url);
 };

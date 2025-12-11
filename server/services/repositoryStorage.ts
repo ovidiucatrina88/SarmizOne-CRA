@@ -139,7 +139,8 @@ export class DatabaseStorage {
 
       // Step 2: For each affected risk, remove the asset reference or delete the risk if it becomes orphaned
       for (const risk of affectedRisks) {
-        const updatedAssets = risk.associatedAssets.filter(a => a !== asset.assetId);
+        // Fix TS error: associatedAssets might be null/undefined although filtered above
+        const updatedAssets = (risk.associatedAssets || []).filter(a => a !== asset.assetId);
 
         if (updatedAssets.length === 0) {
           // Risk has no more assets - delete the risk and its dependencies
@@ -432,19 +433,13 @@ export class DatabaseStorage {
   }
 
   async createActivityLog(log: InsertActivityLog): Promise<ActivityLog> {
-    // Map to both old and new schema fields for compatibility
     const processedLog = {
-      // New schema fields
       action: log.action || 'system_action',
       entityType: log.entityType || 'unknown',
       entityId: log.entityId || '',
-      userId: log.userId || 1,
+      userId: log.userId ? String(log.userId) : '1',
       details: log.details || null,
       createdAt: log.createdAt || new Date(),
-      // Old schema fields (required by current database structure)
-      activity: log.action || 'system_action',
-      user: 'System User',
-      entity: typeof log.details === 'object' && log.details?.message ? log.details.message : (log.entityType || 'Entity')
     };
 
     const [createdLog] = await db.insert(activityLogs).values(processedLog).returning();
@@ -667,36 +662,6 @@ export class DatabaseStorage {
     console.log('Risk summaries recalculation requested - placeholder implementation');
   }
 
-  /**
-   * CONTROL LIBRARY REPOSITORY METHODS
-   */
-
-  async getAllControlLibraryItems(): Promise<any[]> {
-    return db.select().from(controlLibrary);
-  }
-
-  async getControlLibraryItem(id: number): Promise<any | undefined> {
-    const [item] = await db.select().from(controlLibrary).where(eq(controlLibrary.id, id));
-    return item;
-  }
-
-  async createControlLibraryItem(data: any): Promise<any> {
-    const [item] = await db.insert(controlLibrary).values(data).returning();
-    return item;
-  }
-
-  async updateControlLibraryItem(id: number, data: any): Promise<any> {
-    const [item] = await db
-      .update(controlLibrary)
-      .set(data)
-      .where(eq(controlLibrary.id, id))
-      .returning();
-    return item;
-  }
-
-  async deleteControlLibraryItem(id: number): Promise<void> {
-    await db.delete(controlLibrary).where(eq(controlLibrary.id, id));
-  }
 
   /**
    * COST MODULE REPOSITORY METHODS
