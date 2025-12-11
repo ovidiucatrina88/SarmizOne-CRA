@@ -1111,18 +1111,18 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
           <div className="space-y-2">
             <div className="flex items-center gap-3">
               <p className="text-[11px] uppercase tracking-[0.35em] text-white/50">
-                {useConceptLayout ? "Fair Studio" : isTemplate ? "Risk Template" : risk ? "Edit Risk" : "New Risk"}
+                {isTemplate ? "Risk Template" : risk ? "Edit Risk" : "New Risk"}
               </p>
-              {useConceptLayout && <Badge className="bg-emerald-500/15 text-emerald-200">Concept Shell</Badge>}
+              {useConceptLayout && null}
             </div>
             <h2 className="text-3xl font-semibold text-white">
               {risk ? risk.name : isTemplate ? "Create Risk Template" : "Create Risk"}
             </h2>
-            <p className="text-sm text-white/60">
-              {useConceptLayout
-                ? "Polished FAIR-U workspace for editing risks with dependency-aware calculations."
-                : "Configure FAIR parameters, associate assets, and quantify exposure without leaving the page."}
-            </p>
+            {!useConceptLayout && (
+              <p className="text-sm text-white/60">
+                Configure FAIR parameters, associate assets, and quantify exposure without leaving the page.
+              </p>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -1329,7 +1329,6 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
             <GlowCard className="space-y-6">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm text-white/60">FAIR summary</p>
                   <h3 className="text-2xl font-semibold text-white">Dynamic calculations</h3>
                 </div>
                 <Button
@@ -1370,7 +1369,7 @@ export function RiskForm({ risk, onClose, isTemplate = false, variant = "default
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h3 className="text-xl font-semibold text-white">
-                  {useConceptLayout ? "FAIR Parameter Editor (Concept)" : "FAIR Parameter Editor"}
+                  {useConceptLayout ? "" : "Risk Evaluation"}
                 </h3>
                 <p className="text-sm text-white/60">Linked assets: {selectedAssets.length || 0}</p>
               </div>

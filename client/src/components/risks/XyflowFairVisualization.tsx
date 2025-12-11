@@ -6,14 +6,14 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 
 // We're using a type assertion approach since the Risk type doesn't fully match the API response
 // This is a simplification to focus on fixing the immediate issue
-import { 
-  ReactFlow, 
-  Background, 
-  Controls, 
-  Node, 
-  Edge, 
-  ReactFlowProvider, 
-  Position, 
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  Node,
+  Edge,
+  ReactFlowProvider,
+  Position,
   BackgroundVariant,
   applyNodeChanges,
   applyEdgeChanges,
@@ -36,16 +36,16 @@ const getValueFromServerOrCalculated = (
   // If useServerValues is true, prioritize server values (when available)
   if (useServerValues && serverValue !== undefined && serverValue !== null) {
     // Convert string values to numbers
-    const numericValue = typeof serverValue === 'string' 
-      ? parseFloat(serverValue) 
+    const numericValue = typeof serverValue === 'string'
+      ? parseFloat(serverValue)
       : serverValue;
-    
+
     // Return the server value if it's a valid number
     if (!isNaN(numericValue)) {
       return numericValue;
     }
   }
-  
+
   // Fall back to calculated value
   return calculatedValue;
 };
@@ -55,12 +55,12 @@ const safeNumber = (value: string | number | undefined | null): number => {
   if (value === undefined || value === null) {
     return 0;
   }
-  
+
   if (typeof value === 'string') {
     const parsed = parseFloat(value);
     return isNaN(parsed) ? 0 : parsed;
   }
-  
+
   return typeof value === 'number' ? value : 0;
 };
 
@@ -84,13 +84,13 @@ const getValueWithFallback = (
   if (serverValue !== undefined && serverValue !== null) {
     return getServerValue(serverValue);
   }
-  
+
   // Simple fallback calculation based on primary loss magnitude
   // This is an extreme simplification compared to the full FAIR calculation
-  const fallbackValue = type === 'residual' 
+  const fallbackValue = type === 'residual'
     ? getServerValue(localParams.primaryLossMagnitudeAvg) * 0.5 // 50% reduction for residual risk
     : getServerValue(localParams.primaryLossMagnitudeAvg);
-    
+
   console.warn(`No server value available for ${type} risk. Using fallback calculation.`);
   return fallbackValue;
 };
@@ -148,18 +148,18 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
-  
+
   // Use callbacks for node and edge changes - this makes dragging more fluid
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)),
     [setNodes],
   );
-  
+
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => setEdges((eds) => applyEdgeChanges(changes, eds)),
     [setEdges],
   );
-  
+
   // Helper to determine if an edge is connected to the selected node
   const isEdgeConnected = useCallback((edge: Edge, nodeId: string): boolean => {
     return edge.source === nodeId || edge.target === nodeId;
@@ -168,11 +168,11 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
   // Handler for node selection
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     console.log('Node selected:', node.id);
-    
+
     // If already selected, deselect it
     if (selectedNode === node.id) {
       setSelectedNode(null);
-      
+
       // Reset edge styles
       setEdges((edgs) =>
         edgs.map((e) => ({
@@ -188,10 +188,10 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
       );
       return;
     }
-    
+
     // Set the selected node
     setSelectedNode(node.id);
-    
+
     // Update edges - highlight only those connected to the selected node
     setEdges((edgs) =>
       edgs.map((e) => {
@@ -209,7 +209,7 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
       })
     );
   }, [selectedNode, isEdgeConnected, setEdges]);
-  
+
   // Handler for when nodes are dragged - this enhances visual feedback
   const onNodeDrag = useCallback((event: React.MouseEvent, node: Node) => {
     // Update connected edges while dragging for better visual feedback
@@ -232,11 +232,11 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
       })
     );
   }, [isEdgeConnected, setEdges]);
-  
+
   // Get risk parameters from server data with fallbacks
   const serverParams = useMemo(() => {
     console.log('Using server-calculated parameters');
-    
+
     // Extract simple control effectiveness values for display only
     const controlEffectiveness = {
       eAvoid: getServerValue(riskFromApi?.eAvoid, 0),
@@ -244,44 +244,44 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
       eResist: getServerValue(riskFromApi?.eResist, 0),
       eDetect: getServerValue(riskFromApi?.eDetect, 0)
     };
-    
+
     // Log control effectiveness values if available
     if (controls && controls.length > 0) {
       console.log('Controls present:', controls.length);
     }
-    
+
     // Create a complete parameter set with server values or fallbacks
     return {
       ...riskParams,
-      
+
       // Pre-calculated values from server
       threatEventFrequencyMin: getServerValue(riskFromApi?.threatEventFrequencyMin, riskParams.threatEventFrequencyMin || 0.3),
       threatEventFrequencyAvg: getServerValue(riskFromApi?.threatEventFrequencyAvg, riskParams.threatEventFrequencyAvg || 1),
       threatEventFrequencyMax: getServerValue(riskFromApi?.threatEventFrequencyMax, riskParams.threatEventFrequencyMax || 2),
-      
+
       susceptibilityMin: getServerValue(riskFromApi?.susceptibilityMin, riskParams.susceptibilityMin || 0.1),
       susceptibilityAvg: getServerValue(riskFromApi?.susceptibilityAvg, riskParams.susceptibilityAvg || 0.2),
       susceptibilityMax: getServerValue(riskFromApi?.susceptibilityMax, riskParams.susceptibilityMax || 0.4),
-      
+
       inherentRisk: getServerValue(riskFromApi?.inherentRisk, riskParams.primaryLossMagnitudeAvg || 100000),
       residualRisk: getServerValue(riskFromApi?.residualRisk, (riskParams.primaryLossMagnitudeAvg || 100000) * 0.7),
-      
+
       // Basic FAIR parameters
       contactFrequencyMin: getServerValue(riskFromApi?.contactFrequencyMin, riskParams.contactFrequencyMin || 5),
       contactFrequencyAvg: getServerValue(riskFromApi?.contactFrequencyAvg, riskParams.contactFrequencyAvg || 10),
       contactFrequencyMax: getServerValue(riskFromApi?.contactFrequencyMax, riskParams.contactFrequencyMax || 15),
       contactFrequencyConfidence: riskFromApi?.contactFrequencyConfidence || riskParams.contactFrequencyConfidence || 'Medium',
-      
+
       probabilityOfActionMin: getServerValue(riskFromApi?.probabilityOfActionMin, riskParams.probabilityOfActionMin || 0.1),
       probabilityOfActionAvg: getServerValue(riskFromApi?.probabilityOfActionAvg, riskParams.probabilityOfActionAvg || 0.3),
       probabilityOfActionMax: getServerValue(riskFromApi?.probabilityOfActionMax, riskParams.probabilityOfActionMax || 0.5),
       probabilityOfActionConfidence: riskFromApi?.probabilityOfActionConfidence || riskParams.probabilityOfActionConfidence || 'Medium',
-      
+
       primaryLossMagnitudeMin: getServerValue(riskFromApi?.primaryLossMagnitudeMin, riskParams.primaryLossMagnitudeMin || 50000),
       primaryLossMagnitudeAvg: getServerValue(riskFromApi?.primaryLossMagnitudeAvg, riskParams.primaryLossMagnitudeAvg || 100000),
       primaryLossMagnitudeMax: getServerValue(riskFromApi?.primaryLossMagnitudeMax, riskParams.primaryLossMagnitudeMax || 250000),
       primaryLossMagnitudeConfidence: riskFromApi?.primaryLossMagnitudeConfidence || riskParams.primaryLossMagnitudeConfidence || 'Medium',
-      
+
       // Control effectiveness values for UI display
       controlEffectiveness,
       eAvoid: controlEffectiveness.eAvoid,
@@ -290,25 +290,25 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
       eDetect: controlEffectiveness.eDetect
     };
   }, [
-    riskFromApi, 
+    riskFromApi,
     riskParams,
-    controls 
+    controls
   ]);
-  
+
   // Utility function for safe number conversion
   const safeNumber = (value: any): number => {
     // Handle null, undefined, or empty string/values
     if (value === null || value === undefined || value === '') return 0;
-    
+
     // Convert to number, ensuring strings are properly parsed
     const num = typeof value === 'string' ? parseFloat(value) : Number(value);
-    
+
     // Return 0 for NaN values or negative values (which shouldn't exist in risk parameters)
     return isNaN(num) ? 0 : Math.max(0, num);
   };
-  
+
   // Use the global getValueFromServerOrCalculated function defined above
-  
+
   // Debug function to log which values are being used (server vs client calculations)
   const logCalculationSource = useCallback((serverValue: any, calculatedValue: any, paramName: string) => {
     if (useServerCalculations && serverValue !== undefined && serverValue !== null) {
@@ -322,11 +322,11 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
   const createNodes = useCallback(() => {
     const levelSpacing = 180;  // Vertical spacing between levels
     const horizontalSpacing = 250;  // Horizontal spacing between nodes
-    
+
     // If we're using server calculations or we have the full risk object from API
     if (useServerCalculations || riskFromApi) {
       console.log("Using server-calculated values for risk visualization");
-      
+
       // Log server-calculated risk values for debugging
       if (riskFromApi) {
         console.log("Server-calculated values:", {
@@ -334,20 +334,20 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
           residualRisk: safeNumber(riskFromApi.residualRisk),
           usingServerCalcs: useServerCalculations
         });
-        
+
         // Log all risk values for debugging
         console.log("Loss Event Frequency values (from API):", {
           min: safeNumber(riskFromApi.lossEventFrequencyMin),
           avg: safeNumber(riskFromApi.lossEventFrequencyAvg),
           max: safeNumber(riskFromApi.lossEventFrequencyMax)
         });
-        
+
         console.log("Primary Loss Magnitude values (from API):", {
           min: safeNumber(riskFromApi.primaryLossMagnitudeMin),
           avg: safeNumber(riskFromApi.primaryLossMagnitudeAvg),
           max: safeNumber(riskFromApi.primaryLossMagnitudeMax)
         });
-        
+
         console.log("Susceptibility values (from API):", {
           min: safeNumber(riskFromApi.susceptibilityMin),
           avg: safeNumber(riskFromApi.susceptibilityAvg),
@@ -362,9 +362,9 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
           data: {
             label: 'Risk (Loss Expectancy)',
             // Use server-calculated values for inherent and residual risk
-            inherentValue: useServerCalculations ? safeNumber(riskFromApi.inherentRisk) : 
+            inherentValue: useServerCalculations ? safeNumber(riskFromApi.inherentRisk) :
               (riskParams.inherentRisk || 0),
-            value: useServerCalculations ? safeNumber(riskFromApi.residualRisk) : 
+            value: useServerCalculations ? safeNumber(riskFromApi.residualRisk) :
               (riskParams.residualRisk || 0),
             description: riskFromApi.description || riskDescription,
             valueLabel: 'Expected Annual Loss',
@@ -374,7 +374,7 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
           position: { x: horizontalSpacing * 2, y: 0 },
           sourcePosition: Position.Bottom,
         },
-        
+
         // Level 1 (First level of decomposition)
         {
           id: 'lef',
@@ -415,7 +415,7 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
           sourcePosition: Position.Bottom,
           targetPosition: Position.Top,
         },
-        
+
         // Level 2 (Second level of decomposition)
         {
           id: 'tef',
@@ -493,7 +493,7 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
           sourcePosition: Position.Bottom,
           targetPosition: Position.Top,
         },
-        
+
         // Level 3 (Third level of decomposition)
         {
           id: 'cf',
@@ -520,7 +520,7 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
             description: 'Likelihood of attempted action',
             value: safeNumber(riskFromApi.probabilityOfActionAvg),
             min: safeNumber(riskFromApi.probabilityOfActionMin),
-            avg: safeNumber(riskFromApi.probabilityOfActionAvg), 
+            avg: safeNumber(riskFromApi.probabilityOfActionAvg),
             max: safeNumber(riskFromApi.probabilityOfActionMax),
             confidence: riskFromApi.probabilityOfActionConfidence,
             valueLabel: 'Probability',
@@ -560,8 +560,8 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
             confidence: riskFromApi.resistanceStrengthConfidence,
             valueLabel: 'Scale 1-10',
             controls: controls,
-            controlEffectiveness: controls && controls.length > 0 
-              ? controls.reduce((total, control) => total + (control.controlEffectiveness || 0), 0) / controls.length 
+            controlEffectiveness: controls && controls.length > 0
+              ? controls.reduce((total, control) => total + (control.controlEffectiveness || 0), 0) / controls.length
               : 0,
             selected: false,
           },
@@ -575,7 +575,7 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
             label: 'Secondary Loss Event Frequency',
             description: 'How often secondary losses occur',
             min: safeNumber(riskFromApi.secondaryLossEventFrequencyMin) || 0.1,
-            avg: safeNumber(riskFromApi.secondaryLossEventFrequencyAvg) || 0.3, 
+            avg: safeNumber(riskFromApi.secondaryLossEventFrequencyAvg) || 0.3,
             max: safeNumber(riskFromApi.secondaryLossEventFrequencyMax) || 0.5,
             confidence: riskFromApi.secondaryLossEventFrequencyConfidence,
             valueLabel: 'Probability',
@@ -605,7 +605,7 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
         }
       ];
     }
-    
+
     // Fallback to calculating from parameters if riskFromApi is not available
     return [
       // Level 0 (Top)
@@ -624,57 +624,57 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
             const serverValue = riskFromApi?.inherentRisk;
             // Get server value with simple fallback if not available
             const value = getValueWithFallback(serverValue, riskParams, 'inherent');
-            
+
             // Log which calculation source is being used
             console.log(`Using ${serverValue ? 'SERVER' : 'fallback'} value for inherent risk: ${value}`);
-            
+
             return value;
           })(),
-          
+
           // Calculate residual risk (with controls)
           value: (() => {
             const serverValue = riskFromApi?.residualRisk;
             // Get server value with simple fallback if not available
             const value = getValueWithFallback(serverValue, riskParams, 'residual');
-            
+
             // Log which calculation source is being used
             console.log(`Using ${serverValue ? 'SERVER' : 'fallback'} value for residual risk: ${value}`);
-            
+
             return value;
           })(),
-                 
+
           // Show projections based on additional controls to be added (for demo purposes)
           // Using residual value with an additional 25% reduction for future projections
           futureValue: (() => {
             const serverValue = riskFromApi?.residualRisk;
             // Get server value with simple fallback
             const baseValue = getValueWithFallback(serverValue, riskParams, 'residual');
-            
+
             // Apply a 25% reduction to model future improvements
             const projectedValue = baseValue * 0.75;
-            
+
             console.log(`Using ${serverValue ? 'SERVER' : 'fallback'} value for future risk projection: ${projectedValue}`);
-            
+
             return projectedValue;
           })(),
-                 
+
           // Min values using the same formula as the main calculation
           // For min values, use server values with a small reduction factor to visually represent the lower bound
           min: (() => {
             const baseValue = getValueWithFallback(riskFromApi?.residualRisk, riskParams, 'residual');
             // Use a 90% factor of the actual value for the lower bound
             const minValue = baseValue * 0.9;
-            
+
             console.log(`Using min value for visualization: ${minValue}`);
             return minValue;
           })(),
-                
+
           // For max values, use server values with a small increase factor to visually represent the upper bound
           max: (() => {
             const baseValue = getValueWithFallback(riskFromApi?.residualRisk, riskParams, 'residual');
             // Use a 110% factor of the actual value for the upper bound
             const maxValue = baseValue * 1.1;
-            
+
             console.log(`Using max value for visualization: ${maxValue}`);
             return maxValue;
           })(),
@@ -686,7 +686,7 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
         position: { x: horizontalSpacing * 2, y: 0 },
         sourcePosition: Position.Bottom,
       },
-      
+
       // Level 1
       {
         id: 'lef',
@@ -725,7 +725,7 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
         sourcePosition: Position.Bottom,
         targetPosition: Position.Top,
       },
-      
+
       // Level 2
       {
         id: 'tef',
@@ -788,7 +788,7 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
         sourcePosition: Position.Bottom,
         targetPosition: Position.Top,
       },
-      
+
       // Level 3
       {
         id: 'cf',
@@ -846,7 +846,7 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
         position: { x: horizontalSpacing * 1.75, y: levelSpacing * 3 },
         targetPosition: Position.Top,
       },
-      
+
       // Level 4
       {
         id: 'slef',
@@ -879,18 +879,18 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
       }
     ];
   }, [serverParams, riskFromApi, controls]);
-  
+
   // Create edges for the FAIR visualization
   const createEdges = useCallback(() => {
     return [
       // Top level connections
-      { 
-        id: 'e-risk-lef', 
-        source: 'risk', 
+      {
+        id: 'e-risk-lef',
+        source: 'risk',
         target: 'lef',
         animated: true,
         type: 'smoothstep',
-        style: { 
+        style: {
           stroke: '#8b5cf6', // purple-600 to match RISK gradient
           strokeWidth: 3,
           transition: 'all 0.3s ease',
@@ -903,13 +903,13 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
           height: 20,
         }
       },
-      { 
-        id: 'e-risk-lm', 
-        source: 'risk', 
+      {
+        id: 'e-risk-lm',
+        source: 'risk',
         target: 'lm',
         animated: true,
         type: 'smoothstep',
-        style: { 
+        style: {
           stroke: '#8b5cf6', // purple-600 to match RISK gradient
           strokeWidth: 3,
           transition: 'all 0.3s ease',
@@ -922,14 +922,14 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
           height: 20,
         }
       },
-      
+
       // First level connections - LEF connections
-      { 
-        id: 'e-lef-tef', 
-        source: 'lef', 
+      {
+        id: 'e-lef-tef',
+        source: 'lef',
         target: 'tef',
         type: 'smoothstep',
-        style: { 
+        style: {
           stroke: '#ea580c', // orange-600 to match LEF gradient
           strokeWidth: 2.5,
           transition: 'all 0.3s ease',
@@ -942,12 +942,12 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
           height: 15,
         }
       },
-      { 
-        id: 'e-lef-vuln', 
-        source: 'lef', 
+      {
+        id: 'e-lef-vuln',
+        source: 'lef',
         target: 'vuln',
         type: 'smoothstep',
-        style: { 
+        style: {
           stroke: '#ea580c', // orange-600 to match LEF gradient
           strokeWidth: 2.5,
           transition: 'all 0.3s ease',
@@ -960,14 +960,14 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
           height: 15,
         }
       },
-      
+
       // First level connections - LM connections
-      { 
-        id: 'e-lm-pl', 
-        source: 'lm', 
+      {
+        id: 'e-lm-pl',
+        source: 'lm',
         target: 'pl',
         type: 'smoothstep',
-        style: { 
+        style: {
           stroke: '#0284c7', // sky-600 to match LM gradient
           strokeWidth: 2.5,
           transition: 'all 0.3s ease',
@@ -980,12 +980,12 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
           height: 15,
         }
       },
-      { 
-        id: 'e-lm-sl', 
-        source: 'lm', 
+      {
+        id: 'e-lm-sl',
+        source: 'lm',
         target: 'sl',
         type: 'smoothstep',
-        style: { 
+        style: {
           stroke: '#0284c7', // sky-600 to match LM gradient
           strokeWidth: 2.5,
           transition: 'all 0.3s ease',
@@ -998,14 +998,14 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
           height: 15,
         }
       },
-      
+
       // Second level connections
-      { 
-        id: 'e-tef-cf', 
-        source: 'tef', 
+      {
+        id: 'e-tef-cf',
+        source: 'tef',
         target: 'cf',
         type: 'smoothstep',
-        style: { 
+        style: {
           stroke: '#3b82f6', // blue-500 to match TEF gradient
           strokeWidth: 1.5,
           transition: 'all 0.3s ease'
@@ -1017,12 +1017,12 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
           height: 12,
         }
       },
-      { 
-        id: 'e-tef-poa', 
-        source: 'tef', 
+      {
+        id: 'e-tef-poa',
+        source: 'tef',
         target: 'poa',
         type: 'smoothstep',
-        style: { 
+        style: {
           stroke: '#3b82f6', // blue-500 to match TEF gradient
           strokeWidth: 1.5,
           transition: 'all 0.3s ease'
@@ -1034,12 +1034,12 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
           height: 12,
         }
       },
-      { 
-        id: 'e-vuln-tcap', 
-        source: 'vuln', 
+      {
+        id: 'e-vuln-tcap',
+        source: 'vuln',
         target: 'tcap',
         type: 'smoothstep',
-        style: { 
+        style: {
           stroke: '#d97706', // amber-600 to match VULN gradient
           strokeWidth: 1.5,
           transition: 'all 0.3s ease'
@@ -1051,12 +1051,12 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
           height: 12,
         }
       },
-      { 
-        id: 'e-vuln-rs', 
-        source: 'vuln', 
+      {
+        id: 'e-vuln-rs',
+        source: 'vuln',
         target: 'rs',
         type: 'smoothstep',
-        style: { 
+        style: {
           stroke: '#d97706', // amber-600 to match VULN gradient
           strokeWidth: 1.5,
           transition: 'all 0.3s ease'
@@ -1068,14 +1068,14 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
           height: 12,
         }
       },
-      
+
       // Third level connections
-      { 
-        id: 'e-sl-slef', 
-        source: 'sl', 
+      {
+        id: 'e-sl-slef',
+        source: 'sl',
         target: 'slef',
         type: 'smoothstep',
-        style: { 
+        style: {
           stroke: '#8b5cf6', // purple-500 to match SL gradient
           strokeWidth: 1.5,
           transition: 'all 0.3s ease'
@@ -1087,12 +1087,12 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
           height: 12,
         }
       },
-      { 
-        id: 'e-sl-slm', 
-        source: 'sl', 
+      {
+        id: 'e-sl-slm',
+        source: 'sl',
         target: 'slm',
         type: 'smoothstep',
-        style: { 
+        style: {
           stroke: '#8b5cf6', // purple-500 to match SL gradient
           strokeWidth: 1.5,
           transition: 'all 0.3s ease'
@@ -1106,7 +1106,7 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
       },
     ];
   }, []);
-  
+
   // Create the graph when risk data changes
   useEffect(() => {
     try {
@@ -1114,9 +1114,9 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
         console.log("Waiting for risk data from database...");
         return;
       }
-      
+
       console.log("Initializing FAIR visualization with database values");
-      
+
       // Add more detailed debugging to see the actual structure of riskFromApi
       console.log("Full risk data structure:", JSON.stringify({
         id: riskFromApi.id,
@@ -1130,11 +1130,11 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
         inherentRisk: riskFromApi.inherentRisk,
         residualRisk: riskFromApi.residualRisk
       }, null, 2));
-      
+
       // Create nodes and edges from database values
       const graphNodes = createNodes();
       const graphEdges = createEdges();
-      
+
       // Initialize the graph with the risk node selected by default
       setNodes(graphNodes.map(node => ({
         ...node,
@@ -1143,10 +1143,10 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
           selected: node.id === 'risk' // Highlight the risk node by default
         }
       })));
-      
+
       setEdges(graphEdges);
       setSelectedNode('risk'); // Select the risk node by default
-      
+
       console.log("FAIR visualization initialized with", graphNodes.length, "nodes and", graphEdges.length, "edges");
     } catch (error) {
       console.error("Failed to initialize FAIR visualization:", error);
@@ -1156,7 +1156,7 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
     createNodes,
     createEdges
   ]);
-  
+
   // Styling for the flow container
   const flowStyles = {
     background: darkMode ? 'radial-gradient(circle at center, #11152b, #070b1a)' : '#f8fafc',
@@ -1164,7 +1164,7 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
     width: '100%',
     boxShadow: 'inset 0 0 100px rgba(0,0,0,0.6)'
   };
-  
+
   // Handle pane click - deselect all nodes
   const onPaneClick = useCallback(() => {
     // Deselect nodes when clicking on the background
@@ -1176,7 +1176,7 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
         selected: false
       }
     })));
-    
+
     // Reset edge styles
     setEdges(edgs => edgs.map(e => ({
       ...e,
@@ -1189,14 +1189,14 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
       }
     })));
   }, [setNodes, setEdges]);
-  
+
   return (
     <Card className={`overflow-hidden border-slate-800 bg-slate-950 shadow-2xl rounded-xl ${className}`}>
       <CardHeader className="bg-gradient-to-r from-slate-900 to-slate-950 border-b border-slate-800 pb-3">
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-xl font-bold mb-1 bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-indigo-500">
-              FAIR Risk Analysis
+              Risk Analysis
             </CardTitle>
           </div>
           <TooltipProvider>
@@ -1207,10 +1207,10 @@ const XyflowFairVisualization: React.FC<XyflowFairVisualizationProps> = ({
                 </div>
               </TooltipTrigger>
               <TooltipContent className="max-w-md bg-slate-900 border-slate-700 p-3 text-white">
-                <p className="font-medium mb-2 text-indigo-400">FAIR Risk Analysis</p>
+                <p className="font-medium mb-2 text-indigo-400"></p>
                 <p className="text-sm text-slate-300">
-                  This visualization follows the FAIR framework (Factor Analysis of Information Risk), 
-                  showing how different factors contribute to the overall risk. Nodes higher in the 
+                  This visualization follows the FAIR framework (Factor Analysis of Information Risk),
+                  showing how different factors contribute to the overall risk. Nodes higher in the
                   hierarchy are derived from those below them.
                 </p>
               </TooltipContent>

@@ -3,14 +3,14 @@ import { RiskCalculationParams } from '@shared/schema';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { InfoIcon } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { 
-  ReactFlow, 
-  Background, 
-  Controls, 
-  Node, 
-  Edge, 
-  ReactFlowProvider, 
-  Position, 
+import {
+  ReactFlow,
+  Background,
+  Controls,
+  Node,
+  Edge,
+  ReactFlowProvider,
+  Position,
   BackgroundVariant,
   applyNodeChanges,
   applyEdgeChanges,
@@ -47,18 +47,18 @@ const FairVisualizationTemplate: React.FC<FairVisualizationTemplateProps> = ({
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
-  
+
   // Add these callbacks for fluid dragging using ReactFlow's built-in functionality
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => setNodes((nds) => applyNodeChanges(changes, nds)),
     [],
   );
-  
+
   const onEdgesChange = useCallback(
     (changes: EdgeChange[]) => setEdges((eds) => applyEdgeChanges(changes, eds)),
     [],
   );
-  
+
   // Helper to determine if an edge is connected to the selected node
   const isEdgeConnected = (edge: Edge, nodeId: string): boolean => {
     return edge.source === nodeId || edge.target === nodeId;
@@ -67,11 +67,11 @@ const FairVisualizationTemplate: React.FC<FairVisualizationTemplateProps> = ({
   // Handler for node selection
   const onNodeClick = (_: React.MouseEvent, node: Node) => {
     console.log('Node selected:', node.id);
-    
+
     // If already selected, deselect it
     if (selectedNode === node.id) {
       setSelectedNode(null);
-      
+
       // Reset node appearance
       setNodes((nds) =>
         nds.map((n) => ({
@@ -82,7 +82,7 @@ const FairVisualizationTemplate: React.FC<FairVisualizationTemplateProps> = ({
           }
         }))
       );
-      
+
       // Reset edge styles
       setEdges((edgs) =>
         edgs.map((e) => ({
@@ -98,12 +98,12 @@ const FairVisualizationTemplate: React.FC<FairVisualizationTemplateProps> = ({
       );
       return;
     }
-    
+
     // Set the selected node
     setSelectedNode(node.id);
-    
+
     // Update nodes - highlight the selected node
-    setNodes((nds) => 
+    setNodes((nds) =>
       nds.map((n) => ({
         ...n,
         // Visual feedback to show which node is selected for dragging
@@ -113,7 +113,7 @@ const FairVisualizationTemplate: React.FC<FairVisualizationTemplateProps> = ({
         }
       }))
     );
-    
+
     // Update edges - highlight only those connected to the selected node
     setEdges((edgs) =>
       edgs.map((e) => {
@@ -131,7 +131,7 @@ const FairVisualizationTemplate: React.FC<FairVisualizationTemplateProps> = ({
       })
     );
   };
-  
+
   // Handler for when nodes are dragged - this now complements onNodesChange
   const onNodeDrag = (_: React.MouseEvent, node: Node) => {
     // Update connected edges while dragging for better visual feedback
@@ -154,7 +154,7 @@ const FairVisualizationTemplate: React.FC<FairVisualizationTemplateProps> = ({
       })
     );
   };
-  
+
   // When drag is completed, log the final position
   const onNodeDragStop = (_: React.MouseEvent, node: Node) => {
     console.log('Node position updated:', node.id, node.position);
@@ -176,7 +176,7 @@ const FairVisualizationTemplate: React.FC<FairVisualizationTemplateProps> = ({
   useEffect(() => {
     try {
       console.log("Initializing FAIR visualization");
-      
+
       // Default container size
       const containerWidth = 800;
       const containerHeight = 600;
@@ -201,21 +201,21 @@ const FairVisualizationTemplate: React.FC<FairVisualizationTemplateProps> = ({
           }
         };
       }));
-      
+
       // Set up edges
       setEdges(graphEdges.map(edge => ({
         ...edge,
         // Add animation to edges connected to the risk node by default
         animated: edge.source === 'risk' || edge.target === 'risk'
       })));
-      
+
       console.log("FAIR visualization initialized with", graphNodes.length, "nodes and", graphEdges.length, "edges");
     } catch (error) {
       console.error("Failed to initialize FAIR visualization:", error);
     }
   }, [
     // Include all risk parameters that might change
-    riskParams.contactFrequencyMin, 
+    riskParams.contactFrequencyMin,
     riskParams.contactFrequencyAvg,
     riskParams.contactFrequencyMax,
     riskParams.probabilityOfActionMin,
@@ -250,10 +250,10 @@ const FairVisualizationTemplate: React.FC<FairVisualizationTemplateProps> = ({
                 </div>
               </TooltipTrigger>
               <TooltipContent className="max-w-md bg-slate-800 border-slate-700 p-3 text-white">
-                <p className="font-medium mb-2">FAIR Risk Analysis</p>
+                <p className="font-medium mb-2"></p>
                 <p className="text-sm text-slate-300">
-                  This visualization follows the FAIR framework (Factor Analysis of Information Risk), 
-                  showing how different factors contribute to the overall risk. Nodes higher in the 
+                  This visualization follows the FAIR framework (Factor Analysis of Information Risk),
+                  showing how different factors contribute to the overall risk. Nodes higher in the
                   hierarchy are derived from those below them.
                 </p>
               </TooltipContent>
@@ -302,7 +302,7 @@ const FairVisualizationTemplate: React.FC<FairVisualizationTemplateProps> = ({
                     selected: false
                   }
                 })));
-                
+
                 // Reset edge styles when deselecting
                 setEdges(edgs => edgs.map(e => ({
                   ...e,

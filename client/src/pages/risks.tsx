@@ -221,7 +221,7 @@ export default function Risks() {
           <DialogContent className="h-[92vh] w-[96vw] max-w-[96vw] overflow-y-auto rounded-[32px] border-white/10 bg-[#040b1c]/95">
             <DialogHeader>
               <DialogTitle>{selectedRisk ? "Edit Risk" : "Create New Risk"}</DialogTitle>
-              <DialogDescription>Define parameters using the FAIR-U methodology.</DialogDescription>
+
             </DialogHeader>
             <RiskForm
               risk={selectedRisk}

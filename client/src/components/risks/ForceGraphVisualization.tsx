@@ -55,13 +55,13 @@ const ForceGraphVisualization: React.FC<ForceGraphVisualizationProps> = ({
   const [graphData, setGraphData] = useState<GraphData>({ nodes: [], links: [] });
   const [highlightedNode, setHighlightedNode] = useState<string | null>(null);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
-  
+
   // Ref for the graph container to measure dimensions
   const containerRef = useRef<HTMLDivElement>(null);
-  
+
   // Ref for the graph instance to access its methods
   const graphRef = useRef<any>(null);
-  
+
   // Extend riskParams with derived values
   const extendedParams = {
     ...riskParams,
@@ -72,7 +72,7 @@ const ForceGraphVisualization: React.FC<ForceGraphVisualizationProps> = ({
     susceptibilityAvg: riskParams.threatCapabilityAvg / (riskParams.threatCapabilityAvg + riskParams.resistanceStrengthAvg),
     susceptibilityMax: riskParams.threatCapabilityMax / (riskParams.threatCapabilityMax + riskParams.resistanceStrengthMin)
   };
-  
+
   // Update the container dimensions on mount and resize
   useEffect(() => {
     const updateDimensions = () => {
@@ -81,15 +81,15 @@ const ForceGraphVisualization: React.FC<ForceGraphVisualizationProps> = ({
         setDimensions({ width, height });
       }
     };
-    
+
     // Initial dimensions
     updateDimensions();
-    
+
     // Add resize listener
     window.addEventListener('resize', updateDimensions);
     return () => window.removeEventListener('resize', updateDimensions);
   }, []);
-  
+
   // Create graph data from risk parameters
   useEffect(() => {
     const nodes: GraphNode[] = [
@@ -97,28 +97,28 @@ const ForceGraphVisualization: React.FC<ForceGraphVisualizationProps> = ({
       {
         id: 'risk',
         name: 'Risk',
-        value: riskParams.primaryLossMagnitudeAvg * (riskParams.contactFrequencyAvg * riskParams.probabilityOfActionAvg * 
-                (riskParams.threatCapabilityAvg / (riskParams.threatCapabilityAvg + riskParams.resistanceStrengthAvg))),
-        min: riskParams.primaryLossMagnitudeMin * (riskParams.contactFrequencyMin * riskParams.probabilityOfActionMin * 
-              (riskParams.threatCapabilityMin / (riskParams.threatCapabilityMin + riskParams.resistanceStrengthMax))),
-        max: riskParams.primaryLossMagnitudeMax * (riskParams.contactFrequencyMax * riskParams.probabilityOfActionMax * 
-              (riskParams.threatCapabilityMax / (riskParams.threatCapabilityMax + riskParams.resistanceStrengthMin))),
+        value: riskParams.primaryLossMagnitudeAvg * (riskParams.contactFrequencyAvg * riskParams.probabilityOfActionAvg *
+          (riskParams.threatCapabilityAvg / (riskParams.threatCapabilityAvg + riskParams.resistanceStrengthAvg))),
+        min: riskParams.primaryLossMagnitudeMin * (riskParams.contactFrequencyMin * riskParams.probabilityOfActionMin *
+          (riskParams.threatCapabilityMin / (riskParams.threatCapabilityMin + riskParams.resistanceStrengthMax))),
+        max: riskParams.primaryLossMagnitudeMax * (riskParams.contactFrequencyMax * riskParams.probabilityOfActionMax *
+          (riskParams.threatCapabilityMax / (riskParams.threatCapabilityMax + riskParams.resistanceStrengthMin))),
         confidence: 'Medium',
         isCurrency: true,
         group: 0,
         level: 0
       },
-      
+
       // Level 1
       {
         id: 'lef',
         name: 'Loss Event Frequency',
-        value: riskParams.contactFrequencyAvg * riskParams.probabilityOfActionAvg * 
-               (riskParams.threatCapabilityAvg / (riskParams.threatCapabilityAvg + riskParams.resistanceStrengthAvg)),
-        min: riskParams.contactFrequencyMin * riskParams.probabilityOfActionMin * 
-             (riskParams.threatCapabilityMin / (riskParams.threatCapabilityMin + riskParams.resistanceStrengthMax)),
-        max: riskParams.contactFrequencyMax * riskParams.probabilityOfActionMax * 
-             (riskParams.threatCapabilityMax / (riskParams.threatCapabilityMax + riskParams.resistanceStrengthMin)),
+        value: riskParams.contactFrequencyAvg * riskParams.probabilityOfActionAvg *
+          (riskParams.threatCapabilityAvg / (riskParams.threatCapabilityAvg + riskParams.resistanceStrengthAvg)),
+        min: riskParams.contactFrequencyMin * riskParams.probabilityOfActionMin *
+          (riskParams.threatCapabilityMin / (riskParams.threatCapabilityMin + riskParams.resistanceStrengthMax)),
+        max: riskParams.contactFrequencyMax * riskParams.probabilityOfActionMax *
+          (riskParams.threatCapabilityMax / (riskParams.threatCapabilityMax + riskParams.resistanceStrengthMin)),
         confidence: 'Medium',
         group: 1,
         level: 1
@@ -134,7 +134,7 @@ const ForceGraphVisualization: React.FC<ForceGraphVisualizationProps> = ({
         group: 1,
         level: 1
       },
-      
+
       // Level 2
       {
         id: 'tef',
@@ -178,7 +178,7 @@ const ForceGraphVisualization: React.FC<ForceGraphVisualizationProps> = ({
         group: 2,
         level: 2
       },
-      
+
       // Level 3
       {
         id: 'cf',
@@ -220,7 +220,7 @@ const ForceGraphVisualization: React.FC<ForceGraphVisualizationProps> = ({
         group: 3,
         level: 3
       },
-      
+
       // Level 4
       {
         id: 'slef',
@@ -244,82 +244,82 @@ const ForceGraphVisualization: React.FC<ForceGraphVisualizationProps> = ({
         level: 4
       }
     ];
-    
+
     const links: GraphLink[] = [
       // Top level connections
       { source: 'risk', target: 'lef' },
       { source: 'risk', target: 'lm' },
-      
+
       // First level connections
       { source: 'lef', target: 'tef' },
       { source: 'lef', target: 'vuln' },
       { source: 'lm', target: 'pl' },
       { source: 'lm', target: 'sl' },
-      
+
       // Second level connections
       { source: 'tef', target: 'cf' },
       { source: 'tef', target: 'poa' },
       { source: 'vuln', target: 'tcap' },
       { source: 'vuln', target: 'rs' },
-      
+
       // Third level connections
       { source: 'sl', target: 'slef' },
       { source: 'sl', target: 'slm' }
     ];
-    
+
     setGraphData({ nodes, links });
   }, [riskParams]);
-  
+
   // Node object custom rendering
   const nodeCanvasObject = useCallback((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
     const graphNode = node as GraphNode;
     const label = graphNode.name;
     const fontSize = 12 / globalScale;
     const nodeSize = 12;
-    
+
     // Check if the node is highlighted
     const isHighlighted = highlightedNode === graphNode.id;
-    
+
     // Calculate colors
     const actualMax = graphNode.max || graphNode.value * 2;
     const riskLevel = getRiskLevel(graphNode.value, actualMax);
     const riskColor = getRiskColor(riskLevel, darkMode ? 'dark' : 'light');
     const confidenceColor = getConfidenceColor(graphNode.confidence, darkMode ? 'dark' : 'light');
-    
+
     // Node background
     ctx.beginPath();
     ctx.arc(node.x, node.y, nodeSize, 0, 2 * Math.PI);
     ctx.fillStyle = isHighlighted ? riskColor : `rgba(30, 41, 59, ${isHighlighted ? 1 : 0.8})`;
     ctx.fill();
-    
+
     // Node border
     ctx.strokeStyle = isHighlighted ? riskColor : '#4b5563';
     ctx.lineWidth = isHighlighted ? 3 : 1.5;
     ctx.stroke();
-    
+
     // Node label
     ctx.font = `${fontSize}px Sans-Serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#f8fafc';
     ctx.fillText(label, node.x, node.y + nodeSize + fontSize);
-    
+
     // Node value
     const valueText = formatValue(graphNode.value, graphNode.isCurrency);
     ctx.font = `bold ${fontSize}px Sans-Serif`;
     ctx.fillStyle = riskColor;
     ctx.fillText(valueText, node.x, node.y + nodeSize + fontSize * 2.2);
-    
+
     // Confidence indicator
     ctx.beginPath();
     ctx.arc(node.x + nodeSize, node.y - nodeSize, nodeSize / 2, 0, 2 * Math.PI);
     ctx.fillStyle = confidenceColor;
     ctx.fill();
-    
+
     // Set node val to influence forces
     node.val = graphNode.value / 1000 + 1;
   }, [highlightedNode, darkMode]);
-  
+
   // Node interaction handlers
   const handleNodeHover = (node: any) => {
     if (node) {
@@ -339,7 +339,7 @@ const ForceGraphVisualization: React.FC<ForceGraphVisualizationProps> = ({
       }));
     }
   };
-  
+
   // Link color based on highlighting
   const linkColor = useCallback((link: GraphLink) => {
     if (link.highlighted) {
@@ -347,7 +347,7 @@ const ForceGraphVisualization: React.FC<ForceGraphVisualizationProps> = ({
     }
     return darkMode ? 'rgba(148, 163, 184, 0.3)' : 'rgba(100, 116, 139, 0.3)';
   }, [darkMode]);
-  
+
   return (
     <Card className={`overflow-hidden border-slate-700 bg-slate-900 ${className}`}>
       <CardHeader className="bg-slate-800 border-b border-slate-700 pb-4">
@@ -366,10 +366,10 @@ const ForceGraphVisualization: React.FC<ForceGraphVisualizationProps> = ({
                 </div>
               </TooltipTrigger>
               <TooltipContent className="max-w-md bg-slate-800 border-slate-700 p-3 text-white">
-                <p className="font-medium mb-2">FAIR Risk Analysis</p>
+                <p className="font-medium mb-2"></p>
                 <p className="text-sm text-slate-300">
-                  This visualization follows the FAIR framework (Factor Analysis of Information Risk), 
-                  showing how different factors contribute to the overall risk. 
+                  This visualization follows the FAIR framework (Factor Analysis of Information Risk),
+                  showing how different factors contribute to the overall risk.
                   Hover over nodes to see relationships and drag to reposition.
                 </p>
               </TooltipContent>
@@ -378,8 +378,8 @@ const ForceGraphVisualization: React.FC<ForceGraphVisualizationProps> = ({
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <div 
-          ref={containerRef} 
+        <div
+          ref={containerRef}
           style={{ height: '600px', width: '100%', position: 'relative' }}
         >
           <div className="absolute top-2 left-2 right-2 z-10 bg-slate-800 bg-opacity-80 backdrop-blur-sm p-2 rounded text-xs text-slate-300 shadow">
@@ -390,7 +390,7 @@ const ForceGraphVisualization: React.FC<ForceGraphVisualizationProps> = ({
               )}
             </span>
           </div>
-          
+
           <ForceGraph2D
             ref={graphRef}
             graphData={graphData}
