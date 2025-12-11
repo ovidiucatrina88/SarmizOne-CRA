@@ -17,21 +17,21 @@ export const controlBaseSchema = z.object({
   implementationTime: z.number().optional(),
   maintainCost: z.number().optional(),
   effectivenessRating: z.number().min(0).max(100).optional(),
-  
+
   // FAIR-U Control Effectiveness
   controlEffectiveness: z.number().min(0).max(10).optional(),
-  
+
   // FAIR-CAM effectiveness parameters
   e_avoid: z.number().min(0).max(1).optional(),
   e_deter: z.number().min(0).max(1).optional(),
   e_detect: z.number().min(0).max(1).optional(),
   e_resist: z.number().min(0).max(1).optional(),
-  
+
   // Cost calculation fields
   costPerAgent: z.number().min(0).optional(),
   isPerAgentPricing: z.boolean().optional(),
   deployedAgentCount: z.number().min(0).optional(),
-  
+
   vendor: z.string().optional(),
   technicalDetails: z.string().optional(),
   implementationNotes: z.string().optional(),
@@ -55,14 +55,14 @@ export const controlFilterSchema = z.object({
   type: controlTypeEnum.optional(),
   category: controlCategoryEnum.optional(),
   status: implementationStatusEnum.optional(),
-  riskId: z.number().optional(),
+  riskId: z.coerce.number().optional(),
   assetId: z.string().optional(),
   entityId: z.string().optional(),
   search: z.string().optional(),
   sortBy: z.enum(['name', 'controlId', 'controlType', 'implementationStatus', 'effectivenessRating']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
-  page: z.number().optional(),
-  limit: z.number().optional()
+  page: z.coerce.number().optional(),
+  limit: z.coerce.number().optional()
 });
 
 export type ControlFilterDto = z.infer<typeof controlFilterSchema>;

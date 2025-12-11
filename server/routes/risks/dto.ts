@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // Define confidence enum for FAIR parameters with case insensitivity
-const confidenceEnum = z.enum(['low', 'medium', 'high']).transform(val => 
+const confidenceEnum = z.enum(['low', 'medium', 'high']).transform(val =>
   val.toLowerCase() as 'low' | 'medium' | 'high'
 );
 
@@ -39,35 +39,35 @@ export const riskBaseSchema = z.object({
   threatEventFrequencyMax: numericStringOrNumber.optional(),
   threatEventFrequencyML: numericStringOrNumber.optional(),
   threatEventFrequencyConfidence: confidenceEnum.optional(),
-  
+
   vulnerabilityRating: numericStringOrNumber.optional(),
   vulnerabilityRatingMin: numericStringOrNumber.optional(),
   vulnerabilityRatingMax: numericStringOrNumber.optional(),
   vulnerabilityRatingML: numericStringOrNumber.optional(),
   vulnerabilityRatingConfidence: confidenceEnum.optional(),
-  
+
   primaryLossMin: numericStringOrNumber.optional(),
   primaryLossMax: numericStringOrNumber.optional(),
   primaryLossML: numericStringOrNumber.optional(),
   primaryLossConfidence: confidenceEnum.optional(),
-  
+
   secondaryLossMin: numericStringOrNumber.optional(),
   secondaryLossMax: numericStringOrNumber.optional(),
   secondaryLossML: numericStringOrNumber.optional(),
   secondaryLossConfidence: confidenceEnum.optional(),
-  
+
   // Contact Frequency parameters - Fixed to handle decimal values properly
   contactFrequencyMin: decimalNumber.optional(),
   contactFrequencyAvg: decimalNumber.optional(),
   contactFrequencyMax: decimalNumber.optional(),
   contactFrequencyConfidence: confidenceEnum.optional(),
-  
+
   // Probability of Action parameters - Fixed to handle decimal values properly
   probabilityOfActionMin: decimalNumber.optional(),
-  probabilityOfActionAvg: decimalNumber.optional(), 
+  probabilityOfActionAvg: decimalNumber.optional(),
   probabilityOfActionMax: decimalNumber.optional(),
   probabilityOfActionConfidence: confidenceEnum.optional(),
-  
+
   // Secondary Loss parameters (crucial for risk calculation)
   secondaryLossMagnitudeMin: numericStringOrNumber.optional(),
   secondaryLossMagnitudeAvg: numericStringOrNumber.optional(),
@@ -77,18 +77,18 @@ export const riskBaseSchema = z.object({
   secondaryLossEventFrequencyAvg: decimalNumber.optional(),
   secondaryLossEventFrequencyMax: decimalNumber.optional(),
   secondaryLossEventFrequencyConfidence: confidenceEnum.optional(),
-  
+
   // Primary Loss Magnitude parameters
   primaryLossMagnitudeMin: numericStringOrNumber.optional(),
   primaryLossMagnitudeAvg: numericStringOrNumber.optional(),
   primaryLossMagnitudeMax: numericStringOrNumber.optional(),
   primaryLossMagnitudeConfidence: confidenceEnum.optional(),
-  
+
   threatEventFrequencyNotes: z.string().optional(),
   vulnerabilityNotes: z.string().optional(),
   primaryLossNotes: z.string().optional(),
   secondaryLossNotes: z.string().optional(),
-  
+
   // FAIR-CAM parameters - Fixed to handle decimal values properly
   threatCapability: decimalNumber.optional(),
   threatCapabilityMin: decimalNumber.optional(),
@@ -96,19 +96,19 @@ export const riskBaseSchema = z.object({
   threatCapabilityMax: decimalNumber.optional(),
   threatCapabilityML: decimalNumber.optional(),
   threatCapabilityConfidence: confidenceEnum.optional(),
-  
+
   // Resistance Strength parameters - Fixed to handle decimal values properly
   resistanceStrengthMin: decimalNumber.optional(),
   resistanceStrengthAvg: decimalNumber.optional(),
   resistanceStrengthMax: decimalNumber.optional(),
   resistanceStrengthConfidence: confidenceEnum.optional(),
-  
+
   controlStrength: numericStringOrNumber.optional(),
   controlStrengthMin: numericStringOrNumber.optional(),
   controlStrengthMax: numericStringOrNumber.optional(),
   controlStrengthML: numericStringOrNumber.optional(),
   controlStrengthConfidence: confidenceEnum.optional(),
-  
+
   lossMagnitude: numericStringOrNumber.optional(),
   lossMagnitudeMin: numericStringOrNumber.optional(),
   lossMagnitudeMax: numericStringOrNumber.optional(),
@@ -133,8 +133,8 @@ export const riskFilterSchema = z.object({
   search: z.string().optional(),
   sortBy: z.enum(['name', 'riskId', 'createdAt', 'residualRisk', 'severity']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional(),
-  page: z.number().optional(),
-  limit: z.number().optional()
+  page: z.coerce.number().optional(),
+  limit: z.coerce.number().optional()
 });
 
 export type RiskFilterDto = z.infer<typeof riskFilterSchema>;

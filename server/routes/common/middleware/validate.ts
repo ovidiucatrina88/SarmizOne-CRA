@@ -7,11 +7,12 @@ import { z } from 'zod';
  * @param schema Zod schema to validate against
  * @returns Express middleware function
  */
-export function validate(schema: z.ZodType<any, any>) {
+export function validate(schema: z.ZodType<any, any>, source: 'body' | 'query' | 'params' = 'body') {
   return (req: Request, res: Response, next: NextFunction) => {
     try {
-      const result = schema.safeParse(req.body);
-      
+      const dataToValidate = req[source];
+      const result = schema.safeParse(dataToValidate);
+
       if (!result.success) {
         const formatted = result.error.format();
         return res.status(400).json({
@@ -20,13 +21,14 @@ export function validate(schema: z.ZodType<any, any>) {
           details: formatted
         });
       }
-      
-      req.body = result.data;
+
+      // Update the request object with the validated (and potentiall coerced/transformed) data
+      req[source] = result.data;
       next();
     } catch (error) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid request body',
+        error: `Invalid request ${source}`,
         details: error instanceof Error ? error.message : String(error)
       });
     }
@@ -43,11 +45,11 @@ export function validate(schema: z.ZodType<any, any>) {
  */
 export function validateId(req: Request, res: Response, next: NextFunction) {
   const id = req.params.id;
-  
+
   // Allow both numeric IDs and string IDs that match the RISK-* pattern
   const isNumericId = !isNaN(parseInt(id));
   const isRiskStringId = /^RISK-[A-Z0-9-]+$/.test(id);
-  
+
   if (!isNumericId && !isRiskStringId) {
     return res.status(400).json({
       success: false,
@@ -55,6 +57,6 @@ export function validateId(req: Request, res: Response, next: NextFunction) {
       details: 'ID must be a number or a valid risk ID string (e.g., RISK-DATA-123)'
     });
   }
-  
+
   next();
 }

@@ -8,8 +8,7 @@ const router = express.Router();
 
 // Get all risks with optional filtering
 router.get('/',
-
-  validate(riskFilterSchema),
+  validate(riskFilterSchema, 'query'),
   riskController.getAllRisks.bind(riskController)
 );
 

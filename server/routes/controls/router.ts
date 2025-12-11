@@ -8,8 +8,7 @@ const router = express.Router();
 
 // Get all controls with optional filtering
 router.get('/',
-
-  validate(controlFilterSchema),
+  validate(controlFilterSchema, 'query'),
   controlController.getAllControls.bind(controlController)
 );
 
