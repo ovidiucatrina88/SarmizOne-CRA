@@ -1,5 +1,6 @@
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
+import { Strategy as OpenIDConnectStrategy } from 'passport-openidconnect';
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import { db } from './db';
@@ -14,7 +15,7 @@ export const configurePassport = () => {
       usernameField: 'username',
       passwordField: 'password',
     },
-    async (username, password, done) => {
+    async (username: string, password: string, done: any) => {
       try {
         const [user] = await db
           .select()
@@ -37,7 +38,7 @@ export const configurePassport = () => {
 
         // Verify password
         const isValidPassword = await bcrypt.compare(password, user.passwordHash!);
-        
+
         if (!isValidPassword) {
           // Increment failed login attempts
           const failedAttempts = (user.failedLoginAttempts || 0) + 1;
@@ -81,65 +82,66 @@ export const configurePassport = () => {
     process.env.OIDC_CALLBACK_URL
   ) {
 
-  passport.use(
-    new OpenIDConnectStrategy(
-      {
-        issuer: process.env.OIDC_ISSUER,
-        authorizationURL: process.env.OIDC_AUTHORIZATION_URL || `${process.env.OIDC_ISSUER}/authorize`, 
-        tokenURL: process.env.OIDC_TOKEN_URL || `${process.env.OIDC_ISSUER}/token`,
-        userInfoURL: process.env.OIDC_USER_INFO_URL || `${process.env.OIDC_ISSUER}/userinfo`,
-        clientID: process.env.OIDC_CLIENT_ID,
-        clientSecret: process.env.OIDC_CLIENT_SECRET,
-        callbackURL: process.env.OIDC_CALLBACK_URL,
-        scope: ['openid', 'profile', 'email']
-      },
-      async (
-        issuer,
-        profile,
-        context,
-        idToken,
-        accessToken,
-        refreshToken,
-        done
-      ) => {
-        try {
-          // Check if user exists with this sub ID
-          const [existingUser] = await db
-            .select()
-            .from(users)
-            .where(eq(users.sub, profile.id));
+    passport.use(
+      new OpenIDConnectStrategy(
+        {
+          issuer: process.env.OIDC_ISSUER,
+          authorizationURL: process.env.OIDC_AUTHORIZATION_URL || `${process.env.OIDC_ISSUER}/authorize`,
+          tokenURL: process.env.OIDC_TOKEN_URL || `${process.env.OIDC_ISSUER}/token`,
+          userInfoURL: process.env.OIDC_USER_INFO_URL || `${process.env.OIDC_ISSUER}/userinfo`,
+          clientID: process.env.OIDC_CLIENT_ID,
+          clientSecret: process.env.OIDC_CLIENT_SECRET,
+          callbackURL: process.env.OIDC_CALLBACK_URL,
+          scope: ['openid', 'profile', 'email']
+        },
+        async (
+          issuer: string,
+          profile: any,
+          context: any,
+          idToken: any,
+          accessToken: any,
+          refreshToken: any,
+          done: any
+        ) => {
+          try {
+            // Check if user exists with this sub ID
+            const [existingUser] = await db
+              .select()
+              .from(users)
+              .where(eq(users.ssoSubject, profile.id));
 
-          if (existingUser) {
-            // Update last login
-            await db
-              .update(users)
-              .set({ lastLogin: new Date() })
-              .where(eq(users.id, existingUser.id));
-            
-            return done(null, existingUser);
+            if (existingUser) {
+              // Update last login
+              await db
+                .update(users)
+                .set({ lastLogin: new Date() })
+                .where(eq(users.id, existingUser.id));
+
+              return done(null, existingUser);
+            }
+
+            // Create a new user
+            const [newUser] = await db
+              .insert(users)
+              .values({
+                ssoSubject: profile.id,
+                email: profile.emails?.[0]?.value || '',
+                firstName: profile.name?.givenName,
+                lastName: profile.name?.familyName,
+                displayName: profile.displayName,
+                role: 'viewer', // Default role for new users
+                authType: 'sso'
+              })
+              .returning();
+
+            return done(null, newUser);
+          } catch (err) {
+            return done(err);
           }
-
-          // Create a new user
-          const [newUser] = await db
-            .insert(users)
-            .values({
-              sub: profile.id,
-              email: profile.emails?.[0]?.value || '',
-              firstName: profile.name?.givenName,
-              lastName: profile.name?.familyName,
-              displayName: profile.displayName,
-              role: 'standard', // Default role for new users
-            })
-            .returning();
-
-          return done(null, newUser);
-        } catch (err) {
-          return done(err);
         }
-      }
-    )
-  );
-  console.log('OpenID Connect strategy configured');
+      )
+    );
+    console.log('OpenID Connect strategy configured');
   } else {
     console.log('OpenID Connect not configured - missing environment variables');
   }
@@ -154,7 +156,7 @@ export const configurePassport = () => {
         .select()
         .from(users)
         .where(eq(users.id, id));
-      
+
       done(null, user || null);
     } catch (err) {
       done(err);
@@ -174,12 +176,12 @@ export const isAuthenticated = (req: Request, res: Response, next: NextFunction)
   if (req.isAuthenticated()) {
     return next();
   }
-  
+
   // For API requests, return 401
   if (req.path.startsWith('/api/')) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-  
+
   // For other requests, redirect to login
   res.redirect('/login');
 };
@@ -194,7 +196,7 @@ export const isAdmin = (req: Request, res: Response, next: NextFunction) => {
   if (req.isAuthenticated() && (req.user as any)?.role === 'admin') {
     return next();
   }
-  
+
   return res.status(403).json({ error: 'Forbidden' });
 };
 
@@ -209,7 +211,7 @@ export const canWriteAssets = (req: Request, res: Response, next: NextFunction) 
     // Both admin and standard users can write to assets
     return next();
   }
-  
+
   return res.status(403).json({ error: 'Forbidden' });
 };
 
@@ -224,6 +226,6 @@ export const canWriteOtherResources = (req: Request, res: Response, next: NextFu
     // Only admin users can write to other resources
     return next();
   }
-  
+
   return res.status(403).json({ error: 'Forbidden' });
 };

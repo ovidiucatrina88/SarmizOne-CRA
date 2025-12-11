@@ -23,7 +23,12 @@ export function validate(schema: z.ZodType<any, any>, source: 'body' | 'query' |
       }
 
       // Update the request object with the validated (and potentiall coerced/transformed) data
-      req[source] = result.data;
+      // We use Object.assign because req.query might be a getter in some Express environments
+      if (source === 'query' || source === 'params') {
+        Object.assign(req[source], result.data);
+      } else {
+        req[source] = result.data;
+      }
       next();
     } catch (error) {
       return res.status(400).json({

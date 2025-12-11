@@ -6,13 +6,31 @@ import { generateTrend } from '../../utils/trends';
 
 export const getRiskCostSummary = async (req: Request, res: Response) => {
     try {
-        // Fetch all risks and their costs
+        // Fetch all risks to count severity
         const allRisks = await db.select().from(risks);
-        const allRiskCosts = await db.select().from(riskCosts);
+
+        // Calculate total cost using SQL logic matching the controller
+        // Note: quantity/hours are assumed 1.0 as they don't exist in DB schema
+        const costResult = await db.execute(sql`
+            SELECT 
+                COUNT(*) as total_mapped,
+                SUM(
+                    CASE 
+                        WHEN cm.cost_type = 'percentage' THEN 
+                            (CAST(COALESCE(r.inherent_risk, 0) AS DECIMAL) * CAST(COALESCE(cm.cost_factor, 0) AS DECIMAL) * CAST(COALESCE(rc.weight, 1) AS DECIMAL))
+                        ELSE 
+                            (CAST(COALESCE(cm.cost_factor, 0) AS DECIMAL) * CAST(COALESCE(rc.weight, 1) AS DECIMAL))
+                    END
+                ) as total_cost
+            FROM risk_costs rc
+            JOIN cost_modules cm ON rc.cost_module_id = cm.id
+            JOIN risks r ON rc.risk_id = r.id
+        `);
 
         // Calculate stats
-        const totalMapped = allRiskCosts.length;
-        const totalCost = allRiskCosts.reduce((sum, record) => sum + (Number(record.costValue) || 0), 0);
+        const params = costResult.rows[0] as any;
+        const totalMapped = parseInt(params.total_mapped) || 0;
+        const totalCost = parseFloat(params.total_cost) || 0;
         const avgCost = totalMapped ? totalCost / totalMapped : 0;
 
         const highSeverityCount = allRisks.filter(
@@ -36,8 +54,8 @@ export const getRiskCostSummary = async (req: Request, res: Response) => {
             },
             trends
         });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error fetching risk cost summary:', error);
-        res.status(500).json({ error: 'Failed to fetch risk cost summary' });
+        res.status(500).json({ error: 'Failed to fetch risk cost summary', details: error.message });
     }
 };

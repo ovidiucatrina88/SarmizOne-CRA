@@ -27,8 +27,8 @@ export const responseFilterSchema = z.object({
   type: responseTypeEnum.optional(),
   riskId: z.string().optional(),
   search: z.string().optional(),
-  page: z.number().optional(),
-  limit: z.number().optional()
+  page: z.coerce.number().optional(),
+  limit: z.coerce.number().optional()
 });
 
 export type ResponseFilterDto = z.infer<typeof responseFilterSchema>;

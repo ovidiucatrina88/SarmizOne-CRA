@@ -25,7 +25,14 @@ import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { useTheme } from "./theme-provider";
 
-const NAV_ITEMS = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ElementType;
+  subItems?: readonly { name: string; href: string }[];
+}
+
+const NAV_ITEMS: readonly NavItem[] = [
   { name: "Dashboard", href: "/", icon: BarChart3 },
   {
     name: "Assets",
@@ -80,7 +87,7 @@ const NAV_ITEMS = [
       { name: "Change Password", href: "/change-password" },
     ],
   },
-] as const;
+];
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -163,8 +170,8 @@ export default function Layout({ children, pageTitle, pageDescription, pageActio
         >
           <div className="flex items-center justify-between px-5 py-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/25 text-primary">
-                <Activity className="h-6 w-6" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5 overflow-hidden">
+                <img src="/sarmiz-logo.jpg" alt="Sarmiz Logo" className="h-full w-full object-cover" />
               </div>
               {!sidebarCollapsed && (
                 <div>

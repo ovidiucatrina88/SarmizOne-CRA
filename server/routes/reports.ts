@@ -46,32 +46,32 @@ router.get('/:id', async (req, res) => {
 
     switch (reportId) {
       case 'risk-summary':
-        const risks = await storage.getRisks();
+        const risks = await storage.getAllRisks();
         reportData = {
           title: 'Risk Summary Report',
           generatedAt: new Date().toISOString(),
           summary: {
             totalRisks: risks.length,
-            criticalRisks: risks.filter(r => r.inherentRiskLevel === 'critical').length,
-            highRisks: risks.filter(r => r.inherentRiskLevel === 'high').length
+            criticalRisks: risks.filter((r: any) => r.inherentRiskLevel === 'critical').length,
+            highRisks: risks.filter((r: any) => r.inherentRiskLevel === 'high').length
           },
           risks: risks
         };
         break;
-      
+
       case 'control-effectiveness':
-        const controls = await storage.getControls();
+        const controls = await storage.getAllControls();
         reportData = {
           title: 'Control Effectiveness Report',
           generatedAt: new Date().toISOString(),
           summary: {
             totalControls: controls.length,
-            implementedControls: controls.filter(c => c.implementationStatus === 'implemented').length
+            implementedControls: controls.filter((c: any) => c.implementationStatus === 'implemented').length
           },
           controls: controls
         };
         break;
-      
+
       default:
         return sendError(res, 'Report not found', 404);
     }

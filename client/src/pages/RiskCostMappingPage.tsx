@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, RefreshCw } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Treemap, Cell } from "recharts";
+import { BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { LegalEntityCostMatrix } from "@/components/legal-entity/legal-entity-cost-matrix";
 
 interface RiskCostRecord {
@@ -47,7 +47,7 @@ export default function RiskCostMappingPage() {
     queryKey: ["/api/risk-costs/summary"],
   });
 
-  const summary = summaryResponse?.data || {
+  const summary = (summaryResponse as any)?.data || {
     stats: { totalMapped: 0, totalCost: 0, avgCost: 0, highSeverity: 0 },
     trends: {
       totalMapped: { series: [], delta: "0% vs last month" },
@@ -57,14 +57,14 @@ export default function RiskCostMappingPage() {
     }
   };
 
-  const risks = (risksResponse?.data as any[]) ?? [];
-  const costModules: CostModule[] = ((costModulesResponse?.data as any[]) ?? []).map((module) => ({
+  const risks = ((risksResponse as any)?.data as any[]) ?? [];
+  const costModules: CostModule[] = (((costModulesResponse as any)?.data as any[]) ?? []).map((module: any) => ({
     ...module,
     moduleType: module.moduleType || module.cost_type || "direct",
   }));
-  const riskCosts: RiskCostRecord[] = (riskCostsResponse?.data as any[]) ?? [];
-  const legalEntities = (legalEntitiesResponse?.data as any[]) ?? [];
-  const assets = (assetsResponse?.data as any[]) ?? [];
+  const riskCosts: RiskCostRecord[] = ((riskCostsResponse as any)?.data as any[]) ?? [];
+  const legalEntities = ((legalEntitiesResponse as any)?.data as any[]) ?? [];
+  const assets = ((assetsResponse as any)?.data as any[]) ?? [];
 
   const enrichedRisks = useMemo(() => {
     return risks.map((risk) => {
@@ -243,28 +243,30 @@ export default function RiskCostMappingPage() {
               <p className="text-lg font-semibold text-white">Risks with largest financial impact</p>
             </div>
             {riskTreemapData.length ? (
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <Treemap
-                    data={riskTreemapData}
-                    dataKey="size"
-                    stroke="#1f2937"
-                    fill="#22d3ee"
-                    content={({ x, y, width, height, name, size }) =>
-                      width > 60 && height > 30 ? (
-                        <g>
-                          <rect x={x} y={y} width={width} height={height} fill="#0ea5e9" opacity={0.8} />
-                          <text x={x + 8} y={y + 20} fill="#fff" fontSize={12} fontWeight={600}>
-                            {name}
-                          </text>
-                          <text x={x + 8} y={y + 38} fill="#e2e8f0" fontSize={10}>
-                            {formatCurrency(size)}
-                          </text>
-                        </g>
-                      ) : null
-                    }
-                  />
-                </ResponsiveContainer>
+              <div className="space-y-4">
+                {riskTreemapData
+                  .sort((a, b) => b.size - a.size)
+                  .slice(0, 5)
+                  .map((item, index, arr) => {
+                    const maxVal = arr[0].size;
+                    const percentage = (item.size / maxVal) * 100;
+                    return (
+                      <div key={item.name} className="space-y-1">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium text-white truncate pr-4" title={item.name}>
+                            {item.name}
+                          </span>
+                          <span className="text-white/70 whitespace-nowrap">{formatCurrency(item.size)}</span>
+                        </div>
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
+                          <div
+                            className="h-full rounded-full bg-cyan-500"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             ) : (
               <p className="text-sm text-white/60">No modeled cost data to display.</p>

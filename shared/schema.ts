@@ -169,6 +169,7 @@ export const assetRelationships = pgTable('asset_relationships', {
 });
 
 // Enterprise Architecture table (L1-L3 capabilities)
+// Enterprise Architecture table (L1-L3 capabilities)
 export const enterpriseArchitecture = pgTable('enterprise_architecture', {
   id: serial('id').primaryKey(),
   assetId: text('asset_id').notNull(),
@@ -177,10 +178,15 @@ export const enterpriseArchitecture = pgTable('enterprise_architecture', {
   level: text('level').notNull(),  // L1, L2, or L3
   type: text('type').notNull(),    // strategic_capability, value_capability, business_service, product_service
   architectureDomain: text('architecture_domain'),
-  parentId: integer('parent_id').references(() => enterpriseArchitecture.id),
+  parentId: integer('parent_id'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
-});
+}, (table) => ({
+  parentFk: foreignKey({
+    columns: [table.parentId],
+    foreignColumns: [table.id],
+  }),
+}));
 
 // Relations for enterprise architecture
 export const enterpriseArchitectureRelations = relations(enterpriseArchitecture, ({ one }) => ({
@@ -191,7 +197,7 @@ export const enterpriseArchitectureRelations = relations(enterpriseArchitecture,
 }));
 
 export const insertEnterpriseArchitectureSchema = createInsertSchema(enterpriseArchitecture)
-  .omit({ id: true, createdAt: true, updatedAt: true });
+  .omit({ id: true, createdAt: true, updatedAt: true }) as unknown as z.ZodType<any, any, any>;
 
 export type EnterpriseArchitecture = typeof enterpriseArchitecture.$inferSelect;
 export type InsertEnterpriseArchitecture = z.infer<typeof insertEnterpriseArchitectureSchema>;
@@ -337,8 +343,7 @@ export const riskCosts = pgTable('risk_costs', {
   id: serial('id').primaryKey(),
   riskId: integer('risk_id').notNull().references(() => risks.id, { onDelete: 'cascade' }),
   costModuleId: integer('cost_module_id').notNull(),
-  costValue: numeric('cost_value', { precision: 15, scale: 2 }).notNull(),
-  frequency: text('frequency').notNull(),
+  weight: numeric('weight', { precision: 5, scale: 2 }).default('1.0'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
@@ -369,33 +374,33 @@ export const activityLogs = pgTable('activity_logs', {
 export const insertAssetSchema = createInsertSchema(assets).omit({
   id: true,
   createdAt: true
-});
+}) as unknown as z.ZodType<any, any, any>;
 
 export const insertRiskSchema = createInsertSchema(risks).omit({
   id: true,
   createdAt: true,
   updatedAt: true
-});
+}) as unknown as z.ZodType<any, any, any>;
 
 export const insertControlSchema = createInsertSchema(controls).omit({
   id: true,
   createdAt: true,
   updatedAt: true
-});
+}) as unknown as z.ZodType<any, any, any>;
 
 export const insertRiskResponseSchema = createInsertSchema(riskResponses).omit({
   id: true,
   createdAt: true,
   updatedAt: true
-});
+}) as unknown as z.ZodType<any, any, any>;
 
 export const insertLegalEntitySchema = createInsertSchema(legalEntities)
-  .omit({ id: true, createdAt: true, updatedAt: true });
+  .omit({ id: true, createdAt: true, updatedAt: true }) as unknown as z.ZodType<any, any, any>;
 
 export const insertActivityLogSchema = createInsertSchema(activityLogs).omit({
   id: true,
   timestamp: true
-});
+}) as unknown as z.ZodType<any, any, any>;
 
 // TypeScript types
 export type Asset = typeof assets.$inferSelect;
@@ -423,7 +428,7 @@ export type AssetRelationship = typeof assetRelationships.$inferSelect;
 export const insertAssetRelationshipSchema = createInsertSchema(assetRelationships).omit({
   id: true,
   createdAt: true,
-});
+}) as unknown as z.ZodType<any, any, any>;
 export type InsertAssetRelationship = z.infer<typeof insertAssetRelationshipSchema>;
 
 // Extended Risk shape that matches API payloads (FAIR parameters + metadata)
@@ -497,7 +502,7 @@ export const insertRiskSummarySchema = createInsertSchema(riskSummaries).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-});
+}) as unknown as z.ZodType<any, any, any>;
 
 export type RiskSummary = typeof riskSummaries.$inferSelect;
 export type InsertRiskSummary = z.infer<typeof insertRiskSummarySchema>;
@@ -557,7 +562,7 @@ export const insertUserSchema = createInsertSchema(users).omit({
   accountLockedUntil: true,
   loginCount: true,
   lastFailedLogin: true,
-});
+}) as unknown as z.ZodType<any, any, any>;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -726,14 +731,14 @@ export type InsertVulnerability = typeof vulnerabilities.$inferInsert;
 export type VulnerabilityAsset = typeof vulnerabilityAssets.$inferSelect;
 export type InsertVulnerabilityAsset = typeof vulnerabilityAssets.$inferInsert;
 
-export const insertVulnerabilitySchema = createInsertSchema(vulnerabilities);
-export const insertVulnerabilityAssetSchema = createInsertSchema(vulnerabilityAssets);
+export const insertVulnerabilitySchema = createInsertSchema(vulnerabilities) as unknown as z.ZodType<any, any, any>;
+export const insertVulnerabilityAssetSchema = createInsertSchema(vulnerabilityAssets) as unknown as z.ZodType<any, any, any>;
 
 export const insertAuthConfigSchema = createInsertSchema(authConfig).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-});
+}) as unknown as z.ZodType<any, any, any>;
 
 export type AuthConfig = typeof authConfig.$inferSelect;
 export type InsertAuthConfig = z.infer<typeof insertAuthConfigSchema>;
@@ -755,6 +760,7 @@ export type LoginRequest = {
 };
 
 // Backstage Integration Tables
+
 export const backstageSyncLogs = pgTable('backstage_sync_logs', {
   id: serial('id').primaryKey(),
   syncType: text('sync_type').notNull(),
@@ -770,3 +776,20 @@ export const backstageSyncLogs = pgTable('backstage_sync_logs', {
 
 export type BackstageSyncLog = typeof backstageSyncLogs.$inferSelect;
 export type InsertBackstageSyncLog = typeof backstageSyncLogs.$inferInsert;
+
+// Industry Insights (IRIS Benchmarks etc)
+export const industryInsights = pgTable('industry_insights', {
+  id: serial('id').primaryKey(),
+  source: text('source').notNull(), // e.g., 'IRIS 2025'
+  region: text('region').notNull(), // e.g., 'SMB'
+  sector: text('sector'), // e.g., 'Financial'
+  metric: text('metric').notNull(), // e.g., 'LM_MU'
+  value: numeric('value', { precision: 15, scale: 4 }).notNull(),
+  description: text('description'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export type IndustryInsight = typeof industryInsights.$inferSelect;
+export type InsertIndustryInsight = typeof industryInsights.$inferInsert;
+export const insertIndustryInsightSchema = createInsertSchema(industryInsights) as unknown as z.ZodType<any, any, any>;
