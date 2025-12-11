@@ -39,9 +39,15 @@ npm install
 **Development Mode:**
 To start both the backend server and the frontend build process in development mode:
 
-```bash
-npm run dev
-```
+1.  Load the development environment variables:
+    ```bash
+    set -a && source .env.development
+    ```
+
+2.  Run the development server:
+    ```bash
+    npm run dev
+    ```
 
 The application should be accessible at `http://localhost:5000` (or the port specified in your logs).
 
