@@ -66,6 +66,18 @@ Push schema changes to the database:
 npm run db:push
 ```
 
+### Database Schema
+
+A raw SQL schema file is provided for reference or manual setup:
+
+- `database_schema.sql`: Contains the CREATE TABLE statements for the application.
+
+To import this schema manually:
+
+```bash
+psql -U your_username -d your_database -f database_schema.sql
+```
+
 ## Tech Stack
 
 - **Frontend**: React, Tailwind CSS, Radix UI, @xyflow/react, Recharts.
