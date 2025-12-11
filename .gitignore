@@ -7,3 +7,9 @@ vite.config.ts.*
 *.tar.gz
 server.log
 *.log
+
+# User requested ignores
+.agent/workflows
+.codex
+agent_docs
+.env.*
