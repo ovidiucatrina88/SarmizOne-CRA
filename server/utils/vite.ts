@@ -47,7 +47,7 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
-  app.use("*", async (req, res, next) => {
+  app.use( async (req, res, next) => {
     const url = req.originalUrl;
 
     try {
@@ -91,7 +91,7 @@ export function serveStatic(app: Express) {
     
     // Fallback: serve minimal static content for production
     console.log("Static files not found, serving minimal content");
-    app.get('*', (req, res) => {
+    app.get('(.*)', (req, res) => {
       if (req.path.startsWith('/api/')) return; // Skip API routes
       res.send('<!DOCTYPE html><html><head><title>Risk Platform</title></head><body><div id="root">Loading...</div></body></html>');
     });
@@ -124,7 +124,7 @@ export function serveStatic(app: Express) {
   app.use(express.static(distPath));
 
   // fall through to index.html if the file doesn't exist
-  app.use("*", (_req, res) => {
+  app.use( (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
