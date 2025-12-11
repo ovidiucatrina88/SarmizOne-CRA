@@ -618,8 +618,34 @@ export function LossExceedanceCurveModern({
       });
     });
 
+    // Prepare interpolation points including boundaries to ensures consistent coverage
+    // This prevents the "drop to 0.1%" behavior in gaps (like between 0 and P10)
+    const interpolationPoints = [
+      { exposure: minExposure, probability: 100.0 }, // Start at 100% probability
+      ...percentileData,
+      { exposure: maxExposure, probability: 1.0 }    // Ensure we connect to the end
+    ].sort((a, b) => a.exposure - b.exposure);
+
+    // Remove duplicates from interpolation points (keep the one with higher probability for conservatism)
+    const uniqueInterpolationPoints = interpolationPoints.reduce((acc: typeof interpolationPoints, current) => {
+      const prev = acc[acc.length - 1];
+      if (prev && Math.abs(prev.exposure - current.exposure) < 1) {
+        // If exposures are essentially equal, keep the one that maintains monotonicity (or just the first one)
+        // For loss exceedance, we want descending probability.
+        // If we have (X, 100) and (X, 90), we strictly want 90 to be the "exceedance" at X?
+        // Actually, Probability of Exceeding X is 100 if X is Min.
+        // If P10 is X, then Prob(>X) is 90.
+        // So at X, the curve transitions. We can keep both or just ensure strictly descending isn't broken.
+        // We'll just keep all points and let the range finder handle it.
+        // But to be safe against division by zero in range calculation:
+        return acc;
+      }
+      acc.push(current);
+      return acc;
+    }, []);
+
     // Generate interpolated points for smooth curve
-    const numPoints = 40;
+    const numPoints = 60; // Increased resolution
     for (let i = 0; i <= numPoints; i++) {
       const lossExposure = i * (extendedMaxExposure / numPoints);
 
@@ -628,8 +654,8 @@ export function LossExceedanceCurveModern({
         continue;
       }
 
-      // Interpolate probability using percentile anchors
-      let probability = 0.1;
+      // Interpolate probability
+      let probability = 0; // Default to 0, but logic below should cover all cases
 
       if (lossExposure <= minExposure) {
         probability = 100;
@@ -638,12 +664,11 @@ export function LossExceedanceCurveModern({
         const normalizedExposure = (lossExposure - maxExposure) / (extendedMaxExposure - maxExposure);
         probability = Math.max(0.1, 1.0 * Math.exp(-2 * normalizedExposure));
       } else {
-        // Linear interpolation between percentile points
-        const sortedPercentiles = percentileData.sort((a, b) => a.exposure - b.exposure);
-
-        for (let j = 0; j < sortedPercentiles.length - 1; j++) {
-          const lower = sortedPercentiles[j];
-          const upper = sortedPercentiles[j + 1];
+        // Linear interpolation using prepared points
+        // Find the segment this exposure falls into
+        for (let j = 0; j < uniqueInterpolationPoints.length - 1; j++) {
+          const lower = uniqueInterpolationPoints[j];
+          const upper = uniqueInterpolationPoints[j + 1];
 
           if (lossExposure >= lower.exposure && lossExposure <= upper.exposure) {
             const range = upper.exposure - lower.exposure;
@@ -652,6 +677,14 @@ export function LossExceedanceCurveModern({
             probability = lower.probability - (lower.probability - upper.probability) * ratio;
             break;
           }
+        }
+
+        // If no segment found (e.g. slight float error), and we are within range, 
+        // fallback to nearest neighbor or logical default
+        if (probability === 0) {
+          // Should not happen if boundaries are set, but safe fallback:
+          if (lossExposure < minExposure) probability = 100;
+          else if (lossExposure > maxExposure) probability = 1;
         }
       }
 

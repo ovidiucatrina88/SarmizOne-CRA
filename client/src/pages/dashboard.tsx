@@ -383,9 +383,9 @@ export default function Dashboard() {
                         minimumExposure: apiData.riskSummary.minimumExposure,
                         averageExposure: apiData.riskSummary.meanExposure,
                         maximumExposure: apiData.riskSummary.maximumExposure,
-                        tenthPercentile: apiData.riskSummary.minimumExposure,
-                        mostLikely: apiData.riskSummary.meanExposure,
-                        ninetiethPercentile: apiData.riskSummary.maximumExposure,
+                        tenthPercentile: apiData.riskSummary.tenthPercentileExposure || apiData.riskSummary.minimumExposure,
+                        mostLikely: apiData.riskSummary.medianExposure || apiData.riskSummary.meanExposure,
+                        ninetiethPercentile: apiData.riskSummary.ninetiethPercentileExposure || apiData.riskSummary.maximumExposure,
                         exposureCurveData: apiData.riskSummary.exposureCurveData,
                       }
                       : undefined

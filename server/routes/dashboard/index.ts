@@ -84,16 +84,18 @@ router.get('/summary', async (req, res) => {
       });
     }
 
-    // Calculate percentiles from current data
-    const residualValues = risks.map(r => parseFloat(r.residualRisk)).filter(v => v > 0).sort((a, b) => b - a);
-    const minimumExposure = residualValues.length > 0 ? Math.min(...residualValues) : 0;
-    const maximumExposure = residualValues.length > 0 ? Math.max(...residualValues) : 0;
-    const meanExposure = residualValues.length > 0 ? residualValues.reduce((a, b) => a + b, 0) / residualValues.length : 0;
-    const medianExposure = residualValues.length > 0 ? residualValues[Math.floor(residualValues.length / 2)] : 0;
-    const percentile95Exposure = residualValues.length > 0 ? residualValues[Math.floor(residualValues.length * 0.05)] || maximumExposure : 0;
-    const percentile99Exposure = residualValues.length > 0 ? residualValues[Math.floor(residualValues.length * 0.01)] || maximumExposure : 0;
+    // Calculate percentiles using Monte Carlo simulation
+    const stats = riskSummaryService.calculateExposureStatistics(risks);
+    const minimumExposure = stats.min;
+    const maximumExposure = stats.max;
+    const meanExposure = stats.avg;
+    const medianExposure = stats.median;
+    const percentile95Exposure = stats.p95;
+    const percentile99Exposure = stats.p99;
+    const tenthPercentileExposure = stats.p10;
+    const ninetiethPercentileExposure = stats.p90;
 
-    console.log(`[Dashboard] Calculated exposure metrics - Min: ${minimumExposure}, Max: ${maximumExposure}, Mean: ${meanExposure}`);
+    console.log(`[Dashboard] Calculated exposure metrics - Min: ${minimumExposure}, Max: ${maximumExposure}, Mean: ${meanExposure}, P10: ${tenthPercentileExposure}, P90: ${ninetiethPercentileExposure}`);
 
     // Top performing controls based on ROI and Risk Reduction
     const topControls = controls
@@ -205,7 +207,9 @@ router.get('/summary', async (req, res) => {
         meanExposure,
         medianExposure,
         percentile95Exposure,
-        percentile99Exposure
+        percentile99Exposure,
+        tenthPercentileExposure,
+        ninetiethPercentileExposure
       },
       riskByCategory: {
         operational: operationalRisks,

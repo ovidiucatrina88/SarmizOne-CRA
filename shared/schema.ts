@@ -487,6 +487,8 @@ export const riskSummaries = pgTable('risk_summaries', {
   medianExposure: numeric('median_exposure', { precision: 15, scale: 2 }).notNull().default('0'),
   percentile95Exposure: numeric('percentile_95_exposure', { precision: 15, scale: 2 }).notNull().default('0'),
   percentile99Exposure: numeric('percentile_99_exposure', { precision: 15, scale: 2 }).notNull().default('0'),
+  tenthPercentileExposure: numeric('tenth_percentile_exposure', { precision: 15, scale: 2 }).notNull().default('0'),
+  ninetiethPercentileExposure: numeric('ninetieth_percentile_exposure', { precision: 15, scale: 2 }).notNull().default('0'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
